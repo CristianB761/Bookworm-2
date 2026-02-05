@@ -1,0 +1,166 @@
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_05f0e8a0cc7f395e\ASUSOptimization\AsusOSD.exe|2025-02-18 16:41:38.252
+C:\Program Files\WindowsApps\MSTeams_25017.203.3370.1174_x64__8wekyb3d8bbwe\ms-teams.exe|2025-02-28 14:15:03.716
+C:\Users\NERQI\Downloads\Visual Studio Code Installer.exe|2025-10-14 15:40:20.337
+C:\Users\NERQI\Downloads\VSCodeUserSetup-x64-1.96.0.exe|2025-12-12 11:07:20.328
+C:\Users\NERQI\AppData\Local\Programs\Microsoft VS Code\Code.exe|2026-01-11 19:55:20.405
+C:\Program Files\JetBrains\PyCharm Community Edition 2024.2.1\bin\pycharm64.exe|2025-11-26 14:13:16.968
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.257.463.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-02-27 09:13:57.455
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_c72309d60182d697\ASUSOptimization\AsusOSD.exe|2025-03-13 14:11:31.840
+C:\Users\NERQI\Downloads\AnyDesk.exe|2025-02-19 14:30:41.953
+C:\Users\NERQI\AppData\Local\Temp\cdbba221-4c80-4b71-b265-3f6cee50f146_Packet_Tracer822_64bit_setup_signed.zip.146\Packet_Tracer822_64bit_setup_signed.exe|2025-02-19 14:52:05.714
+C:\Users\NERQI\AppData\Local\Temp\f3b2a790-1756-4f71-a8d7-eec079842c9e_Packet_Tracer822_64bit_setup_signed.zip.c9e\Packet_Tracer822_64bit_setup_signed.exe|2025-02-19 14:52:07.353
+C:\Program Files\Cisco Packet Tracer 8.2.2\bin\PacketTracer.exe|2025-03-12 14:14:22.988
+C:\Program Files\WindowsApps\Microsoft.Windows.Photos_2024.11120.5010.0_x64__8wekyb3d8bbwe\Photos.exe|2025-02-19 17:34:21.581
+C:\Program Files\MySQL\MySQL Workbench 8.0 CE\MySQLWorkbench.exe|2025-11-20 17:55:24.002
+C:\Users\NERQI\AppData\Local\Programs\Opera\assistant\assistant_installer.exe|2025-04-22 09:56:27.039
+C:\Program Files (x86)\Microsoft\Edge\Application\msedge_proxy.exe|2026-01-08 18:46:01.526
+C:\Users\NERQI\Downloads\FileZilla_Server_1.9.4_win64-setup.exe|2025-02-26 14:23:54.933
+C:\Program Files\FileZilla Server\filezilla-server-gui.exe|2025-02-26 14:58:33.414
+C:\Program Files\FileZilla Server\Uninstall.exe|2025-02-26 14:23:30.316
+C:\Users\NERQI\Downloads\FileZilla_3.68.1_win64_sponsored2-setup.exe|2025-02-26 14:24:19.335
+C:\Program Files (x86)\AVAST Software\Browser\Update\AvastBrowserUpdate.exe|2025-02-26 14:30:07.863
+C:\Program Files\FileZilla FTP Client\filezilla.exe|2025-02-26 14:58:47.510
+C:\Program Files\WindowsApps\MSTeams_25031.805.3440.5290_x64__8wekyb3d8bbwe\ms-teams.exe|2025-03-10 22:15:30.380
+C:\Program Files\WindowsApps\Microsoft.GetHelp_10.2409.22951.0_x64__8wekyb3d8bbwe\GetHelp.exe|2025-03-06 18:12:06.761
+C:\Program Files\WindowsApps\AD2F1837.HPPrinterControl_158.1.1131.0_x64__v10z8vjag6ke6\DesktopExtension\HPPrintScanDoctorExt.exe|2025-03-10 17:26:27.176
+C:\Program Files\Avast Software\Browser\Application\AvastBrowser.exe|2025-03-10 17:28:04.710
+C:\Program Files\Microsoft Office\root\Integration\Integrator.exe|2025-12-18 16:55:02.916
+C:\Users\NERQI\AppData\Local\Temp\ExpressZip-19028-1\zipsetup.exe|2025-03-10 18:41:28.149
+C:\Users\NERQI\AppData\Local\Temp\ExpressZip-2304-1\zipsetup.exe|2025-03-10 18:44:34.315
+C:\Program Files\WindowsApps\MSTeams_25044.2208.3471.2155_x64__8wekyb3d8bbwe\ms-teams.exe|2025-04-02 13:15:22.882
+C:\Program Files\WindowsApps\B9ECED6F.ASUSPCAssistant_4.0.34.0_x64__qmba6cd70vzyy\ModuleDll\SCI\SelfUpdate.exe|2025-03-13 15:56:12.275
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_f57c48cf404ebc46\ASUSOptimization\AsusOSD.exe|2025-07-14 10:41:48.600
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_18.2503.1107.0_x64__8wekyb3d8bbwe\WebViewHost.exe|2025-03-14 15:52:32.930
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.259.514.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-03-20 10:38:30.481
+C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2412.16.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe|2025-03-20 17:38:47.250
+C:\Users\NERQI\AppData\Local\Discord\Update.exe|2026-01-09 19:13:45.115
+C:\Windows\System32\msiexec.exe|2025-10-09 14:54:33.974
+C:\Program Files\Blender Foundation\Blender 4.4\blender-launcher.exe|2025-04-09 16:38:43.756
+C:\Program Files\Blender Foundation\Blender 4.2\blender-launcher.exe|2025-04-30 13:17:22.446
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.260.564.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-04-10 16:35:53.539
+C:\Program Files\Common Files\Avast Software\Icarus\avast-av-vps\icarus.exe|2026-01-11 21:38:45.325
+C:\Users\NERQI\Downloads\Deejaysystem_Video_VJ2_350_setup.exe|2025-04-02 16:42:39.194
+C:\Program Files\WindowsApps\Deezer.62021768415AF_7.0.40.0_x86__q7m17pa7q8kj0\app\Deezer.exe|2025-04-02 16:44:19.610
+C:\Program Files (x86)\Deejaysystem\Deejaysystem Video VJ2\VJ2.exe|2025-04-02 16:51:33.735
+C:\Users\NERQI\Downloads\Install_Cross_DJ_Free_3.4.0.exe|2025-04-02 16:59:21.722
+C:\Program Files\MixVibes\Cross DJ Free 3.4.0\win64\Cross-DJ-Free.exe|2025-04-02 17:00:23.092
+C:\Program Files (x86)\Deejaysystem\Deejaysystem Video VJ2\unins000.exe|2025-04-02 17:05:53.933
+C:\Program Files\MixVibes\Cross DJ Free 3.4.0\win32\Cross-DJ-Free.exe|2025-04-28 15:09:06.583
+C:\Users\NERQI\AppData\Local\Temp\nengqqcv.exe|2025-04-02 19:02:30.921
+C:\Program Files\Viddly YouTube Downloader\Viddly.exe|2025-04-02 19:04:49.880
+C:\Program Files\WindowsApps\MSTeams_25060.205.3499.6849_x64__8wekyb3d8bbwe\ms-teams.exe|2025-04-22 09:58:41.527
+C:\Users\NERQI\Downloads\Install_Cross_DJ_Pro_Demo_4.2.0.exe|2025-04-03 00:50:06.764
+C:\Program Files\MixVibes\Cross DJ Pro Demo 4.2.0\win32\Cross DJ Pro Demo.exe|2025-04-04 14:28:57.103
+C:\Program Files\Viddly YouTube Downloader\unins000.exe|2025-04-07 16:30:55.403
+C:\Program Files\WindowsApps\Microsoft.Windows.Photos_2025.11030.27002.0_x64__8wekyb3d8bbwe\Photos.exe|2025-05-04 13:44:25.878
+C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2501.31.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe|2025-05-08 15:29:13.545
+C:\Program Files\WindowsApps\MSTeams_25072.1611.3570.1995_x64__8wekyb3d8bbwe\ms-teams.exe|2025-05-15 18:14:34.434
+C:\Users\NERQI\Downloads\odoo_18.0.latest.exe|2025-05-04 11:27:46.927
+C:\Users\NERQI\Downloads\odoo_17.0.latest.exe|2025-04-22 18:07:46.132
+C:\Program Files (x86)\Microsoft\Edge\Application\pwahelper.exe|2025-04-26 12:29:10.406
+C:\Users\NERQI\AppData\Local\Programs\PyCharm Professional 2025.1\bin\pycharm64.exe|2025-04-27 10:35:15.056
+C:\Program Files\LM Studio\LM Studio.exe|2025-04-28 15:04:36.828
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.262.580.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-05-11 14:44:04.386
+C:\Program Files\Odoo 18.0.20250422\Uninstall.exe|2025-05-04 11:18:32.276
+C:\Program Files\Odoo 17.0.20250422\Uninstall.exe|2025-05-01 18:55:56.584
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2504.27011.0_x64__8wekyb3d8bbwe\WebViewHost.exe|2025-05-04 11:18:41.246
+C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.12.10983.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe|2025-05-04 11:42:44.305
+C:\Users\NERQI\AppData\Local\Temp\WinGet\XP9KHM4BK9FZ7Q.1.83.1\vscode-winsta11er-x64.exe|2025-05-14 18:31:16.706
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.263.394.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-05-15 22:19:26.773
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2505.37051.0_x64__8wekyb3d8bbwe\WebViewHost.exe|2025-05-15 19:07:24.820
+C:\Program Files\WindowsApps\MSTeams_25094.310.3616.953_x64__8wekyb3d8bbwe\ms-teams.exe|2025-08-04 18:08:50.921
+C:\Program Files (x86)\NCH Software\ExpressZip\expresszip.exe|2025-05-19 17:59:07.076
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2505.50115.0_x64__8wekyb3d8bbwe\WebViewHost.exe|2025-05-22 17:28:24.845
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.264.408.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-06-16 09:42:18.077
+C:\Users\NERQI\AppData\Local\MongoDBCompass\Update.exe|2025-05-26 18:34:51.394
+C:\Program Files\WindowsApps\Microsoft.ScreenSketch_11.2503.29.0_x64__8wekyb3d8bbwe\SnippingTool\SnippingTool.exe|2025-05-27 19:27:42.576
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.265.255.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-07-09 19:05:06.221
+C:\Users\NERQI\Downloads\OperaSetup (1).exe|2025-07-09 19:52:33.879
+C:\Program Files\WindowsApps\B9ECED6F.ASUSPCAssistant_4.0.42.0_x64__qmba6cd70vzyy\ModuleDll\SCI\SelfUpdate.exe|2025-07-14 11:22:04.060
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_cceffaf9805aa134\ASUSOptimization\AsusOSD.exe|2025-09-13 14:12:37.972
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\python3.11.exe|2025-10-09 14:34:23.393
+C:\Program Files\WindowsApps\MicrosoftWindows.CrossDevice_1.25062.33.0_x64__cw5n1h2txyewy\CrossDeviceService.exe|2025-08-02 09:09:41.140
+C:\Program Files\WindowsApps\MSTeams_25185.410.3812.8024_x64__8wekyb3d8bbwe\ms-teams.exe|2025-08-18 17:36:23.184
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.269.449.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-08-18 17:43:55.020
+C:\Program Files\WindowsApps\MicrosoftWindows.CrossDevice_1.25071.33.0_x64__cw5n1h2txyewy\CrossDeviceService.exe|2025-08-18 17:56:20.457
+C:\Program Files\WindowsApps\MSTeams_25198.1112.3855.2900_x64__8wekyb3d8bbwe\ms-teams.exe|2025-09-16 13:43:18.875
+C:\Program Files\WindowsApps\MicrosoftWindows.CrossDevice_1.25081.52.0_x64__cw5n1h2txyewy\CrossDeviceService.exe|2025-09-13 14:23:03.267
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_5f423004ed8db302\ASUSOptimization\AsusOSD.exe|2025-09-16 09:24:18.286
+C:\Program Files\WindowsApps\B9ECED6F.ASUSPCAssistant_4.0.48.0_x64__qmba6cd70vzyy\ModuleDll\SCI\SelfUpdate.exe|2025-09-16 09:24:32.617
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_1c054a83d803f0c0\ASUSOptimization\AsusOSD.exe|2025-11-19 21:30:42.697
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_1c054a83d803f0c0\ASUSSoftwareManager\AsusUpdateChecker.exe|2025-11-19 09:55:12.944
+C:\Program Files\WindowsApps\Microsoft.Windows.Photos_2025.11080.28001.0_x64__8wekyb3d8bbwe\Photos.exe|2025-10-24 11:44:57.956
+C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.22.12111.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe|2025-10-09 16:43:05.193
+C:\Program Files\WindowsApps\MSTeams_25227.205.3936.6644_x64__8wekyb3d8bbwe\ms-teams.exe|2025-10-09 14:06:06.115
+C:\Users\NERQI\AppData\Local\Temp\WinGet\XP9KHM4BK9FZ7Q.1.83.1\973b41be-5827-46f6-ab6d-637c2942eb33_9490453f2d73eb32f365c631bbad3b9d4837af27ce31ad6cb3dad56c50b0a5fa.exe|2025-09-17 13:47:39.057
+C:\Program Files\Avast Software\Browser\Application\vps_helper.exe|2025-12-22 20:14:19.566
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.272.438.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-09-24 19:11:18.695
+C:\Users\NERQI\Downloads\VisualStudioSetup.exe|2025-09-17 17:06:46.359
+C:\Users\NERQI\Downloads\UnityHubSetup.exe|2025-09-22 14:23:58.325
+C:\Program Files\Unity Hub\Unity Hub.exe|2025-10-24 12:17:57.209
+C:\Program Files\WindowsApps\MicrosoftWindows.CrossDevice_1.25082.81.0_x64__cw5n1h2txyewy\CrossDeviceService.exe|2025-09-29 13:18:47.652
+C:\Users\NERQI\Downloads\Git-2.51.0-64-bit.exe|2025-09-29 13:20:32.523
+C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2507.26.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe|2025-11-05 16:56:14.950
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.273.474.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-10-08 16:35:20.164
+C:\Program Files\Unity\Hub\Editor\6000.0.58f1\Editor\Unity.exe|2025-10-13 13:48:16.643
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2509.59141.0_x64__8wekyb3d8bbwe\WebViewHost.exe|2025-10-06 14:43:58.487
+C:\Program Files\Piriform\CCleaner 7\CCleaner.exe|2025-12-20 12:12:21.438
+C:\Program Files\WindowsApps\MSTeams_25255.703.3978.7153_x64__8wekyb3d8bbwe\ms-teams.exe|2025-10-20 13:07:16.412
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.274.477.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-10-22 14:22:59.656
+C:\Users\NERQI\Downloads\Windows10Upgrade9252.exe|2025-10-20 16:43:08.204
+C:\Users\NERQI\Downloads\Windows11InstallationAssistant.exe|2025-10-20 16:44:26.454
+C:\Program Files\WindowsApps\MSTeams_25275.2601.4002.2815_x64__8wekyb3d8bbwe\ms-teams.exe|2025-11-18 10:54:23.603
+C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.12811.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe|2025-11-27 18:32:16.501
+C:\Program Files\MySQL\MySQL Server 9.1\bin\mysql_configurator.exe|2025-10-23 17:31:38.506
+C:\Program Files\Android\Android Studio\bin\studio64.exe|2025-12-18 17:27:06.340
+C:\Windows\Temp\{0170BE3C-D166-426B-9410-42DFC5FC093D}\.be\VC_redist.x86.exe|2025-10-23 18:18:38.356
+C:\Windows\Temp\{94CE72EF-4546-4189-BEA3-5C4B590453D0}\.be\VC_redist.x64.exe|2025-10-23 18:22:39.001
+C:\Windows\Temp\{F46EA53B-DBE6-4A5F-BEB4-51F166C284CE}\.be\winsdksetup.exe|2025-10-23 18:31:50.918
+C:\Windows\SysWOW64\msiexec.exe|2025-10-23 18:44:06.295
+C:\Windows\Temp\{111F4AEF-9B73-4DA2-8B19-3B48FF2FC800}\.be\winsdksetup.exe|2025-10-23 18:46:52.500
+C:\Windows\Temp\{26333E11-5313-4233-9A23-6C7FE5B6A937}\.be\winsdksetup.exe|2025-10-24 10:26:38.057
+C:\Program Files\Common Files\MariaDBShared\HeidiSQL\heidisql.exe|2025-11-20 17:57:40.435
+C:\Program Files (x86)\VMware\VMware Player\vmplayer.exe|2025-10-24 16:39:53.137
+C:\Program Files (x86)\KC Softwares\RAMExpert\RAMExpert.exe|2025-10-24 12:18:13.576
+C:\Program Files\Oracle\VirtualBox\VirtualBox.exe|2025-10-24 16:39:29.718
+C:\Program Files\WindowsApps\MicrosoftWindows.CrossDevice_1.25101.30.0_x64__cw5n1h2txyewy\CrossDeviceService.exe|2025-11-02 19:56:13.314
+C:\Program Files\WindowsApps\Microsoft.Windows.Photos_2025.11100.9001.0_x64__8wekyb3d8bbwe\Photos.exe|2025-11-05 14:16:29.699
+C:\Program Files\WindowsApps\SpotifyAB.SpotifyMusic_1.275.510.0_x64__zpdnekdrzrea0\SpotifyMigrator.exe|2025-11-11 22:14:55.154
+C:\Users\NERQI\Downloads\weka-3-8-6-azul-zulu-windows.exe|2025-11-10 14:18:21.940
+C:\Program Files\Weka-3-8-6\jre\zulu17.32.13-ca-fx-jre17.0.2-win_x64\bin\javaw.exe|2025-11-17 15:22:38.577
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2511.35091.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-11-10 17:46:06.130
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2511.37021.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-11-11 10:03:17.350
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2511.41111.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-11-13 15:15:06.179
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2511.44061.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-11-18 10:56:50.380
+C:\Program Files\WindowsApps\MSTeams_25306.804.4102.7193_x64__8wekyb3d8bbwe\ms-teams.exe|2025-12-29 18:30:10.128
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2511.46031.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-11-19 14:21:42.875
+C:\Program Files\WindowsApps\B9ECED6F.ASUSPCAssistant_4.0.52.0_x64__qmba6cd70vzyy\ModuleDll\SCI\SelfUpdate.exe|2025-11-19 21:30:54.038
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_d37b14e97dd34825\ASUSOptimization\AsusOSD.exe|2025-12-15 10:02:17.465
+C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2508.38.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe|2025-12-04 18:00:22.440
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2511.50071.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-11-22 11:58:41.851
+C:\Users\NERQI\Downloads\Antigravity.exe|2025-11-24 14:14:19.860
+C:\Users\NERQI\AppData\Local\Programs\Antigravity\Antigravity.exe|2025-12-17 10:17:42.256
+C:\Program Files\WindowsApps\Microsoft.Windows.Photos_2025.11110.18001.0_x64__8wekyb3d8bbwe\Photos.exe|2025-12-18 17:20:31.020
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2512.33091.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-12-04 18:47:45.919
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2512.39051.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-12-11 20:25:16.743
+C:\Users\NERQI\Downloads\GitHubDesktopSetup-x64.exe|2025-12-12 11:54:38.541
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2512.41101.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-12-15 10:13:31.011
+C:\Program Files\WindowsApps\B9ECED6F.ASUSPCAssistant_4.0.56.0_x64__qmba6cd70vzyy\ModuleDll\SCI\SelfUpdate.exe|2025-12-15 10:38:49.878
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_f44825bb5b746f1a\ASUSOptimization\AsusOSD.exe|2026-01-11 12:20:02.654
+C:\Users\NERQI\AppData\Local\GitHubDesktop\GitHubDesktop.exe|2026-01-11 21:43:09.775
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2512.46071.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-12-18 19:11:08.627
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2512.46101.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-12-19 09:52:58.250
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2512.49061.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-12-20 12:18:26.914
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2512.52151.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-12-24 12:18:20.470
+C:\Program Files\WindowsApps\MSTeams_25332.1210.4188.1171_x64__8wekyb3d8bbwe\ms-teams.exe|2026-01-11 17:49:01.493
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2512.53121.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2025-12-30 11:19:36.900
+C:\Program Files\WindowsApps\Microsoft.Windows.Photos_2025.11120.5001.0_x64__8wekyb3d8bbwe\Photos.exe|2026-01-01 22:53:54.639
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2601.32091.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2026-01-05 09:47:58.520
+C:\Program Files\WindowsApps\5319275A.WhatsAppDesktop_2.2587.9.0_x64__cv1g1gvanyjgm\WhatsApp.Root.exe|2026-01-05 12:24:19.836
+F:\WiiBackupManager_Win64.exe|2026-01-05 12:21:27.124
+F:\WiiBackupManager_Win32.exe|2026-01-05 14:46:08.472
+C:\Program Files\WindowsApps\Microsoft.MicrosoftOfficeHub_19.2601.34031.0_x64__8wekyb3d8bbwe\M365Copilot.exe|2026-01-11 17:56:58.769
+C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.13503.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe|2026-01-09 10:40:04.095
+C:\Users\NERQI\Git\git-bash.exe|2026-01-09 20:08:47.667
+C:\Program Files\WindowsApps\B9ECED6F.ASUSPCAssistant_4.0.58.0_x64__qmba6cd70vzyy\ModuleDll\SCI\SelfUpdate.exe|2026-01-11 12:58:10.213
+C:\Windows\System32\DriverStore\FileRepository\asussci2.inf_amd64_2a18edfbe3ca6a1e\ASUSOptimization\AsusOSD.exe|2026-01-11 17:43:01.212

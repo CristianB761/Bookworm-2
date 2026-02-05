@@ -1,0 +1,130 @@
+{"Install" : [{"path": "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{771FD6B0-FA20-440A-A002-3B3BAC16DC50}_is1",
+"programId": "000016fe37c839cbb31243f1a7ddbc94ceb50000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Users\\NERQI\\AppData\\Local\\Programs\\Microsoft VS Code\\",
+"files" : []
+},{"path": "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Opera 125.0.5729.49",
+"programId": "0000235a7a7384a22942af576029625d34080000ffff",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2245156;RootDirPath|C:\\Users\\NERQI\\AppData\\Local\\Programs\\Opera",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\CCleaner 7",
+"programId": "000035a500a3091919a509a7e0329b7896a30000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Piriform\\CCleaner 7",
+"files" : []
+},{"path": "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Discord",
+"programId": "0000474b1fe65505c38bc89bf33bd4491c2800000904",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Users\\NERQI\\AppData\\Local\\Discord",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\O365HomePremRetail - es-es",
+"programId": "00004c41e836a6451c74c69136bbff38d8c80000ffff",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2234787;RootDirPath|C:\\Program Files\\Microsoft Office",
+"files" : []
+},{"path": "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{AA73B3E3-C6C8-45C8-B1DC-4AE56C751432}_is1",
+"programId": "000050b849277b7239c70357f087fad0adaf0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Users\\NERQI\\AppData\\Local\\Programs\\Antigravity\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Microsoft Edge",
+"programId": "00005e62d53fcfebc2603e81e469eb1c19d90000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\Microsoft\\Edge\\Application",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Avast Antivirus",
+"programId": "000070764ff8abecd4e7ec921197011a54140000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Avast Software\\Avast",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Avast Secure Browser",
+"programId": "00007d85d71396601bfb26957796b2253d6b00000a04",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\AVAST Software\\Browser\\Application",
+"files" : []
+},{"path": "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GitHubDesktop",
+"programId": "00008086418b2dc97d02644b9a69d439436700000904",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\ProgramData\\NERQI\\GitHubDesktop",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{35ED3F83-4BDC-4c44-8EC6-6A8301C7413A}",
+"programId": "00009e744da58b595ffb1513c9087003bfed0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\McAfee\\WebAdvisor",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Google Chrome",
+"programId": "0000d8c5d548c52b64a1936abcdbd731863b0000ffff",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2227077;RootDirPath|C:\\Program Files\\Google\\Chrome\\Application",
+"files" : [{"productName": "google chrome installer",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.147",
+"binFileVersion": "143.0.7499.147",
+"path": "%programfiles%\\google\\chrome\\application\\143.0.7499.147\\installer\\chrmstp.exe"
+},{"productName": "google chrome",
+"originalFileName": "chrome.exe",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.147",
+"binFileVersion": "143.0.7499.147",
+"path": "%programfiles%\\google\\chrome\\application\\chrome.exe"
+},{"productName": "google chrome",
+"originalFileName": "chrome_proxy.exe",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.147",
+"binFileVersion": "143.0.7499.147",
+"path": "%programfiles%\\google\\chrome\\application\\chrome_proxy.exe"
+},{"productName": "google chrome",
+"originalFileName": "chrome_pwa_launcher.exe",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.170",
+"binFileVersion": "143.0.7499.170",
+"path": "%programfiles%\\google\\chrome\\application\\143.0.7499.170\\chrome_pwa_launcher.exe"
+},{"productName": "google chrome",
+"originalFileName": "elevated_tracing_service.exe",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.147",
+"binFileVersion": "143.0.7499.147",
+"path": "%programfiles%\\google\\chrome\\application\\143.0.7499.147\\elevated_tracing_service.exe"
+}]
+},{"path": "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\OneDriveSetup.exe",
+"programId": "0000dcf99200e0cf5d32a1c21d351f9819630000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\Users\\NERQI\\AppData\\Local\\microsoft\\OneDrive\\25.222.1112.0002_1",
+"files" : []
+}],
+"Update" : [{"path": "c:\\program files\\mcafee\\webadvisor\\browserhost.exe",
+"programId": "00069b42de752fdc9c85b2c49e0bf553ec2900000904",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2230519",
+"files" : [{"productName": "mcafee webadvisor",
+"originalFileName": "browserhost.exe",
+"companyName": "mcafee, llc",
+"binProductVersion": "4.1.0.0",
+"binFileVersion": "4.1.1.1084",
+"path": "%programfiles%\\mcafee\\webadvisor\\browserhost.exe"
+}]
+}],
+"Uninstall" : [{"programId": "00000612c75a12cdf963ab4eb551ae9a098e0000ffff",
+"files" : []
+},{"programId": "000009e06e9f77b58db38fefc24b6eb9af550000ffff",
+"files" : []
+},{"programId": "00004da32a8edbc0d54522f818a8c731472800000904",
+"files" : []
+},{"programId": "000062eb9eb004c6350713cbf524c3baf1ee0000ffff",
+"files" : []
+},{"programId": "0000680130f69da2915fec85e2c3ad25b12e0000ffff",
+"files" : []
+},{"programId": "00006e652c815db076350b696999859ec14f0000ffff",
+"files" : []
+},{"programId": "0000876b3be530c076c7172705f5f6e17a350000ffff",
+"files" : []
+},{"programId": "0000a537bdac154fe733a0dece759181af4e0000ffff",
+"files" : []
+},{"programId": "0000aac4391accfc8273dc1aa4e123994f820000ffff",
+"files" : []
+},{"programId": "0000e053ab2103fb5ca3aa39aece08246b950000ffff",
+"files" : []
+},{"programId": "0000e7a93da47cb8e91c058cea097137ebb600000a04",
+"files" : []
+}]}

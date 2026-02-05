@@ -1,0 +1,540 @@
+{"Install" : [{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{wampserver64}_is1",
+"programId": "0000022bd6dd6f1a8b6f8e1c4c37736eb38d0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\wamp64\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Prism",
+"programId": "0000079e9cfc9754e215ae39595bf219540b0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\NCH Software\\Prism",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{43D01861-8EE2-496A-A6EA-0CCC913D7286}",
+"programId": "000009f55c17550313a80bd74feaf0f30ef600000904",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\MySQL\\MySQL Server 9.1\\",
+"files" : [{"productName": "mysql server",
+"companyName": "oracle corporation",
+"binProductVersion": "9.1.0.0",
+"binFileVersion": "9.1.0.0",
+"path": "%programfiles%\\mysql\\mysql server 9.1\\bin\\ibd2sdi.exe"
+},{"productName": "mysql server",
+"companyName": "oracle corporation",
+"binProductVersion": "9.1.0.0",
+"binFileVersion": "9.1.0.0",
+"path": "%programfiles%\\mysql\\mysql server 9.1\\bin\\innochecksum.exe"
+},{"productName": "mysql server",
+"companyName": "oracle corporation",
+"binProductVersion": "9.1.0.0",
+"binFileVersion": "9.1.0.0",
+"path": "%programfiles%\\mysql\\mysql server 9.1\\bin\\my_print_defaults.exe"
+},{"productName": "mysql server",
+"companyName": "oracle corporation",
+"binProductVersion": "9.1.0.0",
+"binFileVersion": "9.1.0.0",
+"path": "%programfiles%\\mysql\\mysql server 9.1\\bin\\myisam_ftdump.exe"
+},{"productName": "mysql server",
+"companyName": "oracle corporation",
+"binProductVersion": "9.1.0.0",
+"binFileVersion": "9.1.0.0",
+"path": "%programfiles%\\mysql\\mysql server 9.1\\bin\\myisamchk.exe"
+}]
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\PostgreSQL 12",
+"programId": "00000d3aeec97170de4ba4708f9fcb97e5180000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files\\odoo 18.0.20250422",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{12111707-01A1-49E9-B894-683BD8F564AB}",
+"programId": "00001376b1644500695643fb2db3a95bf58300000904",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\PlayStationNow\\",
+"files" : [{"productName": "agl",
+"originalFileName": "agl.exe",
+"companyName": "\"eric poulsen\"",
+"binProductVersion": "0.0.0.0",
+"binFileVersion": "0.0.0.0",
+"path": "%programfiles(x86)%\\playstationnow\\agl\\agl.exe"
+},{"productName": "playstation plus",
+"originalFileName": "pspluslauncher.exe",
+"companyName": "sony interactive entertainment llc",
+"binProductVersion": "12.0.0.0",
+"binFileVersion": "12.0.0.0",
+"path": "%programfiles(x86)%\\playstationnow\\pspluslauncher.exe"
+},{"path": "%programfiles(x86)%\\playstationnow\\qtwebengineprocess.exe"
+},{"productName": "universal updater",
+"originalFileName": "unidater.exe",
+"companyName": "sony interactive entertainment",
+"binProductVersion": "1.0.0.0",
+"binFileVersion": "1.0.0.0",
+"path": "%programfiles(x86)%\\playstationnow\\unidater.exe"
+}]
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{1851460E-0E63-4117-B5BA-25A2F045801B}",
+"programId": "0000183196c141343d668b5e95e25e985db100000904",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|C:\\ProgramData\\Microsoft\\VisualStudio\\Packages\\CoreEditorFonts,version=17.7.40001.1,productarch=neutral\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\c6dbe996-22a9-5998-b542-7abe33da3b83",
+"programId": "000019449b1530b2fb05891b1970f07ffb150000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files\\lm studio",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\xampp",
+"programId": "00001ad820f4578d76d09eb803f93d68cc500000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Users\\NERQI\\OneDrive\\Escritorio\\Grado superior\\Llenguatge",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{8220EEFE-38CD-377E-8595-13398D740ACE}",
+"programId": "00001c71b1380b123de4347dd014e565368e00000904",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\Bignox\\BigNoxVM\\vcredist\\",
+"files" : [{"productName": "microsoft® visual studio® 2008",
+"originalFileName": "install.exe",
+"companyName": "microsoft corporation",
+"binProductVersion": "9.0.30729.1",
+"binFileVersion": "9.0.30729.1",
+"path": "%programfiles(x86)%\\bignox\\bignoxvm\\vcredist\\install.exe"
+}]
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\CrystalDiskMark8_is1",
+"programId": "00001d78ebb0f68947e39952c24983d564390000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\CrystalDiskMark8\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{9dff3540-fc85-4ed5-ac84-9e3c7fd8bece}",
+"programId": "00001e77fdde01306a1da1e834bf02151a430000ffff",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|c:\\programdata\\package cache\\{9dff3540-fc85-4ed5-ac84-9e3c7fd8bece}",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\MSC",
+"programId": "000020a25321f71e3be29f60e6bf079df0420000ffff",
+"compatFlags": "256",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2234498;RootDirPath|C:\\Program Files\\McAfee",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Pivot Stickfigure Animator_is1",
+"programId": "000020b3fd22b7c14391c24204894a61a98c0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\Pivot Stickfigure Animator\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\MixPad",
+"programId": "000026e45f6de5ef148fd67cec449989e0d00000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\NCH Software\\MixPad",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{d8bbe9f9-7c5b-42c6-b715-9ee898a2e515}",
+"programId": "00002e96ac03ed3ce3b16fbcb7f0627e67f90000ffff",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|c:\\programdata\\package cache\\{d8bbe9f9-7c5b-42c6-b715-9ee898a2e515}",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\UltraISO_is1",
+"programId": "000033336f494b10286c6244ff461b5d051a0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\UltraISO\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\CCleaner 7",
+"programId": "000035a500a3091919a509a7e0329b7896a30000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Piriform\\CCleaner 7",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{C3C53D59-2B6F-588E-99FE-4E7D3636EA12}",
+"programId": "000036a16524edbfc9d8ab8145e694d3083700000904",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Java\\jdk-23\\",
+"files" : [{"productName": "java(tm) platform se 23",
+"originalFileName": "jabswitch.exe",
+"companyName": "n\/a",
+"binProductVersion": "23.0.0.0",
+"binFileVersion": "23.0.0.0",
+"path": "%programfiles%\\java\\jdk-23\\bin\\jabswitch.exe"
+},{"productName": "java(tm) platform se 23",
+"originalFileName": "jaccessinspector.exe",
+"companyName": "n\/a",
+"binProductVersion": "23.0.0.0",
+"binFileVersion": "23.0.0.0",
+"path": "%programfiles%\\java\\jdk-23\\bin\\jaccessinspector.exe"
+},{"productName": "java(tm) platform se 23",
+"originalFileName": "jaccesswalker.exe",
+"companyName": "n\/a",
+"binProductVersion": "23.0.0.0",
+"binFileVersion": "23.0.0.0",
+"path": "%programfiles%\\java\\jdk-23\\bin\\jaccesswalker.exe"
+},{"productName": "java(tm) platform se 23",
+"originalFileName": "jar.exe",
+"companyName": "n\/a",
+"binProductVersion": "23.0.0.0",
+"binFileVersion": "23.0.0.0",
+"path": "%programfiles%\\java\\jdk-23\\bin\\jar.exe"
+},{"productName": "java(tm) platform se 23",
+"originalFileName": "jarsigner.exe",
+"companyName": "n\/a",
+"binProductVersion": "23.0.0.0",
+"binFileVersion": "23.0.0.0",
+"path": "%programfiles%\\java\\jdk-23\\bin\\jarsigner.exe"
+}]
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\BlueStacks_nxt",
+"programId": "000038a319c5bde3a49fc0af9465c8e0a8820000ffff",
+"compatFlags": "256",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2235021;RootDirPath|c:\\program files\\bluestacks_nxt",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\PyCharm 2025.1",
+"programId": "0000457c12f6efc8ad233e77274cf16081ad0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Users\\NERQI\\AppData\\Local\\Programs\\PyCharm Professional 2025.1",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{2c1d2274-0b9c-437b-8937-60ed881f6678}",
+"programId": "000046a2d01f58ae516f2b041004c25b35de0000ffff",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|c:\\programdata\\package cache\\{2c1d2274-0b9c-437b-8937-60ed881f6678}",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\MixVibes Cross DJ Pro Demo 4.2.0",
+"programId": "000047069478250520e37ff7c8c5ac07c36c0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files\\MixVibes\\cross dj pro demo 4.2.0",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{99A6B581-0FA3-4E1B-BD84-E796FE26E41D}",
+"programId": "0000497bf4cbea9c28681f2da1be32a2d0e000000904",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\Common Files\\VMware\\InstallerCache\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\O365HomePremRetail - es-es",
+"programId": "00004c41e836a6451c74c69136bbff38d8c80000ffff",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2234787;RootDirPath|C:\\Program Files\\Microsoft Office",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{4B6C7001-C7D6-3710-913E-5BC23FCE91E6}",
+"programId": "0000519945478fcde661b2c1bd5350f3300a00000904",
+"compatFlags": "4",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\MixVibes Cross DJ Free 3.4.0",
+"programId": "00005369783f6bc2fbbf592fe53c7ddd4a840000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files\\MixVibes\\cross dj free 3.4.0",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\D5410AE5FA467EF0F19558D5F60C991A79E11B51",
+"programId": "0000538459afe0d77b99cac22fd5add4d9f00000ffff",
+"compatFlags": "256",
+"restoreAction": "RootDirPath|c:\\Program Files\\DIFX\\115107525EEE5325",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{5C5C09F2-B879-4364-83FA-0FD13402C39D}",
+"programId": "000055b9e6beb54c174544254a6af4d207c800000904",
+"compatFlags": "0",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\CrystalDiskInfo_is1",
+"programId": "0000562fe6daf27590cb7ac4dfd7b21a4f7e0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\CrystalDiskInfo\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\KC Softwares RAMExpert_is1",
+"programId": "00005717a41bd5bf54ecd3ca7898441b1bd00000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\KC Softwares\\RAMExpert\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{6F320B93-EE3C-4826-85E0-ADF79F8D4C61}",
+"programId": "00005a3cb58689d86e238d25984dcd7cca950000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\LDPlayer9",
+"programId": "00005d4515f34b9512be265d36e985443fd90000ffff",
+"compatFlags": "256",
+"restoreAction": "RootDirPath|c:\\LDPlayer\\ldplayer9",
+"files" : [{"productName": "oracle vm virtualbox",
+"originalFileName": "vboxsup.sys",
+"companyName": "oracle corporation",
+"binProductVersion": "6.1.36.2435",
+"binFileVersion": "6.1.36.2435",
+"linkDate": "6.1.36.152435",
+"path": "%programfiles%\\ldplayer9box\\ld9boxsup.sys"
+}]
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Unity 6000.0.58f1",
+"programId": "00005e47a8fbdd2868c89f36687d200b1f970000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files\\Unity\\Hub\\Editor\\6000.0.58f1\\Editor",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Microsoft Edge",
+"programId": "00005e62d53fcfebc2603e81e469eb1c19d90000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\Microsoft\\Edge\\Application",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\FileZilla Server",
+"programId": "0000617d541e110fb890b7c16cf5776700da0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\FileZilla Server",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{115DF11E-4B4C-4EA9-9A79-00DB0C7EF02D}",
+"programId": "00006692f5bd50ec7c826941022fe1f2e5870000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files (x86)\\windowsinstallationassistant",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{1D8E6291-B0D5-35EC-8441-6616F567A0F7}",
+"programId": "00006941b7a4b9402af5e298e3f8517521d800000000",
+"compatFlags": "4",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Cisco Packet Tracer 8.2.2 64Bit_is1",
+"programId": "00006bdfe86a8234e36168add572794832300000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Cisco Packet Tracer 8.2.2\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Avast Antivirus",
+"programId": "000070764ff8abecd4e7ec921197011a54140000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Avast Software\\Avast",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{BDB9832B-E442-4E5A-AA10-2B9A9110AF8F}",
+"programId": "000070f08b4a554bec2f73ab252a76cc972800000904",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2240672",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{33d1fd90-4274-48a1-9bc1-97e33d9c2d6f}",
+"programId": "0000711e471311256b767312386e0ce130360000ffff",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|c:\\programdata\\package cache\\{33d1fd90-4274-48a1-9bc1-97e33d9c2d6f}",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{b72d4013-dd88-405a-9f9d-e88c278dcefe}",
+"programId": "00007843517e6c7f7a1996894e09a6766afb0000ffff",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|c:\\programdata\\package cache\\{b72d4013-dd88-405a-9f9d-e88c278dcefe}",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Avast Secure Browser",
+"programId": "00007d85d71396601bfb26957796b2253d6b00000a04",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\AVAST Software\\Browser\\Application",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{5363CE84-5F09-48A1-8B6C-6BB590FFEDF2}_is1",
+"programId": "00007f28c956a19a4656fb29f99800e6f8190000ffff",
+"compatFlags": "8",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\Common Files\\Wondershare\\Wondershare Helper Compact\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\d2856419",
+"programId": "00007f983252b5f347aebcaf9fa902bf0d420000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\FileZilla Client",
+"programId": "000081bc202535e011c3bfd16a9de647d8150000ffff",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2240933;RootDirPath|C:\\Program Files\\FileZilla FTP Client",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Weka 3.8.6",
+"programId": "00008af8a2591f558cea40f2135ec4069c340000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files\\weka-3-8-6",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\PyCharm Community Edition 2024.2.1",
+"programId": "00008b9d4bdda3c7188f8731d560845bde760000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\JetBrains\\PyCharm Community Edition 2024.2.1",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\FileViewPro_is1",
+"programId": "00008ed129a845c0c3ffe86fe78ac5fef9550000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\FileViewPro\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{36F01827-0DE5-460B-A12D-CBC724DE407E}",
+"programId": "00009068e7e3bddc9a235e40f1bcb31edcb100000a0c",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|C:\\ProgramData\\Microsoft\\VisualStudio\\Packages\\sqlsysclrtypes,version=17.12.4.0,chip=x64,language=es-ES\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{95140000-00FF-0403-1000-0000000FF1CE}",
+"programId": "000092708449a783b8b090b41bcc5c2ed39700000304",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2235834;RootDirPath|C:\\Program Files (x86)\\MSECache\\LIP14\\1027\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Nox",
+"programId": "00009ce827b882a9369dd142a45ed8aa468a0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files (x86)\\Nox\\bin",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{35ED3F83-4BDC-4c44-8EC6-6A8301C7413A}",
+"programId": "00009e744da58b595ffb1513c9087003bfed0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\McAfee\\WebAdvisor",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{06FB9A8C-080E-4209-8CA0-DB3A4124F784}",
+"programId": "0000a1d15d770658e28756da4029d493d89200000904",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|C:\\ProgramData\\Package Cache\\{06FB9A8C-080E-4209-8CA0-DB3A4124F784}v10.1.0.0\\Redistributable\\10.1.0.0\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{75741B4B-FC87-494A-A380-0EBA06DB89F9}",
+"programId": "0000a30869efda250f46f564592bf73ff68700000a0c",
+"compatFlags": "0",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{F0C3E5D1-1ADE-321E-8167-68EF0DE699A5}",
+"programId": "0000a36e62d52bff5b1a012e9b5a3d788c2000000000",
+"compatFlags": "4",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Git_is1",
+"programId": "0000a5304ca7f1aa27db5986568895c22a800000ffff",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2234158;RootDirPath|C:\\Users\\NERQI\\Git\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{ca67548a-5ebe-413a-b50c-4b9ceb6d66c6}",
+"programId": "0000a9e48d524e34fb9b37c0e6db372ae45b0000ffff",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|c:\\programdata\\package cache\\{ca67548a-5ebe-413a-b50c-4b9ceb6d66c6}",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Odoo 17.0",
+"programId": "0000aa015ef8301057d3f53cf017840f1c310000ffff",
+"compatFlags": "0",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{6E3610B2-430D-4EB0-81E3-2B57E8B9DE8D}",
+"programId": "0000ac95c04a00964fee0287eea25476480c00000a04",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\Bonjour\\",
+"files" : [{"productName": "bonjour",
+"originalFileName": "mdnsresponder.exe",
+"companyName": "apple inc.",
+"binProductVersion": "3.0.0.10",
+"binFileVersion": "3.0.0.10",
+"path": "%programfiles(x86)%\\bonjour\\mdnsresponder.exe"
+}]
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\PhotoStage",
+"programId": "0000b146e6970a6c7bc2e4ab9d968e1ffb7d0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\NCH Software\\PhotoStage",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{5220ab35-1a54-4298-aa0c-1443f2e18149}",
+"programId": "0000b65ca67b8ab1fb83eeacf911dd2a5e180000ffff",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2241009;RootDirPath|c:\\program files (x86)\\Lavasoft\\web companion\\application",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\IncrediBuild",
+"programId": "0000b675eaa3b4574ac035eae91bec65147d0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files (x86)\\incredibuild",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{D5C69738-B486-402E-85AC-2456D98A64E4}",
+"programId": "0000b7a3cd1fdba7d90a70ae20e337d4d95f0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files (x86)\\windowsinstallationassistant",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Nmap",
+"programId": "0000b8c572fbc20dc4507ce11d5f0a1e19260000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files (x86)\\Nmap",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GanttProject",
+"programId": "0000be99aeae5965f960f5762cb27770ceed0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files (x86)\\ganttproject-3.2",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{751F86E3-563F-40B8-807C-80DFBA4FBA3C}",
+"programId": "0000c8093fae718f62e284bb81a8d4f09d0800000904",
+"compatFlags": "0",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\NpcapInst",
+"programId": "0000ced922534ebec932e11899ad7a6942730000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Npcap",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Unity Technologies - Hub",
+"programId": "0000d2c60a58cd0f6d7f48588bc15b33d7170000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files\\unity hub",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Wireshark",
+"programId": "0000d83622a5827da851e10d9bf19b71842d0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Users\\NERQI\\OneDrive\\Escritorio\\Wireshark",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Google Chrome",
+"programId": "0000d8c5d548c52b64a1936abcdbd731863b0000ffff",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2227077;RootDirPath|C:\\Program Files\\Google\\Chrome\\Application",
+"files" : [{"productName": "google chrome installer",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.147",
+"binFileVersion": "143.0.7499.147",
+"path": "%programfiles%\\google\\chrome\\application\\143.0.7499.147\\installer\\chrmstp.exe"
+},{"productName": "google chrome",
+"originalFileName": "chrome.exe",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.147",
+"binFileVersion": "143.0.7499.147",
+"path": "%programfiles%\\google\\chrome\\application\\chrome.exe"
+},{"productName": "google chrome",
+"originalFileName": "chrome_proxy.exe",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.147",
+"binFileVersion": "143.0.7499.147",
+"path": "%programfiles%\\google\\chrome\\application\\chrome_proxy.exe"
+},{"productName": "google chrome",
+"originalFileName": "chrome_pwa_launcher.exe",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.170",
+"binFileVersion": "143.0.7499.170",
+"path": "%programfiles%\\google\\chrome\\application\\143.0.7499.170\\chrome_pwa_launcher.exe"
+},{"productName": "google chrome",
+"originalFileName": "elevated_tracing_service.exe",
+"companyName": "google llc",
+"binProductVersion": "143.0.7499.147",
+"binFileVersion": "143.0.7499.147",
+"path": "%programfiles%\\google\\chrome\\application\\143.0.7499.147\\elevated_tracing_service.exe"
+}]
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{042d26ef-3dbe-4c25-95d3-4c1b11b235a7}",
+"programId": "0000e29c312140a260b7947c6feeec24a1000000ffff",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|c:\\programdata\\package cache\\{042d26ef-3dbe-4c25-95d3-4c1b11b235a7}",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Android Studio",
+"programId": "0000e379f0de9e893f10c481179da96c45f30000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|c:\\program files\\Android\\android studio",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Odoo 18.0",
+"programId": "0000e70a8993284e2a617a7f865566041a7f0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Odoo 18.0.20250422",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{0b5169e3-39da-4313-808e-1f9c0407f3bf}",
+"programId": "0000ea448545d03145f01134afdf9efa72e60000ffff",
+"compatFlags": "4",
+"restoreAction": "RootDirPath|c:\\programdata\\package cache\\{0b5169e3-39da-4313-808e-1f9c0407f3bf}",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{C6FD611E-7EFE-488C-A0E0-974C09EF6473}",
+"programId": "0000f059efbd77c46e4751718070818d3fc000000000",
+"compatFlags": "0",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Debut",
+"programId": "0000f1f5055dd7ea4d9812a838eef2d47b970000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\NCH Software\\Debut",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Sublime Text_is1",
+"programId": "0000f339b4684632d585f8625e02d96d5c4a0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\Sublime Text\\",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{B7EE9AB2-4188-4B5F-8499-43114E7AD7DA}",
+"programId": "0000f3efcf340e6dd0ecad97f3ed9659c22100000904",
+"compatFlags": "0",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VideoPad",
+"programId": "0000f53a3e2fc1fb7f370200128023563a2e0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\NCH Software\\VideoPad",
+"files" : []
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\MariaDB 12.0 (x64)",
+"programId": "0000f5804bd36bd34d104c8db6eb912587d00000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files\\MariaDB 12.0\\",
+"files" : [{"binProductVersion": "12.0.2.0",
+"binFileVersion": "12.0.2.0",
+"path": "%programfiles%\\%USERNAME% 12.0\\bin\\mysqld.exe"
+}]
+},{"path": "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\360TotalSecurity",
+"programId": "0000fe8a04223435e5fe4704b6b2b9a4753b0000ffff",
+"compatFlags": "0",
+"restoreAction": "RootDirPath|C:\\Program Files (x86)\\360\\Total Security",
+"files" : []
+},{"path": "c:\\program files\\mcafee\\webadvisor\\browserhost.exe",
+"programId": "00069b42de752fdc9c85b2c49e0bf553ec2900000904",
+"compatFlags": "0",
+"restoreAction": "AddPlaceholderCustom|FWLINK~2230519",
+"files" : [{"productName": "mcafee webadvisor",
+"originalFileName": "browserhost.exe",
+"companyName": "mcafee, llc",
+"binProductVersion": "4.1.0.0",
+"binFileVersion": "4.1.1.1084",
+"path": "%programfiles%\\mcafee\\webadvisor\\browserhost.exe"
+}]
+}],
+"Update" : [],
+"Uninstall" : []}

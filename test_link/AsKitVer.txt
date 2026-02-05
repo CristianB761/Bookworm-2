@@ -1,0 +1,4 @@
+ASKIT_WIN10_64_V8.00
+Date=2019/09/19
+DetailVer=8.00
+

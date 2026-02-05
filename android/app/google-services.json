@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "993471989568",
+    "project_id": "bookworm-app-nerqi-2025",
+    "storage_bucket": "bookworm-app-nerqi-2025.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:993471989568:android:185e1ffb05341e25155ca5",
+        "android_client_info": {
+          "package_name": "com.example.bookworm"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "993471989568-es6q35dvqp9cd0o3gbu6jav39fgicq89.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.bookworm",
+            "certificate_hash": "586f77df8e727a3188a9658b0002c0fea24577a0"
+          }
+        },
+        {
+          "client_id": "993471989568-bh5o2j7sjmmgg0hv21s6sba9k88b48me.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3UOi8n6-Ncazma9yKjhi2jYAg6cYxi3A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "993471989568-1botoj6cjuifejc4njhedt0lucj9qn3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "993471989568-v3ed1qa33k9e1k0nrtsbsvr41ffkvitu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bookworm"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Aplicación Flutter">
+  
+  <!-- Configuración de viewport para responsive -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  
+  <!-- Título de la aplicación -->
+  <title>Tu Aplicación</title>
+  
+  <!-- Importar Firebase SDK (VERSIÓN ACTUALIZADA) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+  
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBr-6JMgXDq5Ov_wV3hxykLnVujEn2YK6Y",
+      authDomain: "bookworm-app-nerqi-2025.firebaseapp.com",
+      projectId: "bookworm-app-nerqi-2025",
+      storageBucket: "bookworm-app-nerqi-2025.firebasestorage.app",
+      messagingSenderId: "993471989568",
+      appId: "1:993471989568:web:46dd14694451a80f155ca5"
+    };
+    
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    
+    console.log("Firebase inicializado correctamente para web");
+  </script>
+  
+  <!-- Cargar Flutter -->
+  <link rel="stylesheet" href="flutter.css" />
+  <script defer src="flutter.js" type="application/javascript"></script>
+  <script>
+    // Configuración del service worker de Flutter
+    window.addEventListener('load', function(ev) {
+      // Descargar el motor principal de Flutter
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            return appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+  <!-- Contenedor donde se cargará Flutter -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Cargando aplicación...</p>
+  </div>
+  
+  <script>
+    // CSS para la pantalla de carga
+    const style = document.createElement('style');
+    style.textContent = `
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #4A6FA5, #6B8EAC);
+        color: white;
+        font-family: Arial, sans-serif;
+        z-index: 9999;
+      }
+      .spinner {
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 5px solid white;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Ocultar pantalla de carga cuando Flutter esté listo
+    document.addEventListener('flutter-first-frame', function() {
+      document.getElementById('loading').style.display = 'none';
+    });
+  </script>
+</body>
+</html>

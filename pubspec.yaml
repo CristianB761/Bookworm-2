@@ -18,9 +18,12 @@ dependencies:
   firebase_storage: ^12.1.0
   
   # UI y gráficos
+  url_launcher: ^6.2.4
   fl_chart: ^1.1.1
   connectivity_plus: ^6.0.0
   image_picker: ^1.1.2
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
   
   # Base de datos local
   hive: ^2.2.3

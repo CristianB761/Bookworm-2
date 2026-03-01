@@ -155,7 +155,7 @@ class ProgresoBackend {
       final progresos = await obtenerProgresosUsuario();
 
       final librosCompletados = progresos.where((p) => p.estaCompletado).length;
-      final totalPaginas = progresos.fold(0, (sum, p) => sum + p.paginaActual);
+      final totalPaginas = progresos.fold(0, (total, p) => total + p.paginaActual);
       final rachaActual = await _calcularRachaActual(usuario.uid);
       
       final generosFavoritos = _calcularGenerosFavoritos(progresos);
@@ -250,8 +250,6 @@ class ProgresoBackend {
       final usuario = _auth.currentUser;
       if (usuario == null) return {};
 
-      final progresos = await obtenerProgresosUsuario();
-      
       return {
         'basadasEnHistorial': [],
         'tendencias': [],

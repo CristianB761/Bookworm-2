@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'diseño.dart';
-import '../API/modelos.dart';
+import 'package:provider/provider.dart';
+import 'diseno.dart';
+import 'API/modelos.dart';
+import 'theme_provider.dart';
 
 class BotonesBarraApp extends StatelessWidget {
   final String rutaActual;
@@ -19,15 +21,16 @@ class BotonesBarraApp extends StatelessWidget {
       'Perfil': {'ruta': '/perfil', 'icono': Icons.person},
     };
 
-    return Row(children: [
-      ...rutas.entries.map((e) => _construirBotonBarraApp(
-        context, 
-        e.key, 
-        e.value['ruta'] as String, 
-        e.value['icono'] as IconData
-      )),
-      const SizedBox(width: 8), 
-    ]);
+    return Row(
+      children: [
+        ...rutas.entries.map((e) => _construirBotonBarraApp(
+          context, 
+          e.key, 
+          e.value['ruta'] as String, 
+          e.value['icono'] as IconData
+        )),
+      ],
+    );
   }
 
   Widget _construirBotonBarraApp(BuildContext context, String texto, String ruta, IconData icono) {
@@ -95,7 +98,7 @@ class BotonSeccion extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: estaSeleccionado ? AppColores.primario : Colors.grey.shade300,
+            color: estaSeleccionado ? AppColores.primario : Theme.of(context).dividerColor,
           ),
         ),
         elevation: 0,
@@ -130,17 +133,19 @@ class EstadoVacio extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: AppColores.fondo,
+        color: Theme.of(context).brightness == Brightness.light 
+            ? AppColores.fondo 
+            : const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
         child: Column(
           children: [
-            Icon(icono, size: 48, color: Colors.grey),
+            Icon(icono, size: 48, color: Theme.of(context).hintColor),
             const SizedBox(height: 16),
-            Text(titulo, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+            Text(titulo, style: EstilosApp.cuerpoPequeno(context)),
             const SizedBox(height: 8),
-            Text(descripcion, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+            Text(descripcion, style: EstilosApp.cuerpoPequeno(context)),
           ],
         ),
       ),
@@ -168,20 +173,28 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
           child: Container(
             height: 50,
             decoration: BoxDecoration(
-              color: AppColores.fondo,
+              color: Theme.of(context).brightness == Brightness.light 
+                  ? AppColores.fondo 
+                  : const Color(0xFF2C2C2C),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: TextField(
               controller: controlador,
               decoration: InputDecoration(
                 hintText: textoHint,
-                hintStyle: const TextStyle(fontSize: 16, color: Colors.black54),
+                hintStyle: TextStyle(
+                  fontSize: 16, 
+                  color: Theme.of(context).hintColor,
+                ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                prefixIcon: const Icon(Icons.search, color: AppColores.primario),
+                prefixIcon: Icon(Icons.search, color: AppColores.primario),
               ),
-              style: const TextStyle(fontSize: 16, color: Colors.black),
+              style: TextStyle(
+                fontSize: 16, 
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
           ),
         ),
@@ -190,7 +203,7 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
           height: 50,
           child: ElevatedButton(
             onPressed: alBuscar,
-            style: EstilosApp.botonPrimario,
+            style: EstilosApp.botonPrimario(context),
             child: const Text('Buscar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
@@ -218,17 +231,24 @@ class FiltroDesplegable extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColores.fondo,
+        color: Theme.of(context).brightness == Brightness.light 
+            ? AppColores.fondo 
+            : const Color(0xFF2C2C2C),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: valor,
           isExpanded: true,
-          hint: Text(hint),
-          dropdownColor: Colors.white,
-          style: const TextStyle(color: Colors.black, fontSize: 16),
+          hint: Text(hint, style: TextStyle(color: Theme.of(context).hintColor)),
+          dropdownColor: Theme.of(context).brightness == Brightness.light 
+              ? Colors.white 
+              : const Color(0xFF2C2C2C),
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            fontSize: 16,
+          ),
           icon: const Icon(Icons.arrow_drop_down, color: AppColores.primario),
           items: items.map((valor) => DropdownMenuItem<String>(
             value: valor,
@@ -258,13 +278,13 @@ class TarjetaLibro extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
-        decoration: EstilosApp.tarjetaPlana,
+        decoration: EstilosApp.tarjetaPlana(context),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _construirPortadaLibro(),
             const SizedBox(width: 16),
-            Expanded(child: _construirInfoLibro()),
+            Expanded(child: _construirInfoLibro(context)),
           ],
         ),
       ),
@@ -277,7 +297,7 @@ class TarjetaLibro extends StatelessWidget {
       height: 120,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: Colors.grey[200],
+        color: const Color(0xFFEEEEEE),
       ),
       child: libro.urlMiniatura != null
           ? ClipRRect(
@@ -296,21 +316,21 @@ class TarjetaLibro extends StatelessWidget {
                   );
                 },
                 errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.book, size: 40, color: Colors.grey);
+                  return const Icon(Icons.book, size: 40, color: Color(0xFF9E9E9E));
                 },
               ),
             )
-          : const Icon(Icons.book, size: 40, color: Colors.grey),
+          : const Icon(Icons.book, size: 40, color: Color(0xFF9E9E9E)),
     );
   }
 
-  Widget _construirInfoLibro() {
+  Widget _construirInfoLibro(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           libro.titulo,
-          style: EstilosApp.tituloPequeno,
+          style: EstilosApp.tituloPequeno(context),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -319,7 +339,7 @@ class TarjetaLibro extends StatelessWidget {
         if (libro.autores.isNotEmpty)
           Text(
             'Por ${libro.autores.join(', ')}',
-            style: EstilosApp.cuerpoMedio,
+            style: EstilosApp.cuerpoMedio(context),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -328,7 +348,7 @@ class TarjetaLibro extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Publicado: ${libro.fechaPublicacion}',
-            style: EstilosApp.cuerpoPequeno,
+            style: EstilosApp.cuerpoPequeno(context),
           ),
         ],
         
@@ -340,7 +360,7 @@ class TarjetaLibro extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${libro.calificacionPromedio!.toStringAsFixed(1)} (${libro.numeroCalificaciones ?? 0})',
-                style: EstilosApp.cuerpoPequeno,
+                style: EstilosApp.cuerpoPequeno(context),
               ),
             ],
           ),
@@ -350,7 +370,7 @@ class TarjetaLibro extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             libro.descripcion!,
-            style: EstilosApp.cuerpoPequeno,
+            style: EstilosApp.cuerpoPequeno(context),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
@@ -385,7 +405,12 @@ class ElementoConfiguracion extends StatelessWidget {
     Widget content = Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 1,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -402,9 +427,9 @@ class ElementoConfiguracion extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(titulo, style: EstilosApp.cuerpoGrande),
+                Text(titulo, style: EstilosApp.cuerpoGrande(context)),
                 const SizedBox(height: 4),
-                Text(subtitulo, style: EstilosApp.cuerpoMedio),
+                Text(subtitulo, style: EstilosApp.cuerpoMedio(context)),
               ],
             ),
           ),
@@ -415,7 +440,7 @@ class ElementoConfiguracion extends StatelessWidget {
               activeColor: AppColores.primario,
             )
           else
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            Icon(Icons.chevron_right, color: Theme.of(context).hintColor),
         ],
       ),
     );
@@ -447,7 +472,7 @@ class IndicadorCarga extends StatelessWidget {
         children: [
           CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColores.primario)),
           const SizedBox(height: 16),
-          Text(mensaje, style: EstilosApp.cuerpoMedio),
+          Text(mensaje, style: EstilosApp.cuerpoMedio(context)),
         ],
       ),
     );

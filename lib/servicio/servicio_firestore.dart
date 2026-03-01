@@ -24,8 +24,11 @@ class ServicioFirestore {
     try {
       final doc = await _firestore.collection('usuarios').doc(uid).get();
       if (doc.exists) {
-        print('Usuario obtenido de Firestore: ${doc.data()}');
-        return DatosUsuario.fromMap(doc.data()!);
+        final data = doc.data()!;
+        if (data['nombre'] == null || data['nombre'].toString().trim().isEmpty) {
+          data['nombre'] = 'Usuario';
+        }
+        return DatosUsuario.fromMap(data);
       }
       print('⚠️ Usuario no encontrado en Firestore');
       return null;
@@ -256,18 +259,37 @@ class ServicioFirestore {
 
       final clubId = _firestore.collection('clubs').doc().id;
       
+      final nombre = datosClub['nombre']?.toString().trim() ?? 'Club sin nombre';
+      final descripcion = datosClub['descripcion']?.toString().trim() ?? '';
+
+      String nombreCreador = usuario.displayName ?? 'Usuario';
+      try {
+        if (nombreCreador == 'Usuario' || nombreCreador.isEmpty) {
+          final userDoc = await _firestore.collection('usuarios').doc(usuario.uid).get();
+          if (userDoc.exists) {
+            final nombreFromDb = userDoc.data()?['nombre']?.toString().trim() ?? '';
+            if (nombreFromDb.isNotEmpty) {
+              nombreCreador = nombreFromDb;
+            }
+          }
+        }
+      } catch (e) {
+        print('Error obteniendo nombre creador: $e');
+      }
+
       await _firestore.collection('clubs').doc(clubId).set({
         'id': clubId,
-        'nombre': datosClub['nombre'],
-        'descripcion': datosClub['descripcion'] ?? '',
+        'nombre': nombre.isEmpty ? 'Club sin nombre' : nombre,
+        'descripcion': descripcion,
         'genero': datosClub['genero'],
         'creadorId': usuario.uid,
-        'creadorNombre': usuario.displayName ?? 'Usuario',
+        'creadorNombre': nombreCreador,
         'fechaCreacion': FieldValue.serverTimestamp(),
         'miembros': [usuario.uid],
         'miembrosCount': 1,
         'libroActual': datosClub['libroActual'] ?? null,
         'estado': 'activo',
+        'privacidad': 'publico',
         'ultimaActividad': FieldValue.serverTimestamp(),
       });
 
@@ -278,7 +300,7 @@ class ServicioFirestore {
         .doc(clubId)
         .set({
       'clubId': clubId,
-      'nombre': datosClub['nombre'],
+      'nombre': nombre.isEmpty ? 'Club sin nombre' : nombre,
       'genero': datosClub['genero'],
       'fechaUnion': FieldValue.serverTimestamp(),
       'rol': 'creador',
@@ -337,12 +359,20 @@ class ServicioFirestore {
       if (!clubDoc.exists) throw Exception('Club no encontrado');
       
       final clubData = clubDoc.data()!;
+      final rawNombre = clubData['nombre']?.toString().trim() ?? '';
+      final nombreClub = rawNombre.isEmpty ? 'Club sin nombre' : rawNombre;
 
-      await _firestore.collection('clubs').doc(clubId).update({
+      final Map<String, dynamic> updateData = {
         'miembros': FieldValue.arrayUnion([usuario.uid]),
         'miembrosCount': FieldValue.increment(1),
         'ultimaActividad': FieldValue.serverTimestamp(),
-      });
+      };
+
+      if (rawNombre.isEmpty) {
+        updateData['nombre'] = nombreClub;
+      }
+
+      await _firestore.collection('clubs').doc(clubId).update(updateData);
 
       await _firestore
           .collection('usuarios')
@@ -351,7 +381,7 @@ class ServicioFirestore {
           .doc(clubId)
           .set({
         'clubId': clubId,
-        'nombre': clubData['nombre'],
+        'nombre': nombreClub,
         'genero': clubData['genero'],
         'fechaUnion': FieldValue.serverTimestamp(),
         'rol': 'miembro',
@@ -362,6 +392,44 @@ class ServicioFirestore {
     } catch (e) {
       print('Error uniéndose al club: $e');
       throw Exception('Error uniéndose al club: $e');
+    }
+  }
+
+  Future<void> eliminarClub(String clubId) async {
+    try {
+      final clubSnapshot = await _firestore.collection('clubs').doc(clubId).get();
+      if (!clubSnapshot.exists) return;
+      
+      final miembros = clubSnapshot.data()?['miembros'] as List<dynamic>? ?? [];
+      
+      final batch = _firestore.batch();
+      
+      for (final miembroId in miembros) {
+        final miembroDocRef = _firestore
+            .collection('usuarios')
+            .doc(miembroId.toString())
+            .collection('mis_clubs')
+            .doc(clubId);
+        batch.delete(miembroDocRef);
+      }
+      
+      final mensajesSnapshot = await _firestore
+          .collection('clubs')
+          .doc(clubId)
+          .collection('mensajes')
+          .get();
+      
+      for (final doc in mensajesSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      
+      batch.delete(_firestore.collection('clubs').doc(clubId));
+      
+      await batch.commit();
+      print('Club eliminado exitosamente: $clubId');
+    } catch (e) {
+      print('Error eliminando club: $e');
+      throw Exception('Error eliminando club: $e');
     }
   }
 
@@ -380,22 +448,34 @@ class ServicioFirestore {
       final clubsCompletos = await Future.wait(
         snapshot.docs.map((doc) async {
           final clubData = doc.data();
+          if (clubData['clubId'] == null || clubData['clubId'].toString().isEmpty) {
+            return null;
+          }
           final clubDetalle = await _firestore
               .collection('clubs')
-              .doc(clubData['clubId'])
+              .doc(clubData['clubId'].toString())
               .get();
           
           if (clubDetalle.exists) {
-            return {
+            final detalleData = clubDetalle.data()!;
+            
+            final rawNombre = detalleData['nombre']?.toString().trim() ?? '';
+            detalleData['nombre'] = rawNombre.isEmpty ? 'Club sin nombre' : rawNombre;
+            final rawCreador = detalleData['creadorNombre']?.toString().trim() ?? '';
+            detalleData['creadorNombre'] = rawCreador.isEmpty ? 'Usuario' : rawCreador;
+
+            final data = {
               ...clubData,
-              ...clubDetalle.data()!,
+              ...detalleData,
             };
+            data['id'] = clubDetalle.id;
+            return data;
           }
-          return clubData;
+          return null;
         }),
       );
 
-      return clubsCompletos.where((club) => club != null).cast<Map<String, dynamic>>().toList();
+      return clubsCompletos.where((c) => c != null).cast<Map<String, dynamic>>().toList();
     } catch (e) {
       print('Error obteniendo clubs del usuario: $e');
       return [];
@@ -407,22 +487,88 @@ class ServicioFirestore {
       final usuario = _auth.currentUser;
       if (usuario == null) return [];
 
+      final misClubsSnapshot = await _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('mis_clubs')
+          .get();
+      final misClubsIds = misClubsSnapshot.docs.map((d) => d.id).toSet();
+
       final snapshot = await _firestore
           .collection('clubs')
           .where('estado', isEqualTo: 'activo')
           .where('privacidad', isEqualTo: 'publico')
-          .orderBy('miembrosCount', descending: true)
-          .limit(10)
+          .limit(50) 
           .get();
 
-      return snapshot.docs.map((doc) {
+      final clubs = snapshot.docs
+          .where((doc) => !misClubsIds.contains(doc.id))
+          .map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
+
+        final rawNombre = data['nombre']?.toString().trim() ?? '';
+        data['nombre'] = rawNombre.isEmpty ? 'Club sin nombre' : rawNombre;
+        final rawCreador = data['creadorNombre']?.toString().trim() ?? '';
+        data['creadorNombre'] = rawCreador.isEmpty ? 'Usuario' : rawCreador;
+
         return data;
       }).toList();
+
+      clubs.sort((a, b) {
+        final tA = a['ultimaActividad'] as Timestamp?;
+        final tB = b['ultimaActividad'] as Timestamp?;
+        if (tA == null || tB == null) return 0;
+        return tB.compareTo(tA);
+      });
+
+      return clubs;
     } catch (e) {
       print('Error obteniendo clubs recomendados: $e');
       return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> buscarClubs(String termino) async {
+    try {
+      final snapshot = await _firestore
+          .collection('clubs')
+          .where('nombre', isGreaterThanOrEqualTo: termino)
+          .where('nombre', isLessThan: '$termino\uf8ff')
+          .limit(20)
+          .get();
+
+      return snapshot.docs
+          .map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+
+        final rawNombre = data['nombre']?.toString().trim() ?? '';
+        data['nombre'] = rawNombre.isEmpty ? 'Club sin nombre' : rawNombre;
+        final rawCreador = data['creadorNombre']?.toString().trim() ?? '';
+        data['creadorNombre'] = rawCreador.isEmpty ? 'Usuario' : rawCreador;
+
+        return data;
+      })
+      .where((data) => data['privacidad'] == 'publico')
+      .toList();
+    } catch (e) {
+      print('Error buscando clubs: $e');
+      return [];
+    }
+  }
+
+  Future<void> corregirNombreUsuarioAuth() async {
+    final user = _auth.currentUser;
+    if (user != null && (user.displayName == null || user.displayName!.trim().isEmpty)) {
+      try {
+        final datos = await obtenerDatosUsuario(user.uid);
+        String nombre = datos?.nombre ?? 'Usuario';
+        if (nombre.trim().isEmpty) nombre = 'Usuario';
+        await user.updateDisplayName(nombre);
+      } catch (e) {
+        print('Error corrigiendo displayName: $e');
+      }
     }
   }
 }

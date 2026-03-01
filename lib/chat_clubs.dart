@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'diseño.dart';
+import 'diseno.dart';
 import 'componentes.dart';
-import '../servicio/servicio_firestore.dart'; 
+import 'servicio/servicio_firestore.dart'; 
 
 class ChatClub extends StatefulWidget {
   final String clubId;
@@ -81,7 +81,7 @@ class _ChatClubState extends State<ChatClub> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Editar información del club', style: EstilosApp.tituloMedio),
+        title: Text('Editar información del club', style: EstilosApp.tituloMedio(context)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -105,7 +105,7 @@ class _ChatClubState extends State<ChatClub> {
                 maxLength: 200,
               ),
               const SizedBox(height: 16),
-              const Text('Género favorito', style: EstilosApp.cuerpoGrande),
+              Text('Género favorito', style: EstilosApp.cuerpoGrande(context)),
               const SizedBox(height: 8),
               FiltroDesplegable(
                 valor: generoSeleccionado,
@@ -154,24 +154,28 @@ class _ChatClubState extends State<ChatClub> {
                   };
                 });
 
-                Navigator.pop(context);
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Información del club actualizada'),
-                    backgroundColor: AppColores.secundario,
-                  ),
-                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Información del club actualizada'),
+                      backgroundColor: AppColores.secundario,
+                    ),
+                  );
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error actualizando: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error actualizando: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
-            style: EstilosApp.botonPrimario,
+            style: EstilosApp.botonPrimario(context),
             child: const Text('Guardar cambios'),
           ),
         ],
@@ -262,7 +266,7 @@ class _ChatClubState extends State<ChatClub> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: esMio ? AppColores.primario : Colors.grey.shade100,
+                    color: esMio ? AppColores.primario : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
@@ -279,7 +283,7 @@ class _ChatClubState extends State<ChatClub> {
                     _formatearFecha(datos['timestamp'].toDate()),
                     style: const TextStyle(
                       fontSize: 10,
-                      color: Colors.grey,
+                      color: Color(0xFF9E9E9E),
                     ),
                   ),
               ],
@@ -379,7 +383,7 @@ class _ChatClubState extends State<ChatClub> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+              border: Border(top: BorderSide(color: const Color(0xFFE0E0E0))),
             ),
             child: Row(
               children: [
@@ -425,11 +429,57 @@ class _ChatClubState extends State<ChatClub> {
     );
   }
 
+  Future<void> _eliminarClub() async {
+    final confirmacion = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('¿Eliminar club?', style: EstilosApp.tituloMedio(context)),
+        content: const Text('Esta acción eliminará el club y todos sus mensajes de forma permanente para todos los miembros.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmacion == true) {
+      try {
+        await _servicioFirestore.eliminarClub(widget.clubId);
+        
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Club eliminado exitosamente'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   void _mostrarInfoClub() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Información del club', style: EstilosApp.tituloMedio),
+        title: Text('Información del club', style: EstilosApp.tituloMedio(context)),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -463,7 +513,15 @@ class _ChatClubState extends State<ChatClub> {
           ),
         ),
         actions: [
-          if (_rolUsuario == 'creador')
+          if (_rolUsuario == 'creador') ...[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _eliminarClub();
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Eliminar Club'),
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
@@ -471,6 +529,7 @@ class _ChatClubState extends State<ChatClub> {
               },
               child: const Text('Editar'),
             ),
+          ],
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cerrar'),

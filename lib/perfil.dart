@@ -1,18 +1,18 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'diseño.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'diseno.dart';
 import 'componentes.dart';
-import '../servicio/servicio_firestore.dart';
-import '../modelos/datos_usuario.dart';
-import '../modelos/progreso_lectura.dart';
-import 'graficos_estadisticas.dart';
-import 'sincronizacion_offline.dart';
-import '../API/open_library.dart';
-import '../API/modelos.dart';
+import 'servicio/servicio_firestore.dart';
+import 'modelos/datos_usuario.dart';
+import 'modelos/progreso_lectura.dart';
+import 'API/modelos.dart';
+import 'theme_provider.dart';
 
 class Perfil extends StatefulWidget {
   const Perfil({super.key});
@@ -23,6 +23,8 @@ class Perfil extends StatefulWidget {
 
 class _PerfilState extends State<Perfil> {
   int _seccionSeleccionada = 0;
+  String _filtroProgreso = 'todos';
+  bool _isInit = true;
   DatosUsuario? _datosUsuario;
   bool _estaCargando = true;
   final ServicioFirestore _servicioFirestore = ServicioFirestore();
@@ -30,22 +32,41 @@ class _PerfilState extends State<Perfil> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   
-  // Imagen seleccionada para subir
   File? _imagenSeleccionada;
   bool _subiendoImagen = false;
   
-  // Libros guardados
   List<Map<String, dynamic>> _librosGuardados = [];
+  List<Map<String, dynamic>> _librosFavoritos = [];
+  List<Map<String, dynamic>> _todosLosLibrosUsuario = [];
   bool _cargandoLibros = false;
   
-  // Progresos de lectura
   List<ProgresoLectura> _progresosLectura = [];
   bool _cargandoProgresos = false;
 
   @override
   void initState() {
     super.initState();
+    _cargandoLibros = true;
+    _cargandoProgresos = true;
     _cargarDatosUsuario();
+    _escucharCambiosBiblioteca();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        if (args.containsKey('seccionIndex')) {
+          _seccionSeleccionada = args['seccionIndex'];
+        }
+        if (args.containsKey('filtroEstado')) {
+          _filtroProgreso = args['filtroEstado'];
+        }
+      }
+      _isInit = false;
+    }
   }
 
   Future<void> _cargarDatosUsuario() async {
@@ -63,63 +84,48 @@ class _PerfilState extends State<Perfil> {
           _estaCargando = false;
         });
       }
-      
-      // Cargar libros guardados y progresos
-      await _cargarLibrosGuardados();
-      await _cargarProgresosLectura();
     } catch (e) {
       print('Error cargando datos del usuario: $e');
       if (mounted) setState(() => _estaCargando = false);
     }
   }
 
-  Future<void> _cargarLibrosGuardados() async {
-    if (!mounted) return;
-    
-    setState(() => _cargandoLibros = true);
-    try {
-      final usuario = _auth.currentUser;
-      if (usuario == null) return;
-      
-      final snapshot = await _firestore
-          .collection('usuarios')
-          .doc(usuario.uid)
-          .collection('libros_guardados')
-          .orderBy('fechaGuardado', descending: true)
-          .get();
-      
+  void _escucharCambiosBiblioteca() {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return;
+
+    _firestore
+        .collection('usuarios')
+        .doc(usuario.uid)
+        .collection('libros_guardados')
+        .orderBy('fechaGuardado', descending: true)
+        .snapshots()
+        .listen((snapshot) {
       if (mounted) {
+        final todosLosLibros = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return data;
+        }).toList();
+
         setState(() {
-          _librosGuardados = snapshot.docs.map((doc) {
-            final data = doc.data();
-            data['id'] = doc.id;
-            return data;
-          }).toList();
+          _todosLosLibrosUsuario = todosLosLibros;
+          _librosFavoritos = todosLosLibros.where((l) => l['favorito'] == true).toList();
+          _librosGuardados = todosLosLibros.where((l) => l['favorito'] != true && (l['estado'] == 'guardado' || l['estado'] == 'leyendo' || l['estado'] == null)).toList();
+          _cargandoLibros = false;
         });
       }
-    } catch (e) {
-      print('Error cargando libros guardados: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _cargandoLibros = false);
-      }
-    }
-  }
+    }, onError: (error) {
+      print('Error escuchando libros guardados: $error');
+      if (mounted) setState(() => _cargandoLibros = false);
+    });
 
-  Future<void> _cargarProgresosLectura() async {
-    if (!mounted) return;
-    
-    setState(() => _cargandoProgresos = true);
-    try {
-      final usuario = _auth.currentUser;
-      if (usuario == null) return;
-      
-      final snapshot = await _firestore
-          .collection('progreso_lectura')
-          .where('usuarioId', isEqualTo: usuario.uid)
-          .orderBy('fechaInicio', descending: true)
-          .get();
-      
+    _firestore
+        .collection('progreso_lectura')
+        .where('usuarioId', isEqualTo: usuario.uid)
+        .orderBy('fechaInicio', descending: true)
+        .snapshots()
+        .listen((snapshot) {
       if (mounted) {
         setState(() {
           _progresosLectura = snapshot.docs.map((doc) {
@@ -127,15 +133,13 @@ class _PerfilState extends State<Perfil> {
             data['id'] = doc.id;
             return ProgresoLectura.fromMap(data);
           }).toList();
+          _cargandoProgresos = false;
         });
       }
-    } catch (e) {
-      print('Error cargando progresos: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _cargandoProgresos = false);
-      }
-    }
+    }, onError: (error) {
+      print('Error escuchando progresos: $error');
+      if (mounted) setState(() => _cargandoProgresos = false);
+    });
   }
 
   Future<void> _seleccionarImagen() async {
@@ -352,6 +356,11 @@ class _PerfilState extends State<Perfil> {
     File? imagenTemp,
   ) async {
     try {
+      if (nombre.trim().isEmpty) {
+        _mostrarError('El nombre no puede estar vacío');
+        return;
+      }
+
       String? nuevaUrl = _datosUsuario?.urlImagenPerfil;
 
       if (imagenTemp != null) {
@@ -386,11 +395,67 @@ class _PerfilState extends State<Perfil> {
     }
   }
 
+  Future<void> _eliminarProgreso(String progresoId, String libroId) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Quitar del progreso'),
+        content: const Text('¿Seguro que quieres quitar este libro de tu progreso? Se perderán las páginas leídas.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Quitar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) return;
+
+      await _firestore.collection('progreso_lectura').doc(progresoId).delete();
+
+      if (mounted) {
+        setState(() {
+          _progresosLectura.removeWhere((progreso) => progreso.id == progresoId);
+        });
+      }
+
+      final libroGuardadoRef = _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('libros_guardados')
+          .doc(libroId);
+      final doc = await libroGuardadoRef.get();
+      if (doc.exists) {
+        await libroGuardadoRef.update({'estado': 'guardado'});
+      }
+      _mostrarExito('Libro quitado de tu progreso');
+    } catch (e) {
+      _mostrarError('Error al quitar el libro del progreso: $e');
+    }
+  }
+
   void _mostrarDialogoActualizarProgreso(ProgresoLectura progreso) {
+    final libroMap = _todosLosLibrosUsuario.firstWhere(
+      (l) => l['libroId'] == progreso.libroId || l['id'] == progreso.libroId,
+      orElse: () => {},
+    );
+    final bool esAudiolibro = libroMap['esAudiolibro'] == true;
+
     final paginaCtrl = TextEditingController(text: progreso.paginaActual.toString());
     final paginasTotalesCtrl = TextEditingController(text: progreso.paginasTotales.toString());
     double? calificacion = progreso.calificacion;
     final resenaCtrl = TextEditingController(text: progreso.resena ?? '');
+    final tiempoCtrl = TextEditingController();
 
     showDialog(
       context: context,
@@ -404,29 +469,39 @@ class _PerfilState extends State<Perfil> {
                 children: [
                   Text(
                     progreso.tituloLibro,
-                    style: EstilosApp.tituloPequeno,
+                    style: EstilosApp.tituloPequeno(context),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: paginaCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Página actual',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: esAudiolibro ? 'Minuto actual' : 'Página actual',
+                      border: const OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: paginasTotalesCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Páginas totales',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: esAudiolibro ? 'Duración total (min)' : 'Páginas totales',
+                      border: const OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
-                  const Text('Calificación', style: EstilosApp.cuerpoGrande),
+                  TextFormField(
+                    controller: tiempoCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Tiempo leído ahora (min)',
+                      border: OutlineInputBorder(),
+                      suffixText: 'min',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Calificación', style: EstilosApp.cuerpoGrande(context)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
@@ -465,19 +540,70 @@ class _PerfilState extends State<Perfil> {
                 onPressed: () async {
                   final paginaActual = int.tryParse(paginaCtrl.text) ?? 0;
                   final paginasTotales = int.tryParse(paginasTotalesCtrl.text) ?? 0;
+                  final tiempoLeido = int.tryParse(tiempoCtrl.text) ?? 0;
                   
+                  final now = DateTime.now();
+                  final fechaKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
                   String estado = 'leyendo';
                   if (paginaActual >= paginasTotales && paginasTotales > 0) {
                     estado = 'completado';
                   }
 
                   try {
+                    await _firestore.collection('progreso_lectura').doc(progreso.id).update({
+                      'paginasTotales': paginasTotales,
+                    });
+
                     await _servicioFirestore.actualizarEstadoLectura(
                       progresoId: progreso.id,
                       estado: estado,
                       paginaActual: paginaActual,
                       fechaCompletado: estado == 'completado' ? DateTime.now() : null,
                     );
+
+                    if (tiempoLeido > 0) {
+                      int rachaActual = _datosUsuario?.estadisticas['rachaActual'] ?? 0;
+                      dynamic ultimaFechaRaw = _datosUsuario?.estadisticas['ultimaFechaLectura'];
+                      DateTime? ultimaFecha;
+                      
+                      if (ultimaFechaRaw is Timestamp) {
+                        ultimaFecha = ultimaFechaRaw.toDate();
+                      }
+
+                      final hoy = DateTime(now.year, now.month, now.day);
+                      final ayer = hoy.subtract(const Duration(days: 1));
+                      DateTime? ultimaFechaDia;
+                      
+                      if (ultimaFecha != null) {
+                        ultimaFechaDia = DateTime(ultimaFecha.year, ultimaFecha.month, ultimaFecha.day);
+                      }
+
+                      if (ultimaFechaDia == null || ultimaFechaDia.isBefore(ayer)) {
+                        rachaActual = 1;
+                      } else if (ultimaFechaDia.isAtSameMomentAs(ayer)) {
+                        rachaActual++;
+                      }
+
+                      await _firestore.collection('usuarios').doc(_auth.currentUser!.uid).update({
+                        'estadisticas.tiempoLectura': FieldValue.increment(tiempoLeido),
+                        'estadisticas.lecturaDiaria.$fechaKey': FieldValue.increment(tiempoLeido),
+                        'estadisticas.rachaActual': rachaActual,
+                        'estadisticas.ultimaFechaLectura': FieldValue.serverTimestamp(),
+                      });
+                      if (mounted && _datosUsuario != null) {
+                        setState(() {
+                          _datosUsuario!.estadisticas['tiempoLectura'] = (_datosUsuario!.estadisticas['tiempoLectura'] ?? 0) + tiempoLeido;
+                          
+                          Map<String, dynamic> lecturaDiaria = Map<String, dynamic>.from(_datosUsuario!.estadisticas['lecturaDiaria'] ?? {});
+                          lecturaDiaria[fechaKey] = (lecturaDiaria[fechaKey] ?? 0) + tiempoLeido;
+                          _datosUsuario!.estadisticas['lecturaDiaria'] = lecturaDiaria;
+                          
+                          _datosUsuario!.estadisticas['rachaActual'] = rachaActual;
+                          _datosUsuario!.estadisticas['ultimaFechaLectura'] = Timestamp.now();
+                        });
+                      }
+                    }
 
                     if (calificacion != null || resenaCtrl.text.isNotEmpty) {
                       await _firestore
@@ -498,11 +624,25 @@ class _PerfilState extends State<Perfil> {
                           .update({'estado': 'completado'});
                     }
 
-                    Navigator.pop(context);
-                    _mostrarExito('Progreso actualizado');
+                    if (mounted) {
+                      setState(() {
+                        final index = _progresosLectura.indexWhere((p) => p.id == progreso.id);
+                        if (index != -1) {
+                          final datosActualizados = _progresosLectura[index].toMap();
+                          datosActualizados['id'] = progreso.id;
+                          datosActualizados['paginaActual'] = paginaActual;
+                          datosActualizados['paginasTotales'] = paginasTotales;
+                          datosActualizados['estado'] = estado;
+                          if (calificacion != null) datosActualizados['calificacion'] = calificacion;
+                          if (resenaCtrl.text.isNotEmpty) datosActualizados['resena'] = resenaCtrl.text;
+                          
+                          _progresosLectura[index] = ProgresoLectura.fromMap(datosActualizados);
+                        }
+                      });
 
-                    await _cargarProgresosLectura();
-                    await _cargarLibrosGuardados();
+                      Navigator.pop(context);
+                      _mostrarExito('Progreso actualizado');
+                    }
                   } catch (e) {
                     _mostrarError('Error actualizando progreso: $e');
                   }
@@ -586,6 +726,52 @@ class _PerfilState extends State<Perfil> {
     }
   }
 
+  void _mostrarDialogoEditarTiempoTotal() {
+    final tiempoActual = _datosUsuario?.estadisticas['tiempoLectura'] ?? 0;
+    final tiempoCtrl = TextEditingController(text: tiempoActual.toString());
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Editar Tiempo Total'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Ajusta el tiempo total de lectura registrado.'),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: tiempoCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Minutos totales',
+                border: OutlineInputBorder(),
+                suffixText: 'min',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final nuevoTiempo = int.tryParse(tiempoCtrl.text) ?? tiempoActual;
+              await _servicioFirestore.actualizarDatosUsuario(
+                _auth.currentUser!.uid,
+                {'estadisticas.tiempoLectura': nuevoTiempo},
+              );
+              await _cargarDatosUsuario();
+              if (mounted) Navigator.pop(context);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _cerrarSesion() async {
     await _auth.signOut();
     if (mounted) {
@@ -597,20 +783,22 @@ class _PerfilState extends State<Perfil> {
     if (_estaCargando) {
       return Container(
         padding: const EdgeInsets.all(24),
-        decoration: EstilosApp.tarjeta,
+        decoration: EstilosApp.tarjeta(context),
         child: const Center(child: CircularProgressIndicator()),
       );
     }
 
+    final int librosLeidos = _progresosLectura.where((p) => p.estado == 'completado').length;
+
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: EstilosApp.tarjeta,
+      decoration: EstilosApp.tarjeta(context),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Mi Perfil', style: EstilosApp.tituloMedio),
+              Text('Mi Perfil', style: EstilosApp.tituloMedio(context)),
               Row(
                 children: [
                   ElevatedButton(
@@ -627,24 +815,6 @@ class _PerfilState extends State<Perfil> {
                         Icon(Icons.edit, size: 16),
                         SizedBox(width: 6),
                         Text('Editar'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _eliminarCuenta,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.delete, size: 16),
-                        SizedBox(width: 6),
-                        Text('Eliminar'),
                       ],
                     ),
                   ),
@@ -677,10 +847,10 @@ class _PerfilState extends State<Perfil> {
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
-                    Text(_datosUsuario?.correo ?? '', style: EstilosApp.cuerpoMedio),
+                    Text(_datosUsuario?.correo ?? '', style: EstilosApp.cuerpoMedio(context)),
                     const SizedBox(height: 8),
                     Text(
-                      '${_datosUsuario?.estadisticas?['librosLeidos'] ?? 0} libros leídos',
+                      '$librosLeidos libros leídos',
                       style: TextStyle(color: AppColores.secundario),
                     ),
                     if (_datosUsuario?.biografia != null && _datosUsuario!.biografia!.isNotEmpty)
@@ -688,7 +858,7 @@ class _PerfilState extends State<Perfil> {
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
                           _datosUsuario!.biografia!,
-                          style: EstilosApp.cuerpoPequeno,
+                          style: EstilosApp.cuerpoPequeno(context),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -714,7 +884,7 @@ class _PerfilState extends State<Perfil> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: EstilosApp.tarjeta,
+      decoration: EstilosApp.tarjeta(context),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -756,13 +926,13 @@ class _PerfilState extends State<Perfil> {
   Widget _construirSeccionInformacion() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: EstilosApp.tarjeta,
+      decoration: EstilosApp.tarjeta(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Información Personal',
-            style: EstilosApp.tituloMedio,
+            style: EstilosApp.tituloMedio(context),
           ),
           const SizedBox(height: 16),
           _construirItemInformacion(
@@ -789,16 +959,187 @@ class _PerfilState extends State<Perfil> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Biografía', style: EstilosApp.tituloPequeno),
+                Text('Biografía', style: EstilosApp.tituloPequeno(context)),
                 const SizedBox(height: 8),
                 Text(
                   _datosUsuario!.biografia!,
-                  style: EstilosApp.cuerpoMedio,
+                  style: EstilosApp.cuerpoMedio(context),
                 ),
               ],
             ),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 16),
+          Text(
+            'Mis Libros Favoritos',
+            style: EstilosApp.tituloMedio(context),
+          ),
+          const SizedBox(height: 16),
+          _construirListaLibros(libros: _librosFavoritos, esFavoritos: true),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 16),
+          Text(
+            'Mis Libros Guardados',
+            style: EstilosApp.tituloMedio(context),
+          ),
+          const SizedBox(height: 16),
+          _construirListaLibros(libros: _librosGuardados, esFavoritos: false),
         ],
       ),
+    );
+  }
+
+  Widget _construirListaLibros({required List<Map<String, dynamic>> libros, required bool esFavoritos}) {
+    if (_cargandoLibros) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (libros.isEmpty) {
+      return EstadoVacio(
+        icono: esFavoritos ? Icons.favorite_border : Icons.bookmark_border,
+        titulo: esFavoritos ? 'No tienes favoritos' : 'No tienes libros guardados',
+        descripcion: esFavoritos 
+            ? 'Añade libros a tus favoritos para verlos aquí' 
+            : 'Guarda libros que te interesen para leer después',
+      );
+    }
+
+    return Column(
+      children: libros.map((libroMap) {
+        final libro = Libro(
+          id: libroMap['id'] ?? '',
+          titulo: libroMap['titulo'] ?? 'Sin título',
+          autores: List<String>.from(libroMap['autores'] ?? []),
+          descripcion: libroMap['descripcion'],
+          urlMiniatura: libroMap['urlMiniatura'],
+          fechaPublicacion: libroMap['fechaPublicacion'],
+          numeroPaginas: libroMap['numeroPaginas'],
+          categorias: List<String>.from(libroMap['categorias'] ?? []),
+          urlLectura: libroMap['urlLectura'],
+          esAudiolibro: libroMap['esAudiolibro'] ?? false,
+        );
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: EstilosApp.tarjetaPlana(context),
+          child: InkWell(
+            onTap: () => _mostrarDetallesLibro(libro),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (libro.urlMiniatura != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      libro.urlMiniatura!,
+                      width: 60,
+                      height: 90,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 60,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEEEEE),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.book, size: 30, color: Color(0xFF9E9E9E)),
+                        );
+                      },
+                    ),
+                  )
+                else
+                  Container(
+                    width: 60,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEEEEE),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.book, size: 30, color: Color(0xFF9E9E9E)),
+                  ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        libro.titulo,
+                        style: EstilosApp.tituloPequeno(context),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      if (libro.autores.isNotEmpty)
+                        Text(
+                          libro.autores.join(', '),
+                          style: EstilosApp.cuerpoPequeno(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          if (esFavoritos)
+                            const Icon(Icons.favorite, size: 16, color: Colors.red)
+                          else
+                            const Icon(Icons.bookmark, size: 16, color: AppColores.primario),
+                          const SizedBox(width: 4),
+                          Text(
+                            esFavoritos ? 'Favorito' : 'Guardado',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: esFavoritos ? Colors.red : AppColores.primario,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _obtenerColorEstado(libroMap['estado']),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _obtenerTextoEstado(libroMap['estado']),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  children: [
+                    if (libro.urlLectura != null)
+                      IconButton(
+                        icon: const Icon(Icons.open_in_browser, size: 20, color: AppColores.secundario),
+                        onPressed: () => _abrirUrlLectura(libro.urlLectura),
+                        tooltip: 'Leer Online',
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                      onPressed: () => _eliminarLibroGuardado(libroMap['id']),
+                      tooltip: 'Eliminar',
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -806,44 +1147,137 @@ class _PerfilState extends State<Perfil> {
     if (_cargandoProgresos) {
       return Container(
         padding: const EdgeInsets.all(24),
-        decoration: EstilosApp.tarjeta,
+        decoration: EstilosApp.tarjeta(context),
         child: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (_progresosLectura.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: EstilosApp.tarjeta,
-        child: const EstadoVacio(
-          icono: Icons.book,
-          titulo: 'No tienes lecturas en progreso',
-          descripcion: 'Empieza a leer un libro para ver tu progreso aquí',
-        ),
-      );
+    List<ProgresoLectura> listaFiltrada = _progresosLectura;
+    if (_filtroProgreso != 'todos') {
+      listaFiltrada = _progresosLectura.where((p) => p.estado == _filtroProgreso).toList();
+    }
+
+    final now = DateTime.now();
+    final fechaKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    int minutosHoy = 0;
+    if (_datosUsuario?.estadisticas['lecturaDiaria'] != null) {
+      final diario = _datosUsuario!.estadisticas['lecturaDiaria'];
+      if (diario is Map) {
+        minutosHoy = int.tryParse(diario[fechaKey]?.toString() ?? '0') ?? 0;
+      }
     }
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: EstilosApp.tarjeta,
+      decoration: EstilosApp.tarjeta(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Progreso de Lectura',
-            style: EstilosApp.tituloMedio,
+          Text(
+            'Mi Progreso',
+            style: EstilosApp.tituloMedio(context),
           ),
           const SizedBox(height: 16),
-          ..._progresosLectura.map((progreso) {
+          
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: AppColores.primario.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColores.primario.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.timer, color: AppColores.primario, size: 32),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Tiempo de Lectura', style: TextStyle(fontWeight: FontWeight.bold, color: AppColores.primario)),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text('Hoy: $minutosHoy min', style: EstilosApp.cuerpoMedio(context).copyWith(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      Text('Meta diaria: ${_datosUsuario?.preferencias['minutos_lectura_diaria'] ?? 30} min', style: EstilosApp.cuerpoPequeno(context)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _construirChipFiltro('Todos', 'todos'),
+                const SizedBox(width: 8),
+                _construirChipFiltro('Leyendo', 'leyendo'),
+                const SizedBox(width: 8),
+                _construirChipFiltro('Completados', 'completado'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          if (listaFiltrada.isEmpty)
+            EstadoVacio(
+              icono: Icons.book,
+              titulo: _filtroProgreso == 'completado' 
+                  ? 'No has completado libros aún' 
+                  : (_filtroProgreso == 'leyendo' 
+                      ? 'No estás leyendo nada actualmente' 
+                      : 'No tienes lecturas en progreso'),
+              descripcion: 'Empieza a leer un libro para ver tu progreso aquí',
+            )
+          else
+            ...listaFiltrada.map((progreso) {
+            final libroMap = _todosLosLibrosUsuario.firstWhere(
+              (l) => l['libroId'] == progreso.libroId || l['id'] == progreso.libroId,
+              orElse: () => {},
+            );
+            final bool esAudiolibro = libroMap['esAudiolibro'] == true;
+
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(16),
-              decoration: EstilosApp.tarjetaPlana,
+              decoration: EstilosApp.tarjetaPlana(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
+                  GestureDetector(
+                    onTap: () {
+                      Libro libro;
+                      if (libroMap.isNotEmpty) {
+                        libro = Libro(
+                          id: libroMap['id'] ?? '',
+                          titulo: libroMap['titulo'] ?? 'Sin título',
+                          autores: List<String>.from(libroMap['autores'] ?? []),
+                          descripcion: libroMap['descripcion'],
+                          urlMiniatura: libroMap['urlMiniatura'],
+                          fechaPublicacion: libroMap['fechaPublicacion'],
+                          numeroPaginas: libroMap['numeroPaginas'],
+                          categorias: List<String>.from(libroMap['categorias'] ?? []),
+                          urlLectura: libroMap['urlLectura'],
+                          esAudiolibro: libroMap['esAudiolibro'] ?? false,
+                        );
+                      } else {
+                        libro = Libro(
+                          id: progreso.libroId,
+                          titulo: progreso.tituloLibro,
+                          autores: progreso.autoresLibro,
+                          urlMiniatura: progreso.miniaturaLibro,
+                          numeroPaginas: progreso.paginasTotales,
+                        );
+                      }
+                      _mostrarDetallesLibro(libro);
+                    },
+                    child: Row(
+                      children: [
                       if (progreso.miniaturaLibro != null && progreso.miniaturaLibro!.isNotEmpty)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -857,10 +1291,10 @@ class _PerfilState extends State<Perfil> {
                                 width: 60,
                                 height: 90,
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[200],
+                                  color: const Color(0xFFEEEEEE),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(Icons.book, size: 30, color: Colors.grey),
+                                child: const Icon(Icons.book, size: 30, color: Color(0xFF9E9E9E)),
                               );
                             },
                           ),
@@ -870,10 +1304,10 @@ class _PerfilState extends State<Perfil> {
                           width: 60,
                           height: 90,
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: const Color(0xFFEEEEEE),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.book, size: 30, color: Colors.grey),
+                          child: const Icon(Icons.book, size: 30, color: Color(0xFF9E9E9E)),
                         ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -882,21 +1316,21 @@ class _PerfilState extends State<Perfil> {
                           children: [
                             Text(
                               progreso.tituloLibro,
-                              style: EstilosApp.tituloPequeno,
+                              style: EstilosApp.tituloPequeno(context),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               progreso.autoresLibro.join(', '),
-                              style: EstilosApp.cuerpoPequeno,
+                              style: EstilosApp.cuerpoPequeno(context),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 8),
                             LinearProgressIndicator(
                               value: progreso.porcentajeProgreso / 100,
-                              backgroundColor: Colors.grey[200],
+                              backgroundColor: const Color(0xFFEEEEEE),
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 progreso.estado == 'completado' 
                                   ? AppColores.secundario 
@@ -908,12 +1342,14 @@ class _PerfilState extends State<Perfil> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '${progreso.paginaActual}/${progreso.paginasTotales} páginas',
-                                  style: EstilosApp.cuerpoPequeno,
+                                  esAudiolibro 
+                                      ? '${progreso.paginaActual}/${progreso.paginasTotales} min'
+                                      : '${progreso.paginaActual}/${progreso.paginasTotales} páginas',
+                                  style: EstilosApp.cuerpoPequeno(context),
                                 ),
                                 Text(
                                   '${progreso.porcentajeProgreso.toStringAsFixed(1)}%',
-                                  style: EstilosApp.cuerpoPequeno,
+                                  style: EstilosApp.cuerpoPequeno(context),
                                 ),
                               ],
                             ),
@@ -921,6 +1357,7 @@ class _PerfilState extends State<Perfil> {
                         ),
                       ),
                     ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -935,57 +1372,146 @@ class _PerfilState extends State<Perfil> {
                           child: const Text('Actualizar Progreso'),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () => _eliminarProgreso(progreso.id, progreso.libroId),
+                        tooltip: 'Quitar del progreso',
+                      ),
                     ],
                   ),
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
   }
 
+  Widget _construirChipFiltro(String label, String valor) {
+    final isSelected = _filtroProgreso == valor;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (bool selected) {
+        if (selected) {
+          setState(() {
+            _filtroProgreso = valor;
+          });
+        }
+      },
+      selectedColor: AppColores.primario.withOpacity(0.2),
+      backgroundColor: Colors.grey[100],
+      labelStyle: TextStyle(
+        color: isSelected ? AppColores.primario : Colors.black54,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    );
+  }
+
   Widget _construirSeccionEstadisticas() {
+    final int librosLeidos = _progresosLectura.where((p) => p.estado == 'completado').length;
+    final int paginasLeidas = _progresosLectura.fold(0, (sum, p) => sum + p.paginaActual);
+
+    final Map<String, int> conteoGeneros = {};
+    int totalCategorias = 0;
+    
+    for (final libro in _todosLosLibrosUsuario) {
+      if (libro['categorias'] != null) {
+        final categorias = List<dynamic>.from(libro['categorias']);
+        for (final c in categorias) {
+          final categoria = c.toString();
+          conteoGeneros[categoria] = (conteoGeneros[categoria] ?? 0) + 1;
+          totalCategorias++;
+        }
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: EstilosApp.tarjeta,
+      decoration: EstilosApp.tarjeta(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Estadísticas de Lectura',
-            style: EstilosApp.tituloMedio,
+            style: EstilosApp.tituloMedio(context),
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _construirEstadisticaItem(
-                valor: '${_datosUsuario?.estadisticas?['librosLeidos'] ?? 0}',
+                valor: '$librosLeidos',
                 titulo: 'Libros leídos',
                 icono: Icons.book,
               ),
               _construirEstadisticaItem(
-                valor: '${_datosUsuario?.estadisticas?['paginasTotales'] ?? 0}',
+                valor: '$paginasLeidas',
                 titulo: 'Páginas totales',
                 icono: Icons.article,
               ),
               _construirEstadisticaItem(
-                valor: '${_datosUsuario?.estadisticas?['rachaActual'] ?? 0}',
+                valor: '${_datosUsuario?.estadisticas['rachaActual'] ?? 0}',
                 titulo: 'Días racha',
                 icono: Icons.trending_up,
               ),
             ],
           ),
+
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
+              final estadisticasActualizadas = Map<String, dynamic>.from(_datosUsuario?.estadisticas ?? {});
+              estadisticasActualizadas['librosLeidos'] = librosLeidos;
+              estadisticasActualizadas['paginasTotales'] = paginasLeidas;
+              estadisticasActualizadas['generos'] = conteoGeneros;
+              estadisticasActualizadas['objetivoMensual'] = _datosUsuario?.preferencias['libros_por_mes'] ?? 1;
+              estadisticasActualizadas['librosEnProgreso'] = _progresosLectura.where((p) => p.estado == 'leyendo').length;
+
+              final Map<String, int> librosPorMes = {};
+              final now = DateTime.now();
+              final meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+              
+              for (int i = 5; i >= 0; i--) {
+                final mesDate = DateTime(now.year, now.month - i, 1);
+                librosPorMes[meses[mesDate.month - 1]] = 0;
+              }
+
+              for (final progreso in _progresosLectura) {
+                if (progreso.estado == 'completado') {
+                  final map = progreso.toMap();
+                  final fechaRaw = map['fechaCompletado'];
+                  DateTime? fecha;
+                  if (fechaRaw is Timestamp) fecha = fechaRaw.toDate();
+                  else if (fechaRaw is String) fecha = DateTime.tryParse(fechaRaw);
+                  else if (fechaRaw is DateTime) fecha = fechaRaw;
+                  
+                  if (fecha != null && now.difference(fecha).inDays < 200) {
+                    final key = meses[fecha.month - 1];
+                    if (librosPorMes.containsKey(key)) {
+                      librosPorMes[key] = (librosPorMes[key] ?? 0) + 1;
+                    }
+                  }
+                }
+              }
+              estadisticasActualizadas['librosPorMes'] = librosPorMes;
+
+              estadisticasActualizadas['progreso'] = {
+                'Leyendo': _progresosLectura.where((p) => p.estado == 'leyendo').length,
+                'Completado': _progresosLectura.where((p) => p.estado == 'completado').length,
+                'Por Leer': _librosGuardados.where((l) => l['estado'] == 'guardado').length,
+              };
+
               Navigator.pushNamed(
                 context,
                 '/graficos',
                 arguments: {
-                  'datosEstadisticas': _datosUsuario?.estadisticas ?? {},
+                  'datosEstadisticas': estadisticasActualizadas,
+                  'tipoGraficoGeneros': 'circular',
                 },
               );
             },
@@ -1003,20 +1529,20 @@ class _PerfilState extends State<Perfil> {
   Widget _construirSeccionPreferencias() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: EstilosApp.tarjeta,
+      decoration: EstilosApp.tarjeta(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Preferencias de Lectura',
-            style: EstilosApp.tituloMedio,
+            style: EstilosApp.tituloMedio(context),
           ),
           const SizedBox(height: 16),
           ElementoConfiguracion(
             titulo: 'Géneros Favoritos',
-            subtitulo: _datosUsuario?.generosFavoritos?.isNotEmpty == true
-                ? _datosUsuario!.generosFavoritos!.join(', ')
-                : 'No especificados',
+            subtitulo: _datosUsuario?.generosFavoritos.isNotEmpty == true
+                ? _datosUsuario!.generosFavoritos.join(', ')
+                : 'Ej: Ficción, Misterio, Terror...',
             icono: Icons.category,
             alPresionar: () => _mostrarDialogoGenerosFavoritos(),
           ),
@@ -1025,7 +1551,7 @@ class _PerfilState extends State<Perfil> {
             subtitulo: 'Recibir recordatorios de lectura',
             icono: Icons.notifications,
             tieneSwitch: true,
-            valorSwitch: _datosUsuario?.preferencias?['notificaciones'] ?? true,
+            valorSwitch: _datosUsuario?.preferencias['notificaciones'] ?? true,
             alCambiarSwitch: (valor) async {
               if (_datosUsuario != null) {
                 await _servicioFirestore.actualizarDatosUsuario(
@@ -1038,9 +1564,15 @@ class _PerfilState extends State<Perfil> {
           ),
           ElementoConfiguracion(
             titulo: 'Objetivo Mensual',
-            subtitulo: '${_datosUsuario?.preferencias?['libros_por_mes'] ?? 1} libros por mes',
+            subtitulo: '${_datosUsuario?.preferencias['libros_por_mes'] ?? 1} libros por mes',
             icono: Icons.flag,
             alPresionar: () => _mostrarDialogoObjetivoMensual(),
+          ),
+          ElementoConfiguracion(
+            titulo: 'Meta de Lectura Diaria',
+            subtitulo: '${_datosUsuario?.preferencias['minutos_lectura_diaria'] ?? 30} minutos al día',
+            icono: Icons.timer,
+            alPresionar: () => _mostrarDialogoMetaLectura(),
           ),
         ],
       ),
@@ -1048,17 +1580,27 @@ class _PerfilState extends State<Perfil> {
   }
 
   Widget _construirSeccionConfiguracion() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: EstilosApp.tarjeta,
+      decoration: EstilosApp.tarjeta(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Configuración',
-            style: EstilosApp.tituloMedio,
+            style: EstilosApp.tituloMedio(context),
           ),
           const SizedBox(height: 16),
+          ElementoConfiguracion(
+            titulo: 'Modo oscuro',
+            subtitulo: themeProvider.esModoOscuro ? 'Actualmente activado' : 'Actualmente desactivado',
+            icono: themeProvider.esModoOscuro ? Icons.dark_mode : Icons.light_mode,
+            tieneSwitch: true,
+            valorSwitch: themeProvider.esModoOscuro,
+            alCambiarSwitch: (_) => themeProvider.alternarTema(),
+          ),
           ElementoConfiguracion(
             titulo: 'Sincronización',
             subtitulo: 'Gestionar datos offline',
@@ -1077,144 +1619,18 @@ class _PerfilState extends State<Perfil> {
             icono: Icons.help,
             alPresionar: () => _mostrarDialogoAyuda(),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _construirSeccionLibrosGuardados() {
-    if (_cargandoLibros) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: EstilosApp.tarjeta,
-        child: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_librosGuardados.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: EstilosApp.tarjeta,
-        child: const EstadoVacio(
-          icono: Icons.bookmark_border,
-          titulo: 'No tienes libros guardados',
-          descripcion: 'Guarda libros que te interesen para leer después',
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: EstilosApp.tarjeta,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Libros Guardados',
-            style: EstilosApp.tituloMedio,
+          ElementoConfiguracion(
+            titulo: 'Cerrar sesión',
+            subtitulo: 'Salir de tu cuenta actual',
+            icono: Icons.logout,
+            alPresionar: _cerrarSesion,
           ),
-          const SizedBox(height: 16),
-          ..._librosGuardados.map((libro) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: EstilosApp.tarjetaPlana,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (libro['urlMiniatura'] != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        libro['urlMiniatura'],
-                        width: 60,
-                        height: 90,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 60,
-                            height: 90,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.book, size: 30, color: Colors.grey),
-                          );
-                        },
-                      ),
-                    )
-                  else
-                    Container(
-                      width: 60,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.book, size: 30, color: Colors.grey),
-                    ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          libro['titulo'] ?? 'Sin título',
-                          style: EstilosApp.tituloPequeno,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        if (libro['autores'] != null && libro['autores'].isNotEmpty)
-                          Text(
-                            libro['autores'].join(', '),
-                            style: EstilosApp.cuerpoPequeno,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _obtenerColorEstado(libro['estado']),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                _obtenerTextoEstado(libro['estado']),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.play_arrow, color: AppColores.primario),
-                        onPressed: libro['estado'] == 'guardado' 
-                          ? () => _iniciarProgresoLectura(libro)
-                          : null,
-                        tooltip: 'Comenzar a leer',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _eliminarLibroGuardado(libro['libroId']),
-                        tooltip: 'Eliminar',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+          ElementoConfiguracion(
+            titulo: 'Eliminar cuenta',
+            subtitulo: 'Acción irreversible',
+            icono: Icons.delete_forever,
+            alPresionar: _eliminarCuenta,
+          ),
         ],
       ),
     );
@@ -1225,36 +1641,52 @@ class _PerfilState extends State<Perfil> {
       final usuario = _auth.currentUser;
       if (usuario == null) return;
 
+      final libroId = libro['libroId'];
+      if (libroId == null) {
+        _mostrarError('ID de libro no válido');
+        return;
+      }
+
+      final progresoExistenteQuery = await _firestore
+          .collection('progreso_lectura')
+          .where('usuarioId', isEqualTo: usuario.uid)
+          .where('libroId', isEqualTo: libroId)
+          .limit(1)
+          .get();
+
+      if (progresoExistenteQuery.docs.isNotEmpty) {
+        _mostrarExito('Ya tienes este libro en progreso.');
+        final data = progresoExistenteQuery.docs.first.data();
+        data['id'] = progresoExistenteQuery.docs.first.id;
+        final progreso = ProgresoLectura.fromMap(data);
+        _mostrarDialogoActualizarProgreso(progreso);
+        return;
+      }
+
       final progresoId = _firestore.collection('progreso_lectura').doc().id;
       
-      await _firestore
-          .collection('progreso_lectura')
-          .doc(progresoId)
-          .set({
-            'id': progresoId,
-            'usuarioId': usuario.uid,
-            'libroId': libro['libroId'],
-            'tituloLibro': libro['titulo'],
-            'autoresLibro': libro['autores'] ?? [],
-            'miniaturaLibro': libro['urlMiniatura'],
-            'estado': 'leyendo',
-            'paginaActual': 0,
-            'paginasTotales': libro['numeroPaginas'] ?? 0,
-            'fechaInicio': FieldValue.serverTimestamp(),
-            'calificacion': 0.0,
-          });
+      await _firestore.collection('progreso_lectura').doc(progresoId).set({
+        'id': progresoId,
+        'usuarioId': usuario.uid,
+        'libroId': libroId,
+        'tituloLibro': libro['titulo'],
+        'autoresLibro': libro['autores'] ?? [],
+        'miniaturaLibro': libro['urlMiniatura'],
+        'estado': 'leyendo',
+        'paginaActual': 0,
+        'paginasTotales': libro['numeroPaginas'] ?? 0,
+        'fechaInicio': FieldValue.serverTimestamp(),
+        'calificacion': 0.0,
+      });
 
       await _firestore
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('libros_guardados')
-          .doc(libro['libroId'])
+          .doc(libroId)
           .update({'estado': 'leyendo'});
 
       _mostrarExito('Progreso iniciado para "${libro['titulo']}"');
-      
-      await _cargarProgresosLectura();
-      await _cargarLibrosGuardados();
     } catch (e) {
       _mostrarError('Error al iniciar progreso: $e');
     }
@@ -1272,8 +1704,6 @@ class _PerfilState extends State<Perfil> {
           .doc(libroId)
           .delete();
 
-      await _cargarLibrosGuardados();
-      
       _mostrarExito('Libro eliminado de tu biblioteca');
     } catch (e) {
       _mostrarError('Error eliminando libro: $e');
@@ -1287,7 +1717,7 @@ class _PerfilState extends State<Perfil> {
       case 'completado':
         return AppColores.secundario;
       default:
-        return Colors.grey;
+        return const Color(0xFF9E9E9E);
     }
   }
 
@@ -1317,9 +1747,9 @@ class _PerfilState extends State<Perfil> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(titulo, style: EstilosApp.cuerpoPequeno.copyWith(color: Colors.grey)),
+              Text(titulo, style: EstilosApp.cuerpoPequeno(context).copyWith(color: const Color(0xFF9E9E9E))),
               const SizedBox(height: 4),
-              Text(valor, style: EstilosApp.cuerpoMedio),
+              Text(valor, style: EstilosApp.cuerpoMedio(context)),
             ],
           ),
         ),
@@ -1347,7 +1777,7 @@ class _PerfilState extends State<Perfil> {
         const SizedBox(height: 4),
         Text(
           titulo,
-          style: EstilosApp.cuerpoPequeno,
+          style: EstilosApp.cuerpoPequeno(context),
         ),
       ],
     );
@@ -1389,6 +1819,15 @@ class _PerfilState extends State<Perfil> {
             ),
             actions: [
               TextButton(
+                onPressed: () {
+                  setStateDialog(() {
+                    generosSeleccionados.clear();
+                  });
+                },
+                child: const Text('Limpiar'),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+              ),
+              TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancelar'),
               ),
@@ -1401,7 +1840,7 @@ class _PerfilState extends State<Perfil> {
                     );
                     await _cargarDatosUsuario();
                   }
-                  Navigator.pop(context);
+                  if (context.mounted) Navigator.pop(context);
                 },
                 child: const Text('Guardar'),
               ),
@@ -1413,7 +1852,7 @@ class _PerfilState extends State<Perfil> {
   }
 
   void _mostrarDialogoObjetivoMensual() {
-    int objetivoActual = _datosUsuario?.preferencias?['libros_por_mes'] ?? 1;
+    int objetivoActual = _datosUsuario?.preferencias['libros_por_mes'] ?? 1;
     final objetivoCtrl = TextEditingController(text: objetivoActual.toString());
     
     showDialog(
@@ -1450,7 +1889,55 @@ class _PerfilState extends State<Perfil> {
                 );
                 await _cargarDatosUsuario();
               }
-              Navigator.pop(context);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _mostrarDialogoMetaLectura() {
+    int metaActual = _datosUsuario?.preferencias['minutos_lectura_diaria'] ?? 30;
+    final metaCtrl = TextEditingController(text: metaActual.toString());
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Meta de Lectura Diaria'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('¿Cuántos minutos quieres leer al día?'),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: metaCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Minutos por día',
+                border: OutlineInputBorder(),
+                suffixText: 'min',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final nuevaMeta = int.tryParse(metaCtrl.text) ?? 30;
+              if (_datosUsuario != null) {
+                await _servicioFirestore.actualizarDatosUsuario(
+                  _datosUsuario!.uid,
+                  {'preferencias.minutos_lectura_diaria': nuevaMeta},
+                );
+                await _cargarDatosUsuario();
+              }
+              if (context.mounted) Navigator.pop(context);
             },
             child: const Text('Guardar'),
           ),
@@ -1460,26 +1947,71 @@ class _PerfilState extends State<Perfil> {
   }
 
   void _mostrarDialogoPrivacidad() {
+    bool perfilPublico = _datosUsuario?.preferencias['perfil_publico'] ?? true;
+    bool actividadPublica = _datosUsuario?.preferencias['actividad_publica'] ?? true;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Privacidad'),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Configura quién puede ver tu perfil y actividad:\n\n'
-            '• Perfil público: Todos pueden ver tu perfil\n'
-            '• Perfil privado: Solo tus amigos pueden ver tu perfil\n'
-            '• Actividad pública: Todos pueden ver tu actividad\n'
-            '• Actividad privada: Solo tú puedes ver tu actividad\n\n'
-            'Para cambiar estas configuraciones, contacta al soporte técnico.',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          title: const Text('Privacidad'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Controla quién puede ver tu información y actividad en la aplicación.',
+                  style: EstilosApp.cuerpoMedio(context),
+                ),
+                const SizedBox(height: 20),
+                SwitchListTile(
+                  title: Text(perfilPublico ? 'Perfil Público' : 'Perfil Privado'),
+                  subtitle: Text(perfilPublico 
+                      ? 'Todos pueden ver tu perfil' 
+                      : 'Solo tú puedes ver tu perfil'),
+                  value: perfilPublico,
+                  activeColor: AppColores.primario,
+                  onChanged: (val) => setStateDialog(() => perfilPublico = val),
+                ),
+                SwitchListTile(
+                  title: Text(actividadPublica ? 'Actividad Pública' : 'Actividad Privada'),
+                  subtitle: Text(actividadPublica 
+                      ? 'Tu progreso es visible en clubs' 
+                      : 'Tu progreso es privado'),
+                  value: actividadPublica,
+                  activeColor: AppColores.primario,
+                  onChanged: (val) => setStateDialog(() => actividadPublica = val),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_datosUsuario != null) {
+                  await _servicioFirestore.actualizarDatosUsuario(
+                    _datosUsuario!.uid,
+                    {
+                      'preferencias.perfil_publico': perfilPublico,
+                      'preferencias.actividad_publica': actividadPublica,
+                    },
+                  );
+                  await _cargarDatosUsuario();
+                }
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _mostrarExito('Configuración de privacidad guardada');
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColores.primario),
+              child: const Text('Guardar'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
       ),
     );
   }
@@ -1496,11 +2028,6 @@ class _PerfilState extends State<Perfil> {
             children: [
               Text('¿Necesitas ayuda?', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text('Email: soporte@bookworm.com'),
-              Text('Teléfono: +1 234 567 8900'),
-              SizedBox(height: 16),
-              Text('Horario de atención: Lunes a Viernes, 9:00 - 18:00'),
-              SizedBox(height: 16),
               Text('Preguntas frecuentes:'),
               Text('- ¿Cómo guardar libros?'),
               Text('- ¿Cómo iniciar progreso de lectura?'),
@@ -1516,6 +2043,29 @@ class _PerfilState extends State<Perfil> {
         ],
       ),
     );
+  }
+
+  void _mostrarDetallesLibro(Libro libro) {
+    Navigator.pushNamed(
+      context,
+      '/detalles_libro',
+      arguments: libro,
+    );
+  }
+
+  Future<void> _abrirUrlLectura(String? urlLectura) async {
+    if (urlLectura == null) return;
+    
+    final url = Uri.parse(urlLectura);
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        _mostrarError('No se pudo abrir el enlace de lectura');
+      }
+    } catch (e) {
+      _mostrarError('Error al abrir el libro: $e');
+    }
   }
 
   void _mostrarError(String mensaje) {
@@ -1541,12 +2091,26 @@ class _PerfilState extends State<Perfil> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColores.fondo,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('BookWorm', style: EstilosApp.tituloGrande),
+        title: Text('BookWorm', style: EstilosApp.tituloGrande(context)),
         backgroundColor: AppColores.primario,
         automaticallyImplyLeading: false,
-        actions: const [BotonesBarraApp(rutaActual: '/perfil')],
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () => themeProvider.alternarTema(),
+                tooltip: themeProvider.esModoOscuro ? 'Modo claro' : 'Modo oscuro',
+              );
+            },
+          ),
+          const BotonesBarraApp(rutaActual: '/perfil'),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -1557,38 +2121,7 @@ class _PerfilState extends State<Perfil> {
             _construirSelectorSeccion(),
             const SizedBox(height: 20),
             _construirContenidoSeccion(),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: EstilosApp.tarjeta,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Mi Biblioteca',
-                    style: EstilosApp.tituloMedio,
-                  ),
-                  const SizedBox(height: 16),
-                  _construirSeccionLibrosGuardados(),
-                ],
-              ),
-            ),
             const SizedBox(height: 40),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _cerrarSesion,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Cerrar sesión'),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),

@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'diseño.dart';
+import 'diseno.dart';
 import 'componentes.dart';
-import '../modelos/progreso_lectura.dart';
+import 'modelos/progreso_lectura.dart';
 
 class SincronizacionOffline {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -23,7 +22,7 @@ class SincronizacionOffline {
   Future<bool> tieneConexion() async {
     try {
       final resultado = await _connectivity.checkConnectivity();
-      return resultado != ConnectivityResult.none;
+      return resultado.any((result) => result != ConnectivityResult.none);
     } catch (e) {
       print('Error verificando conexión: $e');
       return false;
@@ -105,7 +104,6 @@ class SincronizacionOffline {
         return;
       }
 
-      // Sincronizar progresos pendientes
       final progresosPendientes = await obtenerLocalmente<List<Map<String, dynamic>>>('progresos_pendientes') ?? [];
       if (progresosPendientes.isNotEmpty) {
         print('Sincronizando ${progresosPendientes.length} progresos pendientes...');
@@ -125,7 +123,6 @@ class SincronizacionOffline {
         await guardarLocalmente('progresos_pendientes', []);
       }
 
-      // Sincronizar mensajes pendientes
       final mensajesPendientes = await obtenerLocalmente<List<Map<String, dynamic>>>('mensajes_pendientes') ?? [];
       if (mensajesPendientes.isNotEmpty) {
         print('Sincronizando ${mensajesPendientes.length} mensajes pendientes...');
@@ -224,7 +221,7 @@ class SincronizacionOffline {
   Future<void> _verificarConexionYSincronizar() async {
     try {
       _connectivity.onConnectivityChanged.listen((resultado) async {
-        if (resultado != ConnectivityResult.none) {
+        if (resultado.any((result) => result != ConnectivityResult.none)) {
           print('Conexión detectada, sincronizando...');
           await sincronizarDatosPendientes();
         }
@@ -387,15 +384,16 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
         title: const Text('Sincronización'),
         backgroundColor: AppColores.primario,
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: true,
+        actions: const [BotonesBarraApp(rutaActual: '/perfil')],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Estado de conexión
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: EstilosApp.tarjeta,
+              decoration: EstilosApp.tarjeta(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -413,13 +411,13 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
                           children: [
                             Text(
                               _tieneConexion ? 'Conectado' : 'Sin conexión',
-                              style: EstilosApp.tituloPequeno,
+                              style: EstilosApp.tituloPequeno(context),
                             ),
                             Text(
                               _tieneConexion 
                                 ? 'Los cambios se guardan automáticamente'
                                 : 'Los cambios se guardarán cuando reconectes',
-                              style: EstilosApp.cuerpoMedio,
+                              style: EstilosApp.cuerpoMedio(context),
                             ),
                           ],
                         ),
@@ -428,7 +426,6 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Datos pendientes
                   if (_progresosPendientes > 0 || _mensajesPendientes > 0)
                     Column(
                       children: [
@@ -445,26 +442,25 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
                         const SizedBox(height: 8),
                         if (_progresosPendientes > 0)
                           Text(
-                            '• ${_progresosPendientes} progresos de lectura',
-                            style: EstilosApp.cuerpoPequeno,
+                            '• $_progresosPendientes progresos de lectura',
+                            style: EstilosApp.cuerpoPequeno(context),
                           ),
                         if (_mensajesPendientes > 0)
                           Text(
-                            '• ${_mensajesPendientes} mensajes de club',
-                            style: EstilosApp.cuerpoPequeno,
+                            '• $_mensajesPendientes mensajes de club',
+                            style: EstilosApp.cuerpoPequeno(context),
                           ),
                         const SizedBox(height: 16),
                       ],
                     ),
                   
-                  // Botón de sincronización
                   ElevatedButton(
                     onPressed: _tieneConexion && !_estaSincronizando && (_progresosPendientes > 0 || _mensajesPendientes > 0)
                         ? _sincronizarManual
                         : null,
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 50),
-                      backgroundColor: _tieneConexion ? AppColores.primario : Colors.grey,
+                      backgroundColor: _tieneConexion ? AppColores.primario : const Color(0xFF9E9E9E),
                     ),
                     child: _estaSincronizando
                         ? const Row(
@@ -482,16 +478,15 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
             ),
             const SizedBox(height: 20),
             
-            // Configuración
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: EstilosApp.tarjeta,
+              decoration: EstilosApp.tarjeta(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Configuración Offline',
-                    style: EstilosApp.tituloMedio,
+                    style: EstilosApp.tituloMedio(context),
                   ),
                   const SizedBox(height: 16),
                   ElementoConfiguracion(
@@ -528,7 +523,6 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
               ),
             ),
             
-            // Información adicional
             Container(
               margin: const EdgeInsets.only(top: 20),
               padding: const EdgeInsets.all(16),
@@ -536,7 +530,7 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
                 color: AppColores.primario.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -552,7 +546,7 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
                     '• Los mensajes en clubs se almacenan temporalmente\n'
                     '• Al recuperar la conexión, todo se sincroniza automáticamente\n'
                     '• Tus datos están seguros incluso sin internet',
-                    style: EstilosApp.cuerpoPequeno,
+                    style: EstilosApp.cuerpoPequeno(context),
                   ),
                 ],
               ),

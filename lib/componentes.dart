@@ -134,7 +134,7 @@ class EstadoVacio extends StatelessWidget {
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.light 
-            ? AppColores.fondo 
+            ? const Color(0xFFF5F5F5)
             : const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -167,17 +167,20 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final esModoOscuro = Theme.of(context).brightness == Brightness.dark;
+    final colorTexto = esModoOscuro ? Colors.white : Colors.black87;
+    final colorFondo = esModoOscuro ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
+    final colorBorde = esModoOscuro ? const Color(0xFF444444) : const Color(0xFFDDDDDD);
+    
     return Row(
       children: [
         Expanded(
           child: Container(
             height: 50,
             decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.light 
-                  ? AppColores.fondo 
-                  : const Color(0xFF2C2C2C),
+              color: colorFondo,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).dividerColor),
+              border: Border.all(color: colorBorde),
             ),
             child: TextField(
               controller: controlador,
@@ -185,7 +188,7 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
                 hintText: textoHint,
                 hintStyle: TextStyle(
                   fontSize: 16, 
-                  color: Theme.of(context).hintColor,
+                  color: esModoOscuro ? const Color(0xFF888888) : const Color(0xFFAAAAAA),
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -193,7 +196,8 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
               ),
               style: TextStyle(
                 fontSize: 16, 
-                color: Theme.of(context).textTheme.bodyLarge?.color,
+                color: colorTexto,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -228,31 +232,36 @@ class FiltroDesplegable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final esModoOscuro = Theme.of(context).brightness == Brightness.dark;
+    final colorFondo = esModoOscuro ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
+    final colorTexto = esModoOscuro ? Colors.white : Colors.black87;
+    final colorBorde = esModoOscuro ? const Color(0xFF444444) : const Color(0xFFDDDDDD);
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light 
-            ? AppColores.fondo 
-            : const Color(0xFF2C2C2C),
+        color: colorFondo,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        border: Border.all(color: colorBorde),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: valor,
           isExpanded: true,
-          hint: Text(hint, style: TextStyle(color: Theme.of(context).hintColor)),
-          dropdownColor: Theme.of(context).brightness == Brightness.light 
-              ? Colors.white 
-              : const Color(0xFF2C2C2C),
-          style: TextStyle(
-            color: Theme.of(context).textTheme.bodyLarge?.color,
+          hint: Text(hint, style: TextStyle(
+            color: esModoOscuro ? const Color(0xFF888888) : const Color(0xFFAAAAAA),
             fontSize: 16,
+          )),
+          dropdownColor: colorFondo,
+          style: TextStyle(
+            color: colorTexto,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
           ),
           icon: const Icon(Icons.arrow_drop_down, color: AppColores.primario),
           items: items.map((valor) => DropdownMenuItem<String>(
             value: valor,
-            child: Text(valor),
+            child: Text(valor, style: TextStyle(color: colorTexto)),
           )).toList(),
           onChanged: alCambiar,
         ),

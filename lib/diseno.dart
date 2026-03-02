@@ -163,8 +163,11 @@ class EstilosApp {
   }
 
   static BoxDecoration tarjetaPlana(BuildContext context) {
+    final esModoOscuro = Theme.of(context).brightness == Brightness.dark;
+    final colorFondo = esModoOscuro ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5);
+    
     return BoxDecoration(
-      color: Theme.of(context).cardColor,
+      color: colorFondo,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(

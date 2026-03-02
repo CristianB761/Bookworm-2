@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'diseno.dart';
+import 'theme_provider.dart';
 import 'servicio/servicio_firestore.dart'; 
 import 'modelos/datos_usuario.dart'; 
 
@@ -192,34 +194,44 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
 
   Widget _construirCampoTexto(TextEditingController controlador, String etiqueta, IconData icono, 
   {bool textoOculto = false, VoidCallback? alAlternarVisibilidad, TextInputType? tipoTeclado}) {
-    return TextFormField(
-      controller: controlador,
-      decoration: InputDecoration(
-        labelText: etiqueta,
-        labelStyle: const TextStyle(color: Color(0xFF9E9E9E)),
-        prefixIcon: Icon(icono, color: AppColores.primario),
-        suffixIcon: alAlternarVisibilidad != null ? IconButton(
-          icon: Icon(textoOculto ? Icons.visibility_off : Icons.visibility, 
-                     color: AppColores.primario.withValues(alpha: 0.7)),
-          onPressed: alAlternarVisibilidad,
-        ) : null,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColores.primario, width: 2),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF9E9E9E)),
-        ),
-        filled: true,
-        fillColor: const Color(0xFFFAFAFA),
-        contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-      ),
-      obscureText: textoOculto,
-      enabled: !_estaCargando,
-      keyboardType: tipoTeclado,
-      style: const TextStyle(fontSize: 16),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final esModoOscuro = themeProvider.esModoOscuro;
+        final fillColor = esModoOscuro ? const Color(0xFF2C2C2C) : const Color(0xFFFAFAFA);
+        final textColor = esModoOscuro ? Colors.white : Colors.black87;
+        final labelColor = esModoOscuro ? const Color(0xFFBBBBBB) : const Color(0xFF9E9E9E);
+        final borderColor = esModoOscuro ? const Color(0xFF555555) : const Color(0xFF9E9E9E);
+        
+        return TextFormField(
+          controller: controlador,
+          decoration: InputDecoration(
+            labelText: etiqueta,
+            labelStyle: TextStyle(color: labelColor),
+            prefixIcon: Icon(icono, color: AppColores.primario),
+            suffixIcon: alAlternarVisibilidad != null ? IconButton(
+              icon: Icon(textoOculto ? Icons.visibility_off : Icons.visibility, 
+                         color: AppColores.primario.withValues(alpha: 0.7)),
+              onPressed: alAlternarVisibilidad,
+            ) : null,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColores.primario, width: 2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: borderColor),
+            ),
+            filled: true,
+            fillColor: fillColor,
+            contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          ),
+          obscureText: textoOculto,
+          enabled: !_estaCargando,
+          keyboardType: tipoTeclado,
+          style: TextStyle(fontSize: 16, color: textColor),
+        );
+      },
     );
   }
 

@@ -175,7 +175,7 @@ class _DesafiosState extends State<Desafios> {
                       return GridView.builder(
                         padding: const EdgeInsets.all(16),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
+                          crossAxisCount: 4,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                           childAspectRatio: 1.0,

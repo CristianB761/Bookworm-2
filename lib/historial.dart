@@ -138,8 +138,14 @@ class Historial extends StatelessWidget {
                   );
                 }
 
-                return ListView.builder(
+                return GridView.builder(
                   padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: 0.7,
+                  ),
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
                     final doc = snapshot.data!.docs[index];
@@ -148,24 +154,33 @@ class Historial extends StatelessWidget {
                     
                     final libro = Libro.fromMap(data);
 
-                    return Dismissible(
-                      key: Key(doc.id),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.only(right: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.centerRight,
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      onDismissed: (direction) => _eliminarDelHistorial(context, doc.id),
-                      child: TarjetaLibro(
+                    return GestureDetector(
+                      onLongPress: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Eliminar del historial'),
+                            content: const Text('¿Deseas eliminar este libro del historial?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancelar'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  _eliminarDelHistorial(context, doc.id);
+                                },
+                                child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      child: TarjetaLibroMosaico(
                         libro: libro,
                         alPresionar: () {
-                           Navigator.pushNamed(
+                          Navigator.pushNamed(
                             context,
                             '/detalles_libro',
                             arguments: libro,

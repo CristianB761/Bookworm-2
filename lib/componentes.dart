@@ -389,6 +389,87 @@ class TarjetaLibro extends StatelessWidget {
   }
 }
 
+class TarjetaLibroMosaico extends StatelessWidget {
+  final Libro libro;
+  final VoidCallback? alPresionar;
+
+  const TarjetaLibroMosaico({
+    super.key,
+    required this.libro,
+    this.alPresionar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: alPresionar,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: const Color(0xFFEEEEEE),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: libro.urlMiniatura != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        libro.urlMiniatura!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, progresoCarga) {
+                          if (progresoCarga == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: progresoCarga.expectedTotalBytes != null
+                                  ? progresoCarga.cumulativeBytesLoaded / progresoCarga.expectedTotalBytes!
+                                  : null,
+                              valueColor: const AlwaysStoppedAnimation<Color>(AppColores.primario),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(Icons.book, size: 50, color: Color(0xFF9E9E9E)),
+                          );
+                        },
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(Icons.book, size: 50, color: Color(0xFF9E9E9E)),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            libro.titulo,
+            style: EstilosApp.cuerpoMedio(context),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (libro.autores.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              libro.autores.first,
+              style: EstilosApp.cuerpoPequeno(context),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class ElementoConfiguracion extends StatelessWidget {
   final String titulo;
   final String subtitulo;

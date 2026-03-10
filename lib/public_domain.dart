@@ -189,82 +189,26 @@ class _PublicDomainState extends State<PublicDomain> {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
+                  child: GridView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: 0.7,
+                    ),
                     itemCount: _libros.length,
                     itemBuilder: (context, index) {
                       final libro = _libros[index];
-                      return _construirTarjetaLibro(libro);
+                      return TarjetaLibroMosaico(
+                        libro: libro,
+                        alPresionar: () => _mostrarDetallesLibro(libro),
+                      );
                     },
                   ),
                 ),
               ],
             ),
-    );
-  }
-
-  Widget _construirTarjetaLibro(Libro libro) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: EstilosApp.tarjetaPlana(context),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () => _mostrarDetallesLibro(libro),
-            child: Container(
-              width: 80,
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.grey[200],
-              ),
-              child: libro.urlMiniatura != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(libro.urlMiniatura!, fit: BoxFit.cover),
-                    )
-                  : const Icon(Icons.book, size: 40, color: Colors.grey),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  libro.titulo,
-                  style: EstilosApp.tituloPequeno(context),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  libro.autores.join(', '),
-                  style: EstilosApp.cuerpoPequeno(context),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () => _mostrarDetallesLibro(libro),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColores.primario,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 36),
-                  ),
-                  child: const Text('Ver Detalles'),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.bookmark_add, color: AppColores.primario),
-            onPressed: () => _guardarLibro(libro),
-          ),
-        ],
-      ),
     );
   }
 }

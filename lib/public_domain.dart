@@ -200,7 +200,7 @@ class _PublicDomainState extends State<PublicDomain> {
                     itemCount: _libros.length,
                     itemBuilder: (context, index) {
                       final libro = _libros[index];
-                      return TarjetaLibroMosaico(
+                      return TarjetaLibro(
                         libro: libro,
                         alPresionar: () => _mostrarDetallesLibro(libro),
                       );

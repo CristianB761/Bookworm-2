@@ -3,12 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'diseno.dart';
 import 'componentes.dart';
-import 'servicio/servicio_firestore.dart'; 
+import 'servicio/servicio_firestore.dart';
 
 class ChatClub extends StatefulWidget {
   final String clubId;
   final String clubNombre;
-  final String? rolUsuario; 
+  final String? rolUsuario;
 
   const ChatClub({
     super.key,
@@ -25,9 +25,9 @@ class _ChatClubState extends State<ChatClub> {
   final TextEditingController _controladorMensaje = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final ServicioFirestore _servicioFirestore = ServicioFirestore(); 
+  final ServicioFirestore _servicioFirestore = ServicioFirestore();
   final ScrollController _scrollController = ScrollController();
-  
+
   String? _rolUsuario;
   Map<String, dynamic>? _infoClub;
 
@@ -61,7 +61,7 @@ class _ChatClubState extends State<ChatClub> {
             .collection('mis_clubs')
             .doc(widget.clubId)
             .get();
-        
+
         if (miClubDoc.exists) {
           setState(() {
             _rolUsuario = miClubDoc.data()?['rol'] ?? 'miembro';
@@ -156,7 +156,7 @@ class _ChatClubState extends State<ChatClub> {
 
                 if (context.mounted) {
                   Navigator.pop(context);
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('Información del club actualizada'),
@@ -224,6 +224,14 @@ class _ChatClubState extends State<ChatClub> {
   Widget _construirMensaje(DocumentSnapshot mensaje) {
     final datos = mensaje.data() as Map<String, dynamic>;
     final esMio = datos['usuarioId'] == _auth.currentUser?.uid;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final Color fondoMensajePropio = isDark ? const Color(0xFF1E3A5F) : AppColores.primario;
+    final Color fondoMensajeAjeno = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5);
+    final Color textoMensajePropio = Colors.white;
+    final Color textoMensajeAjeno = isDark ? Colors.white70 : Colors.black87;
+    final Color colorNombreUsuario = isDark ? Colors.grey.shade400 : Colors.black54;
+    final Color colorFecha = isDark ? Colors.grey.shade500 : const Color(0xFF9E9E9E);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -257,23 +265,23 @@ class _ChatClubState extends State<ChatClub> {
                 if (!esMio)
                   Text(
                     datos['usuarioNombre'],
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black54,
+                      color: colorNombreUsuario,
                     ),
                   ),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: esMio ? AppColores.primario : const Color(0xFFF5F5F5),
+                    color: esMio ? fondoMensajePropio : fondoMensajeAjeno,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     datos['texto'],
                     style: TextStyle(
                       fontSize: 14,
-                      color: esMio ? Colors.white : Colors.black87,
+                      color: esMio ? textoMensajePropio : textoMensajeAjeno,
                     ),
                   ),
                 ),
@@ -281,9 +289,9 @@ class _ChatClubState extends State<ChatClub> {
                 if (datos['timestamp'] != null)
                   Text(
                     _formatearFecha(datos['timestamp'].toDate()),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
-                      color: Color(0xFF9E9E9E),
+                      color: colorFecha,
                     ),
                   ),
               ],
@@ -312,6 +320,8 @@ class _ChatClubState extends State<ChatClub> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -382,23 +392,33 @@ class _ChatClubState extends State<ChatClub> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: const Color(0xFFE0E0E0))),
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? const Color(0xFF444444) : const Color(0xFFE0E0E0),
+                ),
+              ),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColores.fondo,
+                      color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
                       controller: _controladorMensaje,
-                      decoration: const InputDecoration(
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                      decoration: InputDecoration(
                         hintText: 'Escribe un mensaje...',
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                        ),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                       onSubmitted: (_) => _enviarMensaje(),
                     ),
@@ -452,7 +472,7 @@ class _ChatClubState extends State<ChatClub> {
     if (confirmacion == true) {
       try {
         await _servicioFirestore.eliminarClub(widget.clubId);
-        
+
         if (mounted) {
           Navigator.of(context).popUntil((route) => route.isFirst);
           ScaffoldMessenger.of(context).showSnackBar(

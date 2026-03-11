@@ -177,7 +177,7 @@ class Historial extends StatelessWidget {
                           ),
                         );
                       },
-                      child: TarjetaLibroMosaico(
+                      child: TarjetaLibro(
                         libro: libro,
                         alPresionar: () {
                           Navigator.pushNamed(

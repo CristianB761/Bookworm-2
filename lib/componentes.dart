@@ -7,13 +7,13 @@ import 'theme_provider.dart';
 class BotonesBarraApp extends StatelessWidget {
   final String rutaActual;
 
-  const BotonesBarraApp({
-    super.key,
-    required this.rutaActual,
-  });
+  const BotonesBarraApp({super.key, required this.rutaActual});
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.esModoOscuro;
+
     final rutas = {
       'Inicio': {'ruta': '/home', 'icono': Icons.home},
       'Buscar': {'ruta': '/search', 'icono': Icons.search},
@@ -22,19 +22,19 @@ class BotonesBarraApp extends StatelessWidget {
     };
 
     return Row(
-      children: [
-        ...rutas.entries.map((e) => _construirBotonBarraApp(
-          context, 
-          e.key, 
-          e.value['ruta'] as String, 
-          e.value['icono'] as IconData
-        )),
-      ],
+      children: rutas.entries.map((e) => _construirBotonBarraApp(
+        context,
+        e.key,
+        e.value['ruta'] as String,
+        e.value['icono'] as IconData,
+        isDark,
+      )).toList(),
     );
   }
 
-  Widget _construirBotonBarraApp(BuildContext context, String texto, String ruta, IconData icono) {
+  Widget _construirBotonBarraApp(BuildContext context, String texto, String ruta, IconData icono, bool isDark) {
     final estaActivo = rutaActual == ruta;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: TextButton(
@@ -43,22 +43,28 @@ class BotonesBarraApp extends StatelessWidget {
             Navigator.pushReplacementNamed(context, ruta);
           }
         },
-        style: TextButton.styleFrom(
-          foregroundColor: estaActivo ? Colors.white : Colors.white70,
-          backgroundColor: estaActivo ? Colors.white.withOpacity(0.2) : Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+        style: ButtonStyle(
+          foregroundColor: MaterialStateProperty.resolveWith((states) {
+            if (estaActivo) return const Color(0xFFf8f8ff);
+            if (states.contains(MaterialState.hovered)) return const Color(0xFFd3d3d3);
+            return const Color(0xFFf8f8ff).withOpacity(0.7);
+          }),
+          backgroundColor: MaterialStateProperty.resolveWith((states) {
+            if (estaActivo) return Colors.white.withOpacity(0.2);
+            if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+            return Colors.transparent;
+          }),
+          shape: MaterialStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: MaterialStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icono,
-              size: 18,
-              color: estaActivo ? Colors.white : Colors.white70,
-            ),
+            Icon(icono, size: 18),
             const SizedBox(width: 6),
             Text(
               texto,
@@ -133,7 +139,7 @@ class EstadoVacio extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light 
+        color: Theme.of(context).brightness == Brightness.light
             ? const Color(0xFFF5F5F5)
             : const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(12),
@@ -171,7 +177,7 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
     final colorTexto = esModoOscuro ? Colors.white : Colors.black87;
     final colorFondo = esModoOscuro ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
     final colorBorde = esModoOscuro ? const Color(0xFF444444) : const Color(0xFFDDDDDD);
-    
+
     return Row(
       children: [
         Expanded(
@@ -187,7 +193,7 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: textoHint,
                 hintStyle: TextStyle(
-                  fontSize: 16, 
+                  fontSize: 16,
                   color: esModoOscuro ? const Color(0xFF888888) : const Color(0xFFAAAAAA),
                 ),
                 border: InputBorder.none,
@@ -195,7 +201,7 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
                 prefixIcon: Icon(Icons.search, color: AppColores.primario),
               ),
               style: TextStyle(
-                fontSize: 16, 
+                fontSize: 16,
                 color: colorTexto,
                 fontWeight: FontWeight.w500,
               ),
@@ -236,7 +242,7 @@ class FiltroDesplegable extends StatelessWidget {
     final colorFondo = esModoOscuro ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
     final colorTexto = esModoOscuro ? Colors.white : Colors.black87;
     final colorBorde = esModoOscuro ? const Color(0xFF444444) : const Color(0xFFDDDDDD);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -344,7 +350,7 @@ class TarjetaLibro extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 8),
-        
+
         if (libro.autores.isNotEmpty)
           Text(
             'Por ${libro.autores.join(', ')}',
@@ -352,7 +358,7 @@ class TarjetaLibro extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-        
+
         if (libro.fechaPublicacion != null) ...[
           const SizedBox(height: 4),
           Text(
@@ -360,7 +366,7 @@ class TarjetaLibro extends StatelessWidget {
             style: EstilosApp.cuerpoPequeno(context),
           ),
         ],
-        
+
         if (libro.calificacionPromedio != null) ...[
           const SizedBox(height: 4),
           Row(
@@ -374,7 +380,7 @@ class TarjetaLibro extends StatelessWidget {
             ],
           ),
         ],
-        
+
         if (libro.descripcion != null) ...[
           const SizedBox(height: 8),
           Text(
@@ -385,87 +391,6 @@ class TarjetaLibro extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class TarjetaLibroMosaico extends StatelessWidget {
-  final Libro libro;
-  final VoidCallback? alPresionar;
-
-  const TarjetaLibroMosaico({
-    super.key,
-    required this.libro,
-    this.alPresionar,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: alPresionar,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: const Color(0xFFEEEEEE),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: libro.urlMiniatura != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        libro.urlMiniatura!,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, progresoCarga) {
-                          if (progresoCarga == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: progresoCarga.expectedTotalBytes != null
-                                  ? progresoCarga.cumulativeBytesLoaded / progresoCarga.expectedTotalBytes!
-                                  : null,
-                              valueColor: const AlwaysStoppedAnimation<Color>(AppColores.primario),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Icon(Icons.book, size: 50, color: Color(0xFF9E9E9E)),
-                          );
-                        },
-                      ),
-                    )
-                  : const Center(
-                      child: Icon(Icons.book, size: 50, color: Color(0xFF9E9E9E)),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            libro.titulo,
-            style: EstilosApp.cuerpoMedio(context),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (libro.autores.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              libro.autores.first,
-              style: EstilosApp.cuerpoPequeno(context),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ],
-      ),
     );
   }
 }
@@ -583,17 +508,30 @@ class BotonAccionRapida extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return TextButton(
       onPressed: alPresionar,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white.withOpacity(0.2),
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.white.withOpacity(0.3)),
+      style: ButtonStyle(
+        foregroundColor: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.hovered)) {
+            return const Color(0xFFd3d3d3);
+          }
+          return const Color(0xFFf8f8ff);
+        }),
+        backgroundColor: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.hovered)) {
+            return const Color(0xFF008080);
+          }
+          return Colors.white.withOpacity(0.2);
+        }),
+        shape: MaterialStateProperty.all(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+          ),
         ),
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: MaterialStateProperty.all(
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

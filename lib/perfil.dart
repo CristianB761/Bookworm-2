@@ -856,11 +856,11 @@ class _PerfilState extends State<Perfil> {
                     if (_datosUsuario?.biografia != null && _datosUsuario!.biografia!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          _datosUsuario!.biografia!,
-                          style: EstilosApp.cuerpoPequeno(context),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        child: TextoConLinks(
+                          texto: _datosUsuario!.biografia!,
+                          estilo: EstilosApp.cuerpoPequeno(context),
+                          maxLineas: 2,
+                          desbordamiento: TextOverflow.ellipsis,
                         ),
                       ),
                   ],
@@ -961,9 +961,9 @@ class _PerfilState extends State<Perfil> {
               children: [
                 Text('Biografía', style: EstilosApp.tituloPequeno(context)),
                 const SizedBox(height: 8),
-                Text(
-                  _datosUsuario!.biografia!,
-                  style: EstilosApp.cuerpoMedio(context),
+                TextoConLinks(
+                  texto: _datosUsuario!.biografia!,
+                  estilo: EstilosApp.cuerpoMedio(context),
                 ),
               ],
             ),

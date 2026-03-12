@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'diseno.dart';
 import 'API/modelos.dart';
 import 'theme_provider.dart';
@@ -549,4 +551,188 @@ class BotonAccionRapida extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Widget que detecta URLs y redes sociales en el texto y las hace clickeables
+class TextoConLinks extends StatelessWidget {
+  final String texto;
+  final TextStyle? estilo;
+  final int? maxLineas;
+  final TextOverflow? desbordamiento;
+
+  const TextoConLinks({
+    super.key,
+    required this.texto,
+    this.estilo,
+    this.maxLineas,
+    this.desbordamiento,
+  });
+
+  // Detecta URLs y redes sociales en el texto
+  List<_Segmento> _analizarTexto(String texto) {
+    final List<_Segmento> segmentos = [];
+    
+    // Patrones para detectar URLs y redes sociales
+    final patrones = [
+      // URLs completas (https:// o http://)
+      RegExp(r'https?://[^\s]+'),
+      // www.
+      RegExp(r'www\.[^\s]+'),
+      // Redes sociales populares (instagram, tiktok, twitter, etc.)
+      RegExp(r'(?:instagram|tiktok|twitter|facebook|youtube|linkedin|twitch|discord)\.[^\s]*(?:\.com)?|@[a-zA-Z0-9_.]+'),
+    ];
+
+    int ultimaPosicion = 0;
+    final partesEncontradas = <_Match>[];
+
+    for (final patron in patrones) {
+      for (final coincidencia in patron.allMatches(texto)) {
+        partesEncontradas.add(_Match(
+          inicio: coincidencia.start,
+          fin: coincidencia.end,
+          texto: coincidencia.group(0)!,
+          esLink: true,
+        ));
+      }
+    }
+
+    // Ordenar por posición y eliminar duplicados
+    partesEncontradas.sort((a, b) => a.inicio.compareTo(b.inicio));
+
+    for (final parte in partesEncontradas) {
+      if (ultimaPosicion < parte.inicio) {
+        segmentos.add(_Segmento(
+          texto: texto.substring(ultimaPosicion, parte.inicio),
+          esLink: false,
+          url: null,
+        ));
+      }
+
+      final url = _prepararUrl(parte.texto);
+      segmentos.add(_Segmento(
+        texto: parte.texto,
+        esLink: true,
+        url: url,
+      ));
+
+      ultimaPosicion = parte.fin;
+    }
+
+    if (ultimaPosicion < texto.length) {
+      segmentos.add(_Segmento(
+        texto: texto.substring(ultimaPosicion),
+        esLink: false,
+        url: null,
+      ));
+    }
+
+    // Si no hay links, devolver todo el texto como un segmento normal
+    if (segmentos.isEmpty) {
+      segmentos.add(_Segmento(
+        texto: texto,
+        esLink: false,
+        url: null,
+      ));
+    }
+
+    return segmentos;
+  }
+
+  // Prepara la URL para que sea válida
+  String _prepararUrl(String texto) {
+    String url = texto.trim();
+
+    // Si comienza con @, es un usuario de red social, añadir https://instagram.com/
+    if (url.startsWith('@')) {
+      return 'https://instagram.com/${url.substring(1)}';
+    }
+
+    // Si contiene instagram/tiktok/etc pero no tiene protocolo
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      if (url.contains('instagram')) return 'https://$url';
+      if (url.contains('tiktok')) return 'https://$url';
+      if (url.contains('twitter')) return 'https://$url';
+      if (url.contains('facebook')) return 'https://$url';
+      if (url.contains('youtube')) return 'https://$url';
+      if (url.contains('linkedin')) return 'https://$url';
+      if (url.contains('twitch')) return 'https://$url';
+      if (url.contains('discord')) return 'https://$url';
+      if (url.startsWith('www.')) return 'https://$url';
+    }
+
+    return url;
+  }
+
+  void _abrirUrl(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        print('No se puede abrir la URL: $url');
+      }
+    } catch (e) {
+      print('Error al abrir URL: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final segmentos = _analizarTexto(texto);
+    final colorLink = AppColores.primario;
+    final colorTextoNormal = estilo?.color ?? Colors.black;
+
+    return RichText(
+      maxLines: maxLineas,
+      overflow: desbordamiento ?? TextOverflow.clip,
+      text: TextSpan(
+        children: segmentos.map((segmento) {
+          if (segmento.esLink && segmento.url != null) {
+            return TextSpan(
+              text: segmento.texto,
+              style: (estilo ?? const TextStyle()).copyWith(
+                color: colorLink,
+                decoration: TextDecoration.underline,
+                decorationColor: colorLink,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () => _abrirUrl(segmento.url!),
+            );
+          } else {
+            return TextSpan(
+              text: segmento.texto,
+              style: estilo,
+            );
+          }
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// Clases auxiliares para analizar el texto
+class _Segmento {
+  final String texto;
+  final bool esLink;
+  final String? url;
+
+  _Segmento({
+    required this.texto,
+    required this.esLink,
+    this.url,
+  });
+}
+
+class _Match {
+  final int inicio;
+  final int fin;
+  final String texto;
+  final bool esLink;
+
+  _Match({
+    required this.inicio,
+    required this.fin,
+    required this.texto,
+    required this.esLink,
+  });
 }

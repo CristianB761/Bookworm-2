@@ -571,14 +571,11 @@ class TextoConLinks extends StatelessWidget {
   // Detecta URLs y redes sociales en el texto
   List<_Segmento> _analizarTexto(String texto) {
     final List<_Segmento> segmentos = [];
-    
+
     // Patrones para detectar URLs y redes sociales
     final patrones = [
-      // URLs completas (https:// o http://)
       RegExp(r'https?://[^\s]+'),
-      // www.
       RegExp(r'www\.[^\s]+'),
-      // Redes sociales populares (instagram, tiktok, twitter, etc.)
       RegExp(r'(?:instagram|tiktok|twitter|facebook|youtube|linkedin|twitch|discord)\.[^\s]*(?:\.com)?|@[a-zA-Z0-9_.]+'),
     ];
 

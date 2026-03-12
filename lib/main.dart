@@ -77,12 +77,12 @@ class AppBookWorm extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         scaffoldBackgroundColor: const Color(0xFF121212),
-        cardColor: const Color(0xFF1E1E1E),
+        cardColor: const Color(0xFF1e1e1e),
         dividerColor: const Color(0xFF444444),
         hintColor: const Color(0xFFAAAAAA),
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColores.primario,
-          foregroundColor: Colors.white,
+          foregroundColor: Color(0xFFf8f8ff),
           elevation: 0,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -218,18 +218,13 @@ class _PaginaInicioState extends State<PaginaInicio> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: GestureDetector(
-          onTap: () {
-            Navigator.pushReplacementNamed(context, '/home');
-          },
+          onTap: () => Navigator.pushReplacementNamed(context, '/home'),
           child: const Text('BookWorm', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFf8f8ff))),
         ),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: Icon(
-              isDark ? Icons.light_mode : Icons.dark_mode,
-              color: const Color(0xFFf8f8ff),
-            ),
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: const Color(0xFFf8f8ff)),
             onPressed: () => themeProvider.alternarTema(),
             tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
           ),
@@ -259,22 +254,9 @@ class _PaginaInicioState extends State<PaginaInicio> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Bienvenido de vuelta',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFf8f8ff),
-                          ),
-                        ),
+                        const Text('Bienvenido de vuelta', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFf8f8ff))),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Continúa tu aventura literaria',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFFf8f8ff),
-                          ),
-                        ),
+                        const Text('Continúa tu aventura literaria', style: TextStyle(fontSize: 14, color: Color(0xFFf8f8ff))),
                         const SizedBox(height: 16),
                         Row(
                           children: [
@@ -294,11 +276,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                       ],
                     ),
                   ),
-                  const Icon(
-                    Icons.menu_book_rounded,
-                    size: 80,
-                    color: Color(0xFFf8f8ff),
-                  ),
+                  const Icon(Icons.menu_book_rounded, size: 80, color: Color(0xFFf8f8ff)),
                 ],
               ),
             ),
@@ -307,7 +285,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFf8f8ff),
+                color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf8f8ff),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -321,12 +299,12 @@ class _PaginaInicioState extends State<PaginaInicio> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Acceso rápido',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0d0d0d),
+                      color: isDark ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -362,7 +340,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: const Color(0xFFf5f5f5),
+                            color: isDark ? const Color(0xFF2c2c2c) : const Color(0xFFf5f5f5),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -401,21 +379,22 @@ class _PaginaInicioState extends State<PaginaInicio> {
                   if (DatosApp.accionesRapidas.length > 4)
                     Center(
                       child: TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _mostrarTodosAccesosRapidos = !_mostrarTodosAccesosRapidos;
-                          });
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF20B2AA),
+                        onPressed: () => setState(() => _mostrarTodosAccesosRapidos = !_mostrarTodosAccesosRapidos),
+                        style: ButtonStyle(
+                          foregroundColor: MaterialStateProperty.resolveWith((states) {
+                            if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                            return const Color(0xFF20B2AA);
+                          }),
+                          backgroundColor: MaterialStateProperty.resolveWith((states) {
+                            if (states.contains(MaterialState.hovered)) return const Color(0xFF20B2AA);
+                            return Colors.transparent;
+                          }),
+                          overlayColor: MaterialStateProperty.all(Colors.transparent),
+                          shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
                         ),
                         child: Text(
                           _mostrarTodosAccesosRapidos ? 'Ver menos' : 'Ver más',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.normal,
-                            color: AppColores.primario,
-                          ),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                         ),
                       ),
                     ),
@@ -433,7 +412,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     height: 280,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFf8f8ff),
+                      color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf8f8ff),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -447,12 +426,12 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        const Text(
+                        Text(
                           'Mis lecturas actuales',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF0d0d0d),
+                            color: isDark ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -463,7 +442,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                     'Inicia sesión para ver tus lecturas',
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: const Color(0xFF2c2c2c),
+                                      color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
                                     ),
                                   ),
                                 )
@@ -488,23 +467,20 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                         ),
                                       );
                                     }
-
                                     if (snapshot.connectionState == ConnectionState.waiting) {
                                       return const Center(child: CircularProgressIndicator());
                                     }
-
                                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                                       return Center(
                                         child: Text(
                                           'No tienes lecturas en progreso',
                                           style: TextStyle(
                                             fontSize: 16,
-                                            color: const Color(0xFF2c2c2c),
+                                            color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
                                           ),
                                         ),
                                       );
                                     }
-
                                     return ListView.separated(
                                       padding: EdgeInsets.zero,
                                       itemCount: snapshot.data!.docs.length,
@@ -520,7 +496,6 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                         final porcentaje = paginasTotales > 0
                                             ? (paginaActual / paginasTotales * 100).clamp(0.0, 100.0)
                                             : 0.0;
-
                                         return InkWell(
                                           onTap: () => Navigator.pushNamed(context, '/perfil', arguments: {'seccionIndex': 1}),
                                           child: Row(
@@ -530,10 +505,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                               ),
                                               Text(
                                                 '${porcentaje.toStringAsFixed(0)}%',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppColores.primario,
-                                                ),
+                                                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColores.primario),
                                               ),
                                             ],
                                           ),
@@ -554,7 +526,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     height: 280,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFf8f8ff),
+                      color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf8f8ff),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -571,26 +543,31 @@ class _PaginaInicioState extends State<PaginaInicio> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Libros leídos',
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF0d0d0d),
+                                color: isDark ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d),
                               ),
                             ),
                             TextButton(
                               onPressed: () => Navigator.pushNamed(context, '/perfil', arguments: {'seccionIndex': 1, 'filtroEstado': 'completado'}),
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFF20B2AA),
+                              style: ButtonStyle(
+                                foregroundColor: MaterialStateProperty.resolveWith((states) {
+                                  if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                                  return const Color(0xFF20B2AA);
+                                }),
+                                backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                  if (states.contains(MaterialState.hovered)) return const Color(0xFF20B2AA);
+                                  return Colors.transparent;
+                                }),
+                                overlayColor: MaterialStateProperty.all(Colors.transparent),
+                                shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(4))),
                               ),
                               child: const Text(
                                 'Ver todos',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.normal,
-                                  color: AppColores.primario,
-                                ),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
                               ),
                             ),
                           ],
@@ -603,7 +580,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                     'Inicia sesión',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: const Color(0xFF2c2c2c),
+                                      color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
                                     ),
                                   ),
                                 )
@@ -628,23 +605,21 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                         ),
                                       );
                                     }
-
                                     if (snapshot.connectionState == ConnectionState.waiting) {
                                       return const Center(child: CircularProgressIndicator());
                                     }
-
                                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                                       return Center(
                                         child: Column(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            const Icon(Icons.emoji_events_outlined, size: 40, color: Colors.grey),
+                                            Icon(Icons.emoji_events_outlined, size: 40, color: Colors.grey),
                                             const SizedBox(height: 8),
                                             Text(
                                               'Aún no has completado libros',
                                               style: TextStyle(
                                                 fontSize: 16,
-                                                color: const Color(0xFF2c2c2c),
+                                                color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
                                               ),
                                               textAlign: TextAlign.center,
                                             ),
@@ -652,7 +627,6 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                         ),
                                       );
                                     }
-
                                     return ListView.separated(
                                       padding: EdgeInsets.zero,
                                       itemCount: snapshot.data!.docs.length,
@@ -668,7 +642,6 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                         final fecha = fechaTs != null
                                             ? '${fechaTs.toDate().day}/${fechaTs.toDate().month}/${fechaTs.toDate().year}'
                                             : '';
-
                                         return ListTile(
                                           contentPadding: const EdgeInsets.symmetric(vertical: 4),
                                           leading: miniatura != null
@@ -697,7 +670,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFf8f8ff),
+                color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf8f8ff),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -711,12 +684,12 @@ class _PaginaInicioState extends State<PaginaInicio> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Descubre algo nuevo',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0d0d0d),
+                      color: isDark ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -728,7 +701,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                         'No se encontraron sugerencias',
                         style: TextStyle(
                           fontSize: 16,
-                          color: const Color(0xFF2c2c2c),
+                          color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
                         ),
                       ),
                     )
@@ -742,13 +715,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                         itemBuilder: (context, index) {
                           final libro = _librosAleatorios[index];
                           return GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                context,
-                                '/detalles_libro',
-                                arguments: libro,
-                              );
-                            },
+                            onTap: () => Navigator.pushNamed(context, '/detalles_libro', arguments: libro),
                             child: SizedBox(
                               width: 140,
                               child: Column(

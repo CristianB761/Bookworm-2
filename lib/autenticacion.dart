@@ -26,6 +26,18 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
 
   final _auth = FirebaseAuth.instance;
 
+  final Map<String, bool> _hoverInputs = {
+    'email': false,
+    'password': false,
+    'confirmar': false,
+    'nombre': false,
+  };
+
+  bool _hoverBoton = false;
+  bool _hoverRegistro = false;
+  bool _hoverIconoPass = false;
+  bool _hoverIconoConfirm = false;
+
   @override
   void dispose() {
     _controladorEmail.dispose();
@@ -175,7 +187,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(mensaje, style: const TextStyle(color: Color(0xFFf8f8ff))),
+        content: Text(mensaje, style: const TextStyle(color: Color(0xFFfffafa))),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: color == Color(0xFF32cd32) ? 3 : 5),
@@ -199,43 +211,73 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     bool textoOculto = false,
     VoidCallback? alAlternarVisibilidad,
     TextInputType? tipoTeclado,
-    required Color inputFillColor,
-    required Color inputBorderColor,
+    required String hoverKey,
+    required bool isHovered,
+    required ValueChanged<bool> onHover,
+    required Color fillColorNormal,
+    required Color fillColorHover,
+    required Color borderColor,
     required Color inputTextColor,
-    required Color labelColor,
   }) {
-    return TextFormField(
-      controller: controlador,
-      decoration: InputDecoration(
-        labelText: etiqueta,
-        labelStyle: TextStyle(color: labelColor),
-        prefixIcon: Icon(icono, color: AppColores.primario),
-        suffixIcon: alAlternarVisibilidad != null
-            ? IconButton(
-                icon: Icon(
-                  textoOculto ? Icons.visibility_off : Icons.visibility,
-                  color: AppColores.primario.withValues(alpha: 0.7),
-                ),
-                onPressed: alAlternarVisibilidad,
-              )
-            : null,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColores.primario, width: 2),
+    return MouseRegion(
+      onEnter: (_) => onHover(true),
+      onExit: (_) => onHover(false),
+      child: TextFormField(
+        controller: controlador,
+        decoration: InputDecoration(
+          labelText: etiqueta,
+          labelStyle: const TextStyle(
+            color: Color(0xFF696969),
+            fontWeight: FontWeight.normal,
+          ),
+          floatingLabelStyle: const TextStyle(
+            color: Color(0xFF696969),
+            fontWeight: FontWeight.bold,
+          ),
+          prefixIcon: Icon(icono, color: AppColores.primario),
+          suffixIcon: alAlternarVisibilidad != null
+              ? MouseRegion(
+                  onEnter: (_) => setState(() {
+                    if (hoverKey == 'password') _hoverIconoPass = true;
+                    if (hoverKey == 'confirmar') _hoverIconoConfirm = true;
+                  }),
+                  onExit: (_) => setState(() {
+                    if (hoverKey == 'password') _hoverIconoPass = false;
+                    if (hoverKey == 'confirmar') _hoverIconoConfirm = false;
+                  }),
+                  child: IconButton(
+                    icon: Icon(
+                      textoOculto ? Icons.visibility_off : Icons.visibility,
+                      color: (hoverKey == 'password' && _hoverIconoPass) || (hoverKey == 'confirmar' && _hoverIconoConfirm)
+                          ? const Color(0xFF008080)
+                          : AppColores.primario,
+                    ),
+                    onPressed: alAlternarVisibilidad,
+                    splashRadius: 0.1,
+                    style: ButtonStyle(
+                      overlayColor: MaterialStateProperty.all(Colors.transparent),
+                    ),
+                  ),
+                )
+              : null,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColores.primario, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            borderSide: BorderSide(color: borderColor),
+          ),
+          filled: true,
+          fillColor: isHovered ? fillColorHover : fillColorNormal,
+          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(10)),
-          borderSide: BorderSide(color: inputBorderColor),
-        ),
-        filled: true,
-        fillColor: inputFillColor,
-        contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+        obscureText: textoOculto,
+        enabled: !_estaCargando,
+        keyboardType: tipoTeclado,
+        style: TextStyle(fontSize: 16, color: inputTextColor),
       ),
-      obscureText: textoOculto,
-      enabled: !_estaCargando,
-      keyboardType: tipoTeclado,
-      style: TextStyle(fontSize: 16, color: inputTextColor),
     );
   }
 
@@ -244,13 +286,13 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final esModoOscuro = themeProvider.esModoOscuro;
 
-    final Color formularioFondo = esModoOscuro ? const Color(0xFF121212) : const Color(0xFFf8f8ff);
-    final Color formularioTexto = esModoOscuro ? const Color(0xFFd3d3d3) : const Color(0xFF121212);
-    final Color inputFillColor = esModoOscuro ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5);
-    final Color inputBorderColor = esModoOscuro ? const Color(0xFF2c2c2c) : const Color(0xFFd3d3d3);
-    final Color inputTextColor = esModoOscuro ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d);
-    final Color labelColor = esModoOscuro ? const Color(0xFF696969) : const Color(0xFF696969);
-    final Color piePaginaColor = esModoOscuro ? const Color(0xFFf8f8ff) : const Color(0xFFf8f8ff);
+    // Colores para modo claro y oscuro
+    final Color inputFillNormal = esModoOscuro ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5);
+    final Color inputFillHover = esModoOscuro ? const Color(0xFF2c2c2c) : const Color(0xFFdcdcdc);
+    final Color inputBorderColor = esModoOscuro ? const Color(0xFF2c2c2c) : const Color(0xFFdcdcdc);
+    final Color inputTextColor = esModoOscuro ? const Color(0xFFfffafa) : const Color(0xFF121212);
+    final Color formularioTextoColor = esModoOscuro ? const Color(0xFFfffafa) : const Color(0xFF121212);
+    final Color piePaginaColor = esModoOscuro ? const Color(0xFFfffafa) : const Color(0xFFf8f8ff);
 
     return Scaffold(
       body: Container(
@@ -273,16 +315,8 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                   constraints: const BoxConstraints(maxWidth: 400),
                   padding: const EdgeInsets.all(30),
                   decoration: BoxDecoration(
-                    color: formularioFondo,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0xFF0d0d0d).withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+                    color: esModoOscuro ? const Color(0xFF121212) : const Color(0xFFfffafa),
+                    borderRadius: const BorderRadius.all(Radius.circular(20)),
                   ),
                   child: Column(
                     children: [
@@ -306,7 +340,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: formularioTexto,
+                          color: formularioTextoColor,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -316,7 +350,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                             : 'Únete a nuestra comunidad de lectores',
                         style: TextStyle(
                           fontSize: 16,
-                          color: formularioTexto,
+                          color: formularioTextoColor,
                           height: 1.4,
                         ),
                         textAlign: TextAlign.center,
@@ -328,10 +362,13 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                           'Nombre completo',
                           Icons.person_outline,
                           tipoTeclado: TextInputType.name,
-                          inputFillColor: inputFillColor,
-                          inputBorderColor: inputBorderColor,
+                          hoverKey: 'nombre',
+                          isHovered: _hoverInputs['nombre']!,
+                          onHover: (v) => setState(() => _hoverInputs['nombre'] = v),
+                          fillColorNormal: inputFillNormal,
+                          fillColorHover: inputFillHover,
+                          borderColor: inputBorderColor,
                           inputTextColor: inputTextColor,
-                          labelColor: labelColor,
                         ),
                         const SizedBox(height: 20),
                       ],
@@ -340,10 +377,13 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         'Correo electrónico',
                         Icons.email_outlined,
                         tipoTeclado: TextInputType.emailAddress,
-                        inputFillColor: inputFillColor,
-                        inputBorderColor: inputBorderColor,
+                        hoverKey: 'email',
+                        isHovered: _hoverInputs['email']!,
+                        onHover: (v) => setState(() => _hoverInputs['email'] = v),
+                        fillColorNormal: inputFillNormal,
+                        fillColorHover: inputFillHover,
+                        borderColor: inputBorderColor,
                         inputTextColor: inputTextColor,
-                        labelColor: labelColor,
                       ),
                       const SizedBox(height: 20),
                       _construirCampoTexto(
@@ -354,10 +394,13 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         alAlternarVisibilidad: _estaCargando
                             ? null
                             : () => setState(() => _passwordOculta = !_passwordOculta),
-                        inputFillColor: inputFillColor,
-                        inputBorderColor: inputBorderColor,
+                        hoverKey: 'password',
+                        isHovered: _hoverInputs['password']!,
+                        onHover: (v) => setState(() => _hoverInputs['password'] = v),
+                        fillColorNormal: inputFillNormal,
+                        fillColorHover: inputFillHover,
+                        borderColor: inputBorderColor,
                         inputTextColor: inputTextColor,
-                        labelColor: labelColor,
                       ),
                       const SizedBox(height: 20),
                       if (!_esLogin) ...[
@@ -369,10 +412,13 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                           alAlternarVisibilidad: _estaCargando
                               ? null
                               : () => setState(() => _confirmarPasswordOculta = !_confirmarPasswordOculta),
-                          inputFillColor: inputFillColor,
-                          inputBorderColor: inputBorderColor,
+                          hoverKey: 'confirmar',
+                          isHovered: _hoverInputs['confirmar']!,
+                          onHover: (v) => setState(() => _hoverInputs['confirmar'] = v),
+                          fillColorNormal: inputFillNormal,
+                          fillColorHover: inputFillHover,
+                          borderColor: inputBorderColor,
                           inputTextColor: inputTextColor,
-                          labelColor: labelColor,
                         ),
                         const SizedBox(height: 20),
                       ],
@@ -386,23 +432,29 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                                   strokeWidth: 3,
                                 ),
                               )
-                            : ElevatedButton(
-                                onPressed: _enviarFormulario,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColores.primario,
-                                  foregroundColor: const Color(0xFFf8f8ff),
-                                  elevation: 5,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                            : MouseRegion(
+                                onEnter: (_) => setState(() => _hoverBoton = true),
+                                onExit: (_) => setState(() => _hoverBoton = false),
+                                child: ElevatedButton(
+                                  onPressed: _enviarFormulario,
+                                  style: ButtonStyle(
+                                    backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                      if (_hoverBoton) return const Color(0xFF20b2aa);
+                                      return const Color(0xFF008080);
+                                    }),
+                                    foregroundColor: MaterialStateProperty.resolveWith((states) {
+                                      if (_hoverBoton) return const Color(0xFFfffafa);
+                                      return const Color(0xFFdcdcdc);
+                                    }),
+                                    elevation: MaterialStateProperty.all(0),
+                                    shape: MaterialStateProperty.all(
+                                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 15)),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
-                                ),
-                                child: Text(
-                                  _esLogin ? 'Iniciar Sesión' : 'Crear Cuenta',
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.5,
+                                  child: Text(
+                                    _esLogin ? 'Iniciar Sesión' : 'Crear Cuenta',
+                                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: 0.5),
                                   ),
                                 ),
                               ),
@@ -413,21 +465,21 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         children: [
                           Text(
                             _esLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: formularioTexto,
-                            ),
+                            style: TextStyle(fontSize: 15, color: formularioTextoColor),
                           ),
                           const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: _alternarModoAuth,
-                            child: Text(
-                              _esLogin ? 'Regístrate aquí' : 'Inicia sesión aquí',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColores.primario,
-                                decoration: TextDecoration.underline,
+                          MouseRegion(
+                            onEnter: (_) => setState(() => _hoverRegistro = true),
+                            onExit: (_) => setState(() => _hoverRegistro = false),
+                            child: GestureDetector(
+                              onTap: _alternarModoAuth,
+                              child: Text(
+                                _esLogin ? 'Regístrate aquí' : 'Inicia sesión aquí',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: _hoverRegistro ? const Color(0xFF008080) : const Color(0xFF20b2aa),
+                                ),
                               ),
                             ),
                           ),
@@ -440,10 +492,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                 const SizedBox(height: 30),
                 Text(
                   'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: piePaginaColor,
-                  ),
+                  style: TextStyle(fontSize: 13, color: piePaginaColor),
                   textAlign: TextAlign.center,
                 ),
               ],

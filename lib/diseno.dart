@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 
 class AppColores {
-  static const Color primario = Color(0xFF4A6FA5);
-  static const Color secundario = Color(0xFF6B8EAC);
-  static const Color acento = Color(0xFFF5A623);
-  static const Color error = Color(0xFFE74C3C);
-  static const Color exito = Color(0xFF2ECC71);
-  static const Color advertencia = Color(0xFFF39C12);
-  
+  static const Color primario = Color(0xFF20B2AA);
+  static const Color secundario = Color(0xFF20B2AA);
+  static const Color acento = Color(0xFFFFD700);
+  static const Color error = Color(0xFFB22222);
+  static const Color exito = Color(0xFF32CD32);
+  static const Color advertencia = Color(0xFFFF8C00);
+
   static Color get fondo => _getColor(const Color(0xFFF8F9FA), const Color(0xFF121212));
   static Color get texto => _getColor(const Color(0xFF333333), const Color(0xFFF5F5F5));
   static Color get textoClaro => _getColor(const Color(0xFF666666), const Color(0xFFAAAAAA));
@@ -17,12 +17,12 @@ class AppColores {
   static Color get deshabilitado => _getColor(const Color(0xFFB0B0B0), const Color(0xFF666666));
   static Color get blancoONegro => _getColor(Colors.white, Colors.black);
   static Color get negroOBlanco => _getColor(Colors.black, Colors.white);
-  
+
   static Color _getColor(Color light, Color dark) {
     final brightness = WidgetsBinding.instance?.window.platformBrightness ?? Brightness.light;
     return brightness == Brightness.light ? light : dark;
   }
-  
+
   static Color getColorForTheme(BuildContext context, Color light, Color dark) {
     try {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -117,7 +117,7 @@ class EstilosApp {
     return ElevatedButton.styleFrom(
       backgroundColor: AppColores.primario,
       foregroundColor: Colors.white,
-      elevation: 4,
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
       textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -149,36 +149,16 @@ class EstilosApp {
     return BoxDecoration(
       color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Theme.of(context).brightness == Brightness.light 
-              ? const Color.fromRGBO(0, 0, 0, 0.1)
-              : const Color.fromRGBO(0, 0, 0, 0.3),
-          blurRadius: 20,
-          spreadRadius: 1,
-          offset: const Offset(0, 5),
-        ),
-      ],
     );
   }
 
   static BoxDecoration tarjetaPlana(BuildContext context) {
     final esModoOscuro = Theme.of(context).brightness == Brightness.dark;
     final colorFondo = esModoOscuro ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5);
-    
+
     return BoxDecoration(
       color: colorFondo,
       borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Theme.of(context).brightness == Brightness.light 
-              ? const Color.fromRGBO(0, 0, 0, 0.05)
-              : const Color.fromRGBO(0, 0, 0, 0.2),
-          blurRadius: 8,
-          spreadRadius: 1,
-          offset: const Offset(0, 2),
-        ),
-      ],
     );
   }
 
@@ -219,10 +199,10 @@ class DatosApp {
   static final List<Map<String, dynamic>> accionesRapidas = [
     {'etiqueta': 'Buscar', 'icono': Icons.search},
     {'etiqueta': 'Favoritos', 'icono': Icons.favorite},
-    {'etiqueta': 'Historial', 'icono': Icons.history},
     {'etiqueta': 'Recomendados', 'icono': Icons.star},
-    {'etiqueta': 'Clubs', 'icono': Icons.group},
     {'etiqueta': 'Desafíos', 'icono': Icons.emoji_events},
+    {'etiqueta': 'Clubs', 'icono': Icons.group},
+    {'etiqueta': 'Historial', 'icono': Icons.history},
     {'etiqueta': 'Configuración', 'icono': Icons.settings},
     {'etiqueta': 'Ayuda', 'icono': Icons.help},
   ];

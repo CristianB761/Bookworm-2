@@ -51,13 +51,13 @@ class AppBookWorm extends StatelessWidget {
           seedColor: AppColores.primario,
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFffffff),
-        cardColor: const Color(0xFFf8f8ff),
+        scaffoldBackgroundColor: const Color(0xFFfffafa),
+        cardColor: const Color(0xFFf5f5f5),
         dividerColor: const Color(0xFFDDDDDD),
         hintColor: const Color(0xFF666666),
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColores.primario,
-          foregroundColor: Color(0xFFf8f8ff),
+          foregroundColor: Color(0xFFfffafa),
           elevation: 0,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -82,7 +82,7 @@ class AppBookWorm extends StatelessWidget {
         hintColor: const Color(0xFFAAAAAA),
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColores.primario,
-          foregroundColor: Color(0xFFf8f8ff),
+          foregroundColor: Color(0xFFfffafa),
           elevation: 0,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -219,14 +219,25 @@ class _PaginaInicioState extends State<PaginaInicio> {
       appBar: AppBar(
         title: GestureDetector(
           onTap: () => Navigator.pushReplacementNamed(context, '/home'),
-          child: const Text('BookWorm', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFf8f8ff))),
+          child: const Text('BookWorm', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFfffafa))),
         ),
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: const Color(0xFFf8f8ff)),
+          TextButton(
             onPressed: () => themeProvider.alternarTema(),
-            tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFFdcdcdc);
+                return const Color(0xFFfffafa);
+              }),
+              backgroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                return const Color(0xFF20b2aa);
+              }),
+              shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+            ),
+            child: Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 18),
           ),
           const BotonesBarraApp(rutaActual: '/home'),
         ],
@@ -285,16 +296,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf8f8ff),
+                color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5),
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,7 +307,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d),
+                      color: isDark ? const Color(0xFFfffafa) : const Color(0xFF121212),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -340,16 +343,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF2c2c2c) : const Color(0xFFf5f5f5),
+                            color: isDark ? const Color(0xFF121212) : const Color(0xFFfffafa),
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -382,11 +377,15 @@ class _PaginaInicioState extends State<PaginaInicio> {
                         onPressed: () => setState(() => _mostrarTodosAccesosRapidos = !_mostrarTodosAccesosRapidos),
                         style: ButtonStyle(
                           foregroundColor: MaterialStateProperty.resolveWith((states) {
-                            if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
-                            return const Color(0xFF20B2AA);
+                            if (states.contains(MaterialState.hovered)) {
+                              return const Color(0xFF008080);
+                            }
+                            return const Color(0xFF20b2aa);
                           }),
                           backgroundColor: MaterialStateProperty.resolveWith((states) {
-                            if (states.contains(MaterialState.hovered)) return const Color(0xFF20B2AA);
+                            if (states.contains(MaterialState.hovered)) {
+                              return isDark ? const Color(0xFF121212) : const Color(0xFFfffafa);
+                            }
                             return Colors.transparent;
                           }),
                           overlayColor: MaterialStateProperty.all(Colors.transparent),
@@ -412,16 +411,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     height: 280,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf8f8ff),
+                      color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,7 +422,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d),
+                            color: isDark ? const Color(0xFFfffafa) : const Color(0xFF121212),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -440,9 +431,9 @@ class _PaginaInicioState extends State<PaginaInicio> {
                               ? Center(
                                   child: Text(
                                     'Inicia sesión para ver tus lecturas',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 16,
-                                      color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
+                                      color: Color(0xFF696969),
                                     ),
                                   ),
                                 )
@@ -461,7 +452,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                           padding: const EdgeInsets.all(8.0),
                                           child: SelectableText(
                                             'Error: ${snapshot.error}',
-                                            style: const TextStyle(color: Colors.red, fontSize: 12),
+                                            style: const TextStyle(color: Color(0xFFb22222), fontSize: 12),
                                             textAlign: TextAlign.center,
                                           ),
                                         ),
@@ -474,9 +465,9 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                       return Center(
                                         child: Text(
                                           'No tienes lecturas en progreso',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 16,
-                                            color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
+                                            color: Color(0xFF696969),
                                           ),
                                         ),
                                       );
@@ -526,16 +517,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     height: 280,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf8f8ff),
+                      color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5),
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,18 +531,22 @@ class _PaginaInicioState extends State<PaginaInicio> {
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d),
+                                color: isDark ? const Color(0xFFfffafa) : const Color(0xFF121212),
                               ),
                             ),
                             TextButton(
                               onPressed: () => Navigator.pushNamed(context, '/perfil', arguments: {'seccionIndex': 1, 'filtroEstado': 'completado'}),
                               style: ButtonStyle(
                                 foregroundColor: MaterialStateProperty.resolveWith((states) {
-                                  if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
-                                  return const Color(0xFF20B2AA);
+                                  if (states.contains(MaterialState.hovered)) {
+                                    return const Color(0xFF008080);
+                                  }
+                                  return const Color(0xFF20b2aa);
                                 }),
                                 backgroundColor: MaterialStateProperty.resolveWith((states) {
-                                  if (states.contains(MaterialState.hovered)) return const Color(0xFF20B2AA);
+                                  if (states.contains(MaterialState.hovered)) {
+                                    return isDark ? const Color(0xFF121212) : const Color(0xFFfffafa);
+                                  }
                                   return Colors.transparent;
                                 }),
                                 overlayColor: MaterialStateProperty.all(Colors.transparent),
@@ -578,9 +565,9 @@ class _PaginaInicioState extends State<PaginaInicio> {
                               ? Center(
                                   child: Text(
                                     'Inicia sesión',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 14,
-                                      color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
+                                      color: Color(0xFF696969),
                                     ),
                                   ),
                                 )
@@ -599,7 +586,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                           padding: const EdgeInsets.all(8.0),
                                           child: SelectableText(
                                             'Error: ${snapshot.error}',
-                                            style: const TextStyle(color: Colors.red, fontSize: 10),
+                                            style: const TextStyle(color: Color(0xFFB22222), fontSize: 10),
                                             textAlign: TextAlign.center,
                                           ),
                                         ),
@@ -613,13 +600,13 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                         child: Column(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.emoji_events_outlined, size: 40, color: Colors.grey),
+                                            const Icon(Icons.emoji_events_outlined, size: 40, color: Color(0xFF696969)),
                                             const SizedBox(height: 8),
                                             Text(
                                               'Aún no has completado libros',
-                                              style: TextStyle(
+                                              style: const TextStyle(
                                                 fontSize: 16,
-                                                color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
+                                                color: Color(0xFF696969),
                                               ),
                                               textAlign: TextAlign.center,
                                             ),
@@ -670,16 +657,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf8f8ff),
+                color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5),
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -689,7 +668,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFFf8f8ff) : const Color(0xFF0d0d0d),
+                      color: isDark ? const Color(0xFFfffafa) : const Color(0xFF121212),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -699,9 +678,9 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     Center(
                       child: Text(
                         'No se encontraron sugerencias',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
-                          color: isDark ? const Color(0xFFd3d3d3) : const Color(0xFF2c2c2c),
+                          color: Color(0xFF696969),
                         ),
                       ),
                     )
@@ -725,13 +704,6 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                     child: Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(8),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.1),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
                                       ),
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(8),
@@ -741,9 +713,9 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                                 fit: BoxFit.cover,
                                                 width: double.infinity,
                                                 errorBuilder: (context, error, stackTrace) =>
-                                                    Container(color: Colors.grey[200], child: const Icon(Icons.book, color: Colors.grey, size: 40)),
+                                                    Container(color: const Color(0xFFdcdcdc), child: const Icon(Icons.book, color: Color(0xFFdcdcdc), size: 40)),
                                               )
-                                            : Container(color: Colors.grey[200], child: const Icon(Icons.book, color: Colors.grey, size: 40)),
+                                            : Container(color: const Color(0xFFdcdcdc), child: const Icon(Icons.book, color: Color(0xFFdcdcdc), size: 40)),
                                       ),
                                     ),
                                   ),
@@ -757,7 +729,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                   const SizedBox(height: 4),
                                   Text(
                                     libro.autores.isNotEmpty ? libro.autores.first : 'Desconocido',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    style: const TextStyle(color: Color(0xFFdcdcdc), fontSize: 12),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),

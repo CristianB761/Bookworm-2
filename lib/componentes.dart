@@ -47,14 +47,14 @@ class BotonesBarraApp extends StatelessWidget {
         },
         style: ButtonStyle(
           foregroundColor: MaterialStateProperty.resolveWith((states) {
-            if (estaActivo) return const Color(0xFFf8f8ff);
-            if (states.contains(MaterialState.hovered)) return const Color(0xFFd3d3d3);
-            return const Color(0xFFf8f8ff).withOpacity(0.7);
+            if (estaActivo) return const Color(0xFFdcdcdc);
+            if (states.contains(MaterialState.hovered) && !estaActivo) return const Color(0xFFdcdcdc);
+            return const Color(0xFFfffafa);
           }),
           backgroundColor: MaterialStateProperty.resolveWith((states) {
-            if (estaActivo) return Colors.white.withOpacity(0.2);
-            if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
-            return Colors.transparent;
+            if (estaActivo) return const Color(0xFF008080);
+            if (states.contains(MaterialState.hovered) && !estaActivo) return const Color(0xFF008080);
+            return const Color(0xFF20b2aa);
           }),
           shape: MaterialStateProperty.all(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -102,7 +102,7 @@ class BotonSeccion extends StatelessWidget {
       onPressed: alPresionar,
       style: ElevatedButton.styleFrom(
         backgroundColor: estaSeleccionado ? AppColores.primario : Colors.transparent,
-        foregroundColor: estaSeleccionado ? Colors.white : AppColores.primario,
+        foregroundColor: estaSeleccionado ? Color(0xFFfffafa) : AppColores.primario,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
@@ -176,7 +176,7 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final esModoOscuro = Theme.of(context).brightness == Brightness.dark;
-    final colorTexto = esModoOscuro ? Colors.white : Colors.black87;
+    final colorTexto = esModoOscuro ? Color(0xFFfffafa) : Color(0xFF121212);
     final colorFondo = esModoOscuro ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
     final colorBorde = esModoOscuro ? const Color(0xFF444444) : const Color(0xFFDDDDDD);
 
@@ -242,7 +242,7 @@ class FiltroDesplegable extends StatelessWidget {
   Widget build(BuildContext context) {
     final esModoOscuro = Theme.of(context).brightness == Brightness.dark;
     final colorFondo = esModoOscuro ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
-    final colorTexto = esModoOscuro ? Colors.white : Colors.black87;
+    final colorTexto = esModoOscuro ? Color(0xFFfffafa) : Color(0xFF121212);
     final colorBorde = esModoOscuro ? const Color(0xFF444444) : const Color(0xFFDDDDDD);
 
     return Container(
@@ -373,7 +373,7 @@ class TarjetaLibro extends StatelessWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.star, size: 16, color: Colors.amber),
+              const Icon(Icons.star, size: 16, color: Color(0xFFff8c00)),
               const SizedBox(width: 4),
               Text(
                 '${libro.calificacionPromedio!.toStringAsFixed(1)} (${libro.numeroCalificaciones ?? 0})',
@@ -514,26 +514,15 @@ class BotonAccionRapida extends StatelessWidget {
       onPressed: alPresionar,
       style: ButtonStyle(
         foregroundColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.hovered)) {
-            return const Color(0xFFd3d3d3);
-          }
-          return const Color(0xFFf8f8ff);
+          if (states.contains(MaterialState.hovered)) return const Color(0xFFfffafa);
+          return const Color(0xFFdcdcdc);
         }),
         backgroundColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.hovered)) {
-            return const Color(0xFF008080);
-          }
-          return Colors.white.withOpacity(0.2);
+          if (states.contains(MaterialState.hovered)) return const Color(0xFF20b2aa);
+          return const Color(0xFF008080);
         }),
-        shape: MaterialStateProperty.all(
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: Colors.white.withOpacity(0.3)),
-          ),
-        ),
-        padding: MaterialStateProperty.all(
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
+        shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+        padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -542,10 +531,7 @@ class BotonAccionRapida extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             texto,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -553,7 +539,6 @@ class BotonAccionRapida extends StatelessWidget {
   }
 }
 
-/// Widget que detecta URLs y redes sociales en el texto y las hace clickeables
 class TextoConLinks extends StatelessWidget {
   final String texto;
   final TextStyle? estilo;
@@ -568,11 +553,9 @@ class TextoConLinks extends StatelessWidget {
     this.desbordamiento,
   });
 
-  // Detecta URLs y redes sociales en el texto
   List<_Segmento> _analizarTexto(String texto) {
     final List<_Segmento> segmentos = [];
 
-    // Patrones para detectar URLs y redes sociales
     final patrones = [
       RegExp(r'https?://[^\s]+'),
       RegExp(r'www\.[^\s]+'),
@@ -593,7 +576,6 @@ class TextoConLinks extends StatelessWidget {
       }
     }
 
-    // Ordenar por posición y eliminar duplicados
     partesEncontradas.sort((a, b) => a.inicio.compareTo(b.inicio));
 
     for (final parte in partesEncontradas) {
@@ -623,7 +605,6 @@ class TextoConLinks extends StatelessWidget {
       ));
     }
 
-    // Si no hay links, devolver todo el texto como un segmento normal
     if (segmentos.isEmpty) {
       segmentos.add(_Segmento(
         texto: texto,
@@ -635,16 +616,13 @@ class TextoConLinks extends StatelessWidget {
     return segmentos;
   }
 
-  // Prepara la URL para que sea válida
   String _prepararUrl(String texto) {
     String url = texto.trim();
 
-    // Si comienza con @, es un usuario de red social, añadir https://instagram.com/
     if (url.startsWith('@')) {
       return 'https://instagram.com/${url.substring(1)}';
     }
 
-    // Si contiene instagram/tiktok/etc pero no tiene protocolo
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       if (url.contains('instagram')) return 'https://$url';
       if (url.contains('tiktok')) return 'https://$url';
@@ -677,7 +655,6 @@ class TextoConLinks extends StatelessWidget {
   Widget build(BuildContext context) {
     final segmentos = _analizarTexto(texto);
     final colorLink = AppColores.primario;
-    final colorTextoNormal = estilo?.color ?? Colors.black;
 
     return RichText(
       maxLines: maxLineas,
@@ -707,7 +684,6 @@ class TextoConLinks extends StatelessWidget {
   }
 }
 
-// Clases auxiliares para analizar el texto
 class _Segmento {
   final String texto;
   final bool esLink;

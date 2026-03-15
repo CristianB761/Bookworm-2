@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'diseno.dart';
 import 'componentes.dart';
 import 'servicio/servicio_firestore.dart';
+import 'theme_provider.dart';
 
 class ChatClub extends StatefulWidget {
   final String clubId;
@@ -352,6 +354,17 @@ class _ChatClubState extends State<ChatClub> {
               _mostrarInfoClub();
             },
             tooltip: 'Información del club',
+          ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
+                ),
+                onPressed: themeProvider.alternarTema,
+                tooltip: themeProvider.esModoOscuro ? 'Modo claro' : 'Modo oscuro',
+              );
+            },
           ),
         ],
       ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'diseno.dart';
 import 'componentes.dart';
+import 'theme_provider.dart';
 
 class GraficosEstadisticas extends StatefulWidget {
   final Map<String, dynamic> datosEstadisticas;
@@ -413,7 +415,20 @@ class _GraficosEstadisticasState extends State<GraficosEstadisticas> {
         backgroundColor: AppColores.primario,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: true,
-        actions: const [BotonesBarraApp(rutaActual: '/perfil')],
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
+                ),
+                onPressed: themeProvider.alternarTema,
+                tooltip: themeProvider.esModoOscuro ? 'Modo claro' : 'Modo oscuro',
+              );
+            },
+          ),
+          const BotonesBarraApp(rutaActual: '/perfil'),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

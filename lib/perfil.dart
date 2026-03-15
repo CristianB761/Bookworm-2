@@ -2097,6 +2097,7 @@ class _PerfilState extends State<Perfil> {
         backgroundColor: AppColores.primario,
         automaticallyImplyLeading: false,
         actions: [
+          const BotonNotificaciones(),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return IconButton(

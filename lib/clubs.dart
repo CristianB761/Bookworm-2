@@ -393,6 +393,7 @@ class _ClubsState extends State<Clubs> {
         backgroundColor: AppColores.primario,
         automaticallyImplyLeading: false,
         actions: [
+          const BotonNotificaciones(),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return IconButton(

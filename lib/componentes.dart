@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'diseno.dart';
 import 'API/modelos.dart';
 import 'theme_provider.dart';
+import 'servicio/servicio_notificaciones.dart';
 
 class BotonesBarraApp extends StatelessWidget {
   final String rutaActual;
@@ -708,4 +709,263 @@ class _Match {
     required this.texto,
     required this.esLink,
   });
+}
+
+class BotonNotificaciones extends StatefulWidget {
+  const BotonNotificaciones({super.key});
+
+  @override
+  State<BotonNotificaciones> createState() => _BotonNotificacionesState();
+}
+
+class _BotonNotificacionesState extends State<BotonNotificaciones> {
+  late OverlayEntry _overlayEntry;
+  bool _mostrarDropdown = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ServicioNotificaciones>(
+      builder: (context, servicio, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications),
+                tooltip: 'Notificaciones',
+                onPressed: () {
+                  setState(() {
+                    _mostrarDropdown = !_mostrarDropdown;
+                  });
+                  if (_mostrarDropdown) {
+                    _mostrarMenuNotificaciones(context, servicio);
+                  } else {
+                    _ocultarMenuNotificaciones();
+                  }
+                },
+              ),
+              if (servicio.contadorNoLeidosTotal > 0)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      servicio.contadorNoLeidosTotal > 99
+                          ? '99+'
+                          : servicio.contadorNoLeidosTotal.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _mostrarMenuNotificaciones(
+    BuildContext context,
+    ServicioNotificaciones servicio,
+  ) {
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Positioned(
+          right: MediaQuery.of(context).size.width - (offset.dx + size.width),
+          top: offset.dy + size.height + 8,
+          width: 320,
+          child: CompositedTransformFollower(
+            link: LayerLink(),
+            showWhenUnlinked: true,
+            offset: const Offset(0, 8),
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1E1E1E)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                  ),
+                ),
+                child: servicio.notificaciones.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.notifications_none,
+                                size: 32,
+                                color: Theme.of(context).hintColor,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No hay notificaciones',
+                                style: TextStyle(
+                                  color: Theme.of(context).hintColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 400),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: servicio.notificaciones.length,
+                          itemBuilder: (context, index) {
+                            final notificacion = servicio.notificaciones[index];
+                            return _construirItemNotificacion(
+                              context,
+                              notificacion,
+                              servicio,
+                            );
+                          },
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_overlayEntry);
+  }
+
+  void _ocultarMenuNotificaciones() {
+    if (_overlayEntry.mounted) {
+      _overlayEntry.remove();
+    }
+  }
+
+  Widget _construirItemNotificacion(
+    BuildContext context,
+    Notificacion notificacion,
+    ServicioNotificaciones servicio,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          _ocultarMenuNotificaciones();
+          setState(() {
+            _mostrarDropdown = false;
+          });
+          
+          // Navegar al chat
+          Navigator.pushNamed(
+            context,
+            '/chat_club',
+            arguments: {
+              'clubId': notificacion.clubId,
+              'clubNombre': notificacion.clubNombre,
+            },
+          );
+          
+          // Marcar como leído
+          servicio.marcarComoLeido(notificacion.clubId, notificacion.id);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5),
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(context).dividerColor,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      notificacion.clubNombre,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? Colors.black87
+                            : Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.circle,
+                    size: 8,
+                    color: AppColores.primario,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${notificacion.usuarioNombre}: ${notificacion.mensaje}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _formatearTiempoTranscurrido(notificacion.timestamp),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatearTiempoTranscurrido(DateTime fechaNotificacion) {
+    final ahora = DateTime.now();
+    final diferencia = ahora.difference(fechaNotificacion);
+
+    if (diferencia.inSeconds < 60) {
+      return 'Hace unos segundos';
+    } else if (diferencia.inMinutes < 60) {
+      return 'Hace ${diferencia.inMinutes} min';
+    } else if (diferencia.inHours < 24) {
+      return 'Hace ${diferencia.inHours} h';
+    } else if (diferencia.inDays == 1) {
+      return 'Ayer';
+    } else if (diferencia.inDays < 7) {
+      return 'Hace ${diferencia.inDays} días';
+    } else {
+      return 'Hace ${(diferencia.inDays / 7).floor()} semanas';
+    }
+  }
 }

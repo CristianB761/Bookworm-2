@@ -22,13 +22,21 @@ import 'API/modelos.dart';
 import 'historial.dart';
 import 'desafios.dart';
 import 'theme_provider.dart';
+import 'servicio/servicio_notificaciones.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ServicioNotificaciones(),
+        ),
+      ],
       child: const AppBookWorm(),
     ),
   );
@@ -165,6 +173,10 @@ class _PaginaInicioState extends State<PaginaInicio> {
   @override
   void initState() {
     super.initState();
+    // Inicializar el servicio de notificaciones
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
+    });
     _cargarLibrosAleatorios();
   }
 
@@ -223,6 +235,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
         ),
         automaticallyImplyLeading: false,
         actions: [
+          const BotonNotificaciones(),
           TextButton(
             onPressed: () => themeProvider.alternarTema(),
             style: ButtonStyle(

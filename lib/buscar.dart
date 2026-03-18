@@ -30,8 +30,8 @@ class _BuscarState extends State<Buscar> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
-  String? _formatoSeleccionado = 'Todos los formatos';
-  String? _generoSeleccionado = 'Todos los géneros';
+  String? _formatoSeleccionado;
+  String? _generoSeleccionado;
   
   List<Libro> _resultadosBusqueda = [];
   bool _estaCargando = false;
@@ -44,10 +44,22 @@ class _BuscarState extends State<Buscar> {
   Set<String> _librosGuardadosIds = {};
   Set<String> _librosFavoritosIds = {};
 
+  List<String> _obtenerItemsFormato() {
+    final lista = ['Audiolibros', 'Libros'];
+    lista.sort((a, b) => a.compareTo(b));
+    return ['Todos los formatos', ...lista];
+  }
+
+  List<String> _obtenerItemsGenero() {
+    final otros = DatosApp.generos.where((g) => g != 'Todos los géneros').toList();
+    otros.sort((a, b) => a.compareTo(b));
+    return ['Todos los géneros', ...otros];
+  }
+
   @override
   void initState() {
     super.initState();
-    _generoSeleccionado = DatosApp.generos.isNotEmpty ? DatosApp.generos.first : null;
+    _generoSeleccionado = _obtenerItemsGenero().first;
     _formatoSeleccionado = 'Todos los formatos';
     _escucharCambiosBiblioteca();
   }
@@ -759,7 +771,6 @@ class _BuscarState extends State<Buscar> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagen del libro
             Expanded(
               child: Stack(
                 children: [
@@ -792,7 +803,6 @@ class _BuscarState extends State<Buscar> {
                             child: Icon(Icons.book, size: 40, color: Color(0xFF9E9E9E)),
                           ),
                   ),
-                  // Badge de tipo (Libro/Audiolibro)
                   Positioned(
                     top: 6,
                     right: 6,
@@ -812,13 +822,11 @@ class _BuscarState extends State<Buscar> {
                 ],
               ),
             ),
-            // Contenido
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título
                   Text(
                     libro.titulo,
                     style: EstilosApp.tituloPequeno(context),
@@ -826,7 +834,6 @@ class _BuscarState extends State<Buscar> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  // Autor
                   if (libro.autores.isNotEmpty)
                     Text(
                       libro.autores.join(', '),
@@ -835,7 +842,6 @@ class _BuscarState extends State<Buscar> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   const SizedBox(height: 6),
-                  // Rating
                   if (libro.calificacionPromedio != null)
                     Row(
                       children: [
@@ -848,7 +854,6 @@ class _BuscarState extends State<Buscar> {
                       ],
                     ),
                   const SizedBox(height: 8),
-                  // Precio / Gratis
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -867,7 +872,6 @@ class _BuscarState extends State<Buscar> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // Botones de acción
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -906,6 +910,9 @@ class _BuscarState extends State<Buscar> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? const Color(0xFFfffafa) : const Color(0xFF121212);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -939,9 +946,15 @@ class _BuscarState extends State<Buscar> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Encuentra tu próximo libro', style: EstilosApp.tituloMedio(context)),
+                  Text(
+                    'Encuentra tu próximo libro',
+                    style: EstilosApp.tituloMedio(context).copyWith(color: textColor),
+                  ),
                   const SizedBox(height: 8),
-                  Text('Busca entre miles de libros y audiolibros', style: EstilosApp.cuerpoMedio(context)),
+                  Text(
+                    'Busca entre miles de libros y audiolibros',
+                    style: EstilosApp.cuerpoMedio(context).copyWith(color: textColor),
+                  ),
                   const SizedBox(height: 20),
                   BarraBusquedaPersonalizada(
                     controlador: _controladorBusqueda,
@@ -954,7 +967,7 @@ class _BuscarState extends State<Buscar> {
                       Expanded(
                         child: FiltroDesplegable(
                           valor: _formatoSeleccionado,
-                          items: const ['Todos los formatos', 'Libros', 'Audiolibros'],
+                          items: _obtenerItemsFormato(),
                           hint: 'Formato',
                           alCambiar: (valor) {
                             if (valor != null) {
@@ -969,7 +982,7 @@ class _BuscarState extends State<Buscar> {
                       Expanded(
                         child: FiltroDesplegable(
                           valor: _generoSeleccionado,
-                          items: DatosApp.generos,
+                          items: _obtenerItemsGenero(),
                           hint: 'Género',
                           alCambiar: (valor) {
                             if (valor != null) {
@@ -992,7 +1005,10 @@ class _BuscarState extends State<Buscar> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Resultados de búsqueda', style: EstilosApp.tituloMedio(context)),
+                  Text(
+                    'Resultados de búsqueda',
+                    style: EstilosApp.tituloMedio(context).copyWith(color: textColor),
+                  ),
                   const SizedBox(height: 16),
                   _seccionResultados(),
                 ],

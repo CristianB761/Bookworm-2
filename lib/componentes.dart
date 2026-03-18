@@ -139,22 +139,33 @@ class EstadoVacio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hintColor = isDark ? const Color(0xFF888888) : const Color(0xFF696969);
+    final textColor = isDark ? const Color(0xFFfffafa) : const Color(0xFF121212);
+
     return Container(
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? const Color(0xFFF5F5F5)
-            : const Color(0xFF1E1E1E),
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
         child: Column(
           children: [
-            Icon(icono, size: 48, color: Theme.of(context).hintColor),
+            Icon(icono, size: 48, color: hintColor),
             const SizedBox(height: 16),
-            Text(titulo, style: EstilosApp.cuerpoPequeno(context)),
+            Text(
+              titulo,
+              style: EstilosApp.cuerpoPequeno(context).copyWith(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 8),
-            Text(descripcion, style: EstilosApp.cuerpoPequeno(context)),
+            Text(
+              descripcion,
+              style: EstilosApp.cuerpoPequeno(context).copyWith(color: hintColor),
+            ),
           ],
         ),
       ),
@@ -176,10 +187,12 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final esModoOscuro = Theme.of(context).brightness == Brightness.dark;
-    final colorTexto = esModoOscuro ? Color(0xFFfffafa) : Color(0xFF121212);
-    final colorFondo = esModoOscuro ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
-    final colorBorde = esModoOscuro ? const Color(0xFF444444) : const Color(0xFFDDDDDD);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorFondo = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFf5f5f5);
+    final colorBorde = isDark ? const Color(0xFF444444) : const Color(0xFFdcdcdc);
+    final colorLupa = isDark ? AppColores.primario : const Color(0xFF20b2aa);
+    final colorTexto = isDark ? const Color(0xFFfffafa) : const Color(0xFF121212);
+    final colorHint = isDark ? const Color(0xFF888888) : const Color(0xFF696969);
 
     return Row(
       children: [
@@ -197,11 +210,12 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
                 hintText: textoHint,
                 hintStyle: TextStyle(
                   fontSize: 16,
-                  color: esModoOscuro ? const Color(0xFF888888) : const Color(0xFFAAAAAA),
+                  fontWeight: FontWeight.normal,
+                  color: colorHint,
                 ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                prefixIcon: Icon(Icons.search, color: AppColores.primario),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                prefixIcon: Icon(Icons.search, color: colorLupa),
               ),
               style: TextStyle(
                 fontSize: 16,
@@ -216,7 +230,27 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
           height: 50,
           child: ElevatedButton(
             onPressed: alBuscar,
-            style: EstilosApp.botonPrimario(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF20b2aa),
+              foregroundColor: const Color(0xFFfffafa),
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ).copyWith(
+              backgroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) {
+                  return const Color(0xFF008080);
+                }
+                return const Color(0xFF20b2aa);
+              }),
+              foregroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) {
+                  return const Color(0xFFdcdcdc);
+                }
+                return const Color(0xFFfffafa);
+              }),
+            ),
             child: const Text('Buscar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
@@ -241,10 +275,12 @@ class FiltroDesplegable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final esModoOscuro = Theme.of(context).brightness == Brightness.dark;
-    final colorFondo = esModoOscuro ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
-    final colorTexto = esModoOscuro ? Color(0xFFfffafa) : Color(0xFF121212);
-    final colorBorde = esModoOscuro ? const Color(0xFF444444) : const Color(0xFFDDDDDD);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorFondo = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFf5f5f5);
+    final colorTexto = isDark ? const Color(0xFFfffafa) : const Color(0xFF121212);
+    final colorHint = isDark ? const Color(0xFF888888) : const Color(0xFF696969);
+    final colorBorde = isDark ? const Color(0xFF444444) : const Color(0xFFdcdcdc);
+    final colorFlecha = isDark ? AppColores.primario : const Color(0xFF20b2aa);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -257,17 +293,20 @@ class FiltroDesplegable extends StatelessWidget {
         child: DropdownButton<String>(
           value: valor,
           isExpanded: true,
-          hint: Text(hint, style: TextStyle(
-            color: esModoOscuro ? const Color(0xFF888888) : const Color(0xFFAAAAAA),
-            fontSize: 16,
-          )),
+          hint: Text(
+            hint,
+            style: TextStyle(
+              color: colorHint,
+              fontSize: 16,
+            ),
+          ),
           dropdownColor: colorFondo,
           style: TextStyle(
             color: colorTexto,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
-          icon: const Icon(Icons.arrow_drop_down, color: AppColores.primario),
+          icon: Icon(Icons.arrow_drop_down, color: colorFlecha),
           items: items.map((valor) => DropdownMenuItem<String>(
             value: valor,
             child: Text(valor, style: TextStyle(color: colorTexto)),
@@ -875,7 +914,6 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
             _mostrarDropdown = false;
           });
           
-          // Navegar al chat
           Navigator.pushNamed(
             context,
             '/chat_club',
@@ -885,7 +923,6 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
             },
           );
           
-          // Marcar como leído
           servicio.marcarComoLeido(notificacion.clubId, notificacion.id);
         },
         child: Container(
@@ -909,9 +946,7 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
-                        color: Theme.of(context).brightness == Brightness.light
-                            ? Colors.black87
-                            : Colors.white,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

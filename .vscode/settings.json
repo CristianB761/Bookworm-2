@@ -1,4 +1,5 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
-    "cmake.sourceDirectory": "C:/Users/NERQI/BookWorm/Bookworm-2/linux"
+    "cmake.sourceDirectory": "C:/Users/NERQI/BookWorm/Bookworm-2/linux",
+    "cmake.ignoreCMakeListsMissing": true
 }

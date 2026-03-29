@@ -105,11 +105,30 @@ class AppBookWorm extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       initialRoute: '/',
       routes: {
-        '/': (context) => const Autenticacion(),
+        '/': (context) => StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasData) {
+                  return const PaginaInicio();
+                }
+                return const Autenticacion();
+              },
+            ),
         '/home': (context) => const PaginaInicio(),
         '/search': (context) => const Buscar(),
         '/clubs': (context) => const Clubs(),
-        '/perfil': (context) => const Perfil(),
+        '/perfil': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          if (args is Map<String, dynamic> && args.containsKey('userId')) {
+            return Perfil(userId: args['userId']);
+          }
+          return const Perfil();
+        },
         '/chat_club': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           if (args is Map<String, dynamic>) {

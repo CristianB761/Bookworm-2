@@ -15,7 +15,8 @@ import 'API/modelos.dart';
 import 'theme_provider.dart';
 
 class Perfil extends StatefulWidget {
-  const Perfil({super.key});
+  final String? userId;
+  const Perfil({super.key, this.userId});
 
   @override
   State<Perfil> createState() => _PerfilState();
@@ -43,6 +44,10 @@ class _PerfilState extends State<Perfil> {
   List<ProgresoLectura> _progresosLectura = [];
   bool _cargandoProgresos = false;
 
+  bool _esMiPerfil = true;
+  bool _loEstoySiguiendo = false;
+  bool _cargandoFollow = false;
+
   @override
   void initState() {
     super.initState();
@@ -64,20 +69,40 @@ class _PerfilState extends State<Perfil> {
         if (args.containsKey('filtroEstado')) {
           _filtroProgreso = args['filtroEstado'];
         }
+        if (args.containsKey('userId')) {
+          final uidRecibido = args['userId'] as String;
+          final uidActual = _auth.currentUser?.uid;
+          if (uidRecibido != uidActual) {
+            _esMiPerfil = false;
+          }
+        }
       }
       _isInit = false;
     }
   }
 
+  String get _uidPerfil {
+    if (widget.userId != null && widget.userId != _auth.currentUser?.uid) {
+      return widget.userId!;
+    }
+    return _auth.currentUser?.uid ?? '';
+  }
+
   Future<void> _cargarDatosUsuario() async {
-    final usuario = _auth.currentUser;
-    if (usuario == null) {
+    final uid = _uidPerfil;
+    if (uid.isEmpty) {
       if (mounted) setState(() => _estaCargando = false);
       return;
     }
 
+    _esMiPerfil = (uid == _auth.currentUser?.uid);
+
     try {
-      final datos = await _servicioFirestore.obtenerDatosUsuario(usuario.uid);
+      final datos = await _servicioFirestore.obtenerDatosUsuario(uid);
+      if (!_esMiPerfil) {
+        final siguiendo = await _servicioFirestore.estaSiguiendo(uid);
+        if (mounted) setState(() => _loEstoySiguiendo = siguiendo);
+      }
       if (mounted) {
         setState(() {
           _datosUsuario = datos;
@@ -91,12 +116,12 @@ class _PerfilState extends State<Perfil> {
   }
 
   void _escucharCambiosBiblioteca() {
-    final usuario = _auth.currentUser;
-    if (usuario == null) return;
+    final uid = _uidPerfil;
+    if (uid.isEmpty) return;
 
     _firestore
         .collection('usuarios')
-        .doc(usuario.uid)
+        .doc(uid)
         .collection('libros_guardados')
         .orderBy('fechaGuardado', descending: true)
         .snapshots()
@@ -122,7 +147,7 @@ class _PerfilState extends State<Perfil> {
 
     _firestore
         .collection('progreso_lectura')
-        .where('usuarioId', isEqualTo: usuario.uid)
+        .where('usuarioId', isEqualTo: uid)
         .orderBy('fechaInicio', descending: true)
         .snapshots()
         .listen((snapshot) {
@@ -779,6 +804,31 @@ class _PerfilState extends State<Perfil> {
     }
   }
 
+  Future<void> _toggleSeguir() async {
+    if (_cargandoFollow) return;
+    setState(() => _cargandoFollow = true);
+
+    try {
+      final uidObjetivo = _uidPerfil;
+      if (_loEstoySiguiendo) {
+        await _servicioFirestore.dejarDeSeguirUsuario(uidObjetivo);
+      } else {
+        await _servicioFirestore.seguirUsuario(uidObjetivo);
+      }
+      if (mounted) {
+        setState(() => _loEstoySiguiendo = !_loEstoySiguiendo);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _cargandoFollow = false);
+    }
+  }
+
   Widget _construirEncabezadoPerfil() {
     if (_estaCargando) {
       return Container(
@@ -798,26 +848,52 @@ class _PerfilState extends State<Perfil> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Mi Perfil', style: EstilosApp.tituloMedio(context)),
+              Text(_esMiPerfil ? 'Mi Perfil' : _datosUsuario?.nombre ?? 'Perfil', style: EstilosApp.tituloMedio(context)),
               Row(
                 children: [
-                  ElevatedButton(
-                    onPressed: _mostrarDialogoEditarPerfil,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColores.primario,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  if (_esMiPerfil)
+                    ElevatedButton(
+                      onPressed: _mostrarDialogoEditarPerfil,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColores.primario,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.edit, size: 16),
+                          SizedBox(width: 6),
+                          Text('Editar'),
+                        ],
+                      ),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: _cargandoFollow ? null : _toggleSeguir,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _loEstoySiguiendo ? Colors.grey[300] : AppColores.primario,
+                        foregroundColor: _loEstoySiguiendo ? Colors.black87 : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: _cargandoFollow
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(_loEstoySiguiendo ? Icons.check : Icons.person_add, size: 16),
+                                const SizedBox(width: 6),
+                                Text(_loEstoySiguiendo ? 'Siguiendo' : 'Seguir'),
+                              ],
+                            ),
                     ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.edit, size: 16),
-                        SizedBox(width: 6),
-                        Text('Editar'),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ],
@@ -874,13 +950,17 @@ class _PerfilState extends State<Perfil> {
   }
 
   Widget _construirSelectorSeccion() {
-    final secciones = [
+    final todasLasSecciones = [
       {'texto': 'Información', 'icono': Icons.person},
       {'texto': 'Progreso', 'icono': Icons.trending_up},
       {'texto': 'Estadísticas', 'icono': Icons.bar_chart},
       {'texto': 'Preferencias', 'icono': Icons.tune},
       {'texto': 'Configuración', 'icono': Icons.settings},
     ];
+
+    final secciones = _esMiPerfil
+        ? todasLasSecciones
+        : todasLasSecciones.sublist(0, 3);
 
     return Container(
       padding: const EdgeInsets.all(16),

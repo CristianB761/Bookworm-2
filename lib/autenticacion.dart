@@ -63,9 +63,9 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     try {
       _esLogin ? await _iniciarSesionUsuario() : await _registrarUsuario();
     } on FirebaseAuthException catch (e) {
-      _manejarErrorFirebase(e);
+      if (mounted) _manejarErrorFirebase(e);
     } catch (e) {
-      _mostrarSnackBar('Error inesperado: $e', Color(0xFFb22222));
+      if (mounted) _mostrarSnackBar('Error inesperado: $e', Color(0xFFb22222));
     } finally {
       if (mounted) setState(() => _estaCargando = false);
     }
@@ -114,9 +114,8 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
       email: _controladorEmail.text.trim(),
       password: _controladorPassword.text,
     );
-    if (credencialUsuario.user != null) {
+    if (credencialUsuario.user != null && mounted) {
       _mostrarSnackBar('¡Bienvenido de vuelta!', Color(0xFF32cd32));
-      _navegarAInicio();
     }
   }
 
@@ -157,12 +156,16 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
       try {
         final servicioFirestore = ServicioFirestore();
         await servicioFirestore.crearUsuario(datosUsuario);
-        _mostrarSnackBar('¡Cuenta creada exitosamente!', Color(0xFF32cd32));
-        _navegarAInicio();
       } catch (e) {
         await credencialUsuario.user!.delete();
-        _mostrarSnackBar('Error al guardar datos: $e', Color(0xFFb22222));
+        if (mounted) {
+          _mostrarSnackBar('Error al guardar datos: $e', Color(0xFFb22222));
+        }
         rethrow;
+      }
+
+      if (mounted) {
+        _mostrarSnackBar('¡Cuenta creada exitosamente!', Color(0xFF32cd32));
       }
     }
   }
@@ -194,14 +197,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
-  }
-
-  void _navegarAInicio() {
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-    });
   }
 
   Widget _construirCampoTexto(

@@ -12,6 +12,8 @@ import 'API/gutendex_service.dart';
 import 'API/librivox_service.dart';
 import 'API/google_books_service.dart';
 import 'API/internet_archive_service.dart';
+import 'servicio/servicio_firestore.dart';
+import 'modelos/datos_usuario.dart';
 
 class Buscar extends StatefulWidget {
   const Buscar({super.key});
@@ -43,6 +45,12 @@ class _BuscarState extends State<Buscar> {
   
   Set<String> _librosGuardadosIds = {};
   Set<String> _librosFavoritosIds = {};
+
+  bool _busquedaUsuarios = false;
+  List<DatosUsuario> _resultadosUsuarios = [];
+  bool _cargandoUsuarios = false;
+  bool _haBuscadoUsuarios = false;
+  final ServicioFirestore _servicioFirestore = ServicioFirestore();
 
   List<String> _obtenerItemsFormato() {
     final lista = ['Audiolibros', 'Libros'];
@@ -267,6 +275,32 @@ class _BuscarState extends State<Buscar> {
       setState(() {
         _estaCargando = false;
       });
+    }
+  }
+
+  Future<void> _buscarUsuarios() async {
+    final query = _controladorBusqueda.text.trim();
+    if (query.isEmpty) {
+      _mostrarError('Ingresa un nombre para buscar');
+      return;
+    }
+
+    setState(() {
+      _cargandoUsuarios = true;
+      _haBuscadoUsuarios = true;
+    });
+
+    try {
+      final resultados = await _servicioFirestore.buscarUsuarios(query);
+      if (mounted) {
+        setState(() {
+          _resultadosUsuarios = resultados;
+          _cargandoUsuarios = false;
+        });
+      }
+    } catch (e) {
+      _mostrarError('Error buscando usuarios: $e');
+      if (mounted) setState(() => _cargandoUsuarios = false);
     }
   }
 
@@ -946,55 +980,71 @@ class _BuscarState extends State<Buscar> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      _construirPestana('Libros', Icons.book, !_busquedaUsuarios),
+                      const SizedBox(width: 8),
+                      _construirPestana('Usuarios', Icons.people, _busquedaUsuarios),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
                   Text(
-                    'Encuentra tu próximo libro',
+                    _busquedaUsuarios
+                        ? 'Buscar usuarios'
+                        : 'Encuentra tu próximo libro',
                     style: EstilosApp.tituloMedio(context).copyWith(color: textColor),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Busca entre miles de libros y audiolibros',
+                    _busquedaUsuarios
+                        ? 'Encuentra lectores en Bookworm'
+                        : 'Busca entre miles de libros y audiolibros',
                     style: EstilosApp.cuerpoMedio(context).copyWith(color: textColor),
                   ),
                   const SizedBox(height: 20),
                   BarraBusquedaPersonalizada(
                     controlador: _controladorBusqueda,
-                    textoHint: 'Ej: Harry Potter, Stephen King o buscar por filtros',
-                    alBuscar: _realizarBusqueda,
+                    textoHint: _busquedaUsuarios
+                        ? 'Ej: Cristian, María...'
+                        : 'Ej: Harry Potter, Stephen King o buscar por filtros',
+                    alBuscar: _busquedaUsuarios ? _buscarUsuarios : _realizarBusqueda,
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FiltroDesplegable(
-                          valor: _formatoSeleccionado,
-                          items: _obtenerItemsFormato(),
-                          hint: 'Formato',
-                          alCambiar: (valor) {
-                            if (valor != null) {
-                              setState(() {
-                                _formatoSeleccionado = valor;
-                              });
-                            }
-                          },
+                  if (!_busquedaUsuarios) ...[
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FiltroDesplegable(
+                            valor: _formatoSeleccionado,
+                            items: _obtenerItemsFormato(),
+                            hint: 'Formato',
+                            alCambiar: (valor) {
+                              if (valor != null) {
+                                setState(() {
+                                  _formatoSeleccionado = valor;
+                                });
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FiltroDesplegable(
-                          valor: _generoSeleccionado,
-                          items: _obtenerItemsGenero(),
-                          hint: 'Género',
-                          alCambiar: (valor) {
-                            if (valor != null) {
-                              setState(() {
-                                _generoSeleccionado = valor;
-                              });
-                            }
-                          },
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FiltroDesplegable(
+                            valor: _generoSeleccionado,
+                            items: _obtenerItemsGenero(),
+                            hint: 'Género',
+                            alCambiar: (valor) {
+                              if (valor != null) {
+                                setState(() {
+                                  _generoSeleccionado = valor;
+                                });
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1006,17 +1056,123 @@ class _BuscarState extends State<Buscar> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Resultados de búsqueda',
+                    _busquedaUsuarios ? 'Usuarios encontrados' : 'Resultados de búsqueda',
                     style: EstilosApp.tituloMedio(context).copyWith(color: textColor),
                   ),
                   const SizedBox(height: 16),
-                  _seccionResultados(),
+                  _busquedaUsuarios ? _seccionResultadosUsuarios() : _seccionResultados(),
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _construirPestana(String texto, IconData icono, bool activa) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _busquedaUsuarios = texto == 'Usuarios';
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: activa ? AppColores.primario : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: activa ? AppColores.primario : Colors.grey,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icono, size: 18, color: activa ? Colors.white : Colors.grey),
+            const SizedBox(width: 6),
+            Text(
+              texto,
+              style: TextStyle(
+                color: activa ? Colors.white : Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _seccionResultadosUsuarios() {
+    if (_cargandoUsuarios) {
+      return const IndicadorCarga(mensaje: 'Buscando usuarios...');
+    }
+
+    if (!_haBuscadoUsuarios) {
+      return const EstadoVacio(
+        icono: Icons.people_outline,
+        titulo: 'Busca usuarios',
+        descripcion: 'Escribe un nombre para encontrar lectores en Bookworm',
+      );
+    }
+
+    if (_resultadosUsuarios.isEmpty) {
+      return const EstadoVacio(
+        icono: Icons.person_off_outlined,
+        titulo: 'Sin resultados',
+        descripcion: 'No se encontraron usuarios con ese nombre',
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _resultadosUsuarios.length,
+      separatorBuilder: (context, index) => const Divider(),
+      itemBuilder: (context, index) {
+        final usuario = _resultadosUsuarios[index];
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundColor: AppColores.primario.withOpacity(0.1),
+            backgroundImage: usuario.urlImagenPerfil != null &&
+                    usuario.urlImagenPerfil!.isNotEmpty
+                ? NetworkImage(usuario.urlImagenPerfil!)
+                : null,
+            child: usuario.urlImagenPerfil == null ||
+                    usuario.urlImagenPerfil!.isEmpty
+                ? const Icon(Icons.person, color: AppColores.primario)
+                : null,
+          ),
+          title: Text(
+            usuario.nombre,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            usuario.biografia?.isNotEmpty == true
+                ? usuario.biografia!
+                : 'Sin biografía',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/perfil',
+                arguments: {'userId': usuario.uid},
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColores.primario,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Ver perfil'),
+          ),
+        );
+      },
     );
   }
 }

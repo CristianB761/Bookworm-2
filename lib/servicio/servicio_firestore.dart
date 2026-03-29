@@ -571,4 +571,77 @@ class ServicioFirestore {
       }
     }
   }
+
+  // ==================== BÚSQUEDA DE USUARIOS ====================
+
+  Future<List<DatosUsuario>> buscarUsuarios(String termino) async {
+    try {
+      final uidActual = _auth.currentUser?.uid;
+      final snapshot = await _firestore
+          .collection('usuarios')
+          .where('nombre', isGreaterThanOrEqualTo: termino)
+          .where('nombre', isLessThan: '$termino\uf8ff')
+          .limit(20)
+          .get();
+
+      return snapshot.docs
+          .where((doc) => doc.id != uidActual)
+          .map((doc) => DatosUsuario.fromMap(doc.data()))
+          .toList();
+    } catch (e) {
+      print('Error buscando usuarios: $e');
+      return [];
+    }
+  }
+
+  // ==================== SISTEMA DE SEGUIR USUARIOS ====================
+
+  Future<void> seguirUsuario(String uidObjetivo) async {
+    final uidActual = _auth.currentUser?.uid;
+    if (uidActual == null) return;
+
+    final batch = _firestore.batch();
+    final datos = {'fecha': Timestamp.now()};
+
+    batch.set(
+      _firestore.collection('usuarios').doc(uidActual).collection('siguiendo').doc(uidObjetivo),
+      datos,
+    );
+    batch.set(
+      _firestore.collection('usuarios').doc(uidObjetivo).collection('seguidores').doc(uidActual),
+      datos,
+    );
+
+    await batch.commit();
+  }
+
+  Future<void> dejarDeSeguirUsuario(String uidObjetivo) async {
+    final uidActual = _auth.currentUser?.uid;
+    if (uidActual == null) return;
+
+    final batch = _firestore.batch();
+
+    batch.delete(
+      _firestore.collection('usuarios').doc(uidActual).collection('siguiendo').doc(uidObjetivo),
+    );
+    batch.delete(
+      _firestore.collection('usuarios').doc(uidObjetivo).collection('seguidores').doc(uidActual),
+    );
+
+    await batch.commit();
+  }
+
+  Future<bool> estaSiguiendo(String uidObjetivo) async {
+    final uidActual = _auth.currentUser?.uid;
+    if (uidActual == null) return false;
+
+    final doc = await _firestore
+        .collection('usuarios')
+        .doc(uidActual)
+        .collection('siguiendo')
+        .doc(uidObjetivo)
+        .get();
+
+    return doc.exists;
+  }
 }

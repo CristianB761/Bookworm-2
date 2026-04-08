@@ -48,6 +48,10 @@ class _PerfilState extends State<Perfil> {
   bool _loEstoySiguiendo = false;
   bool _cargandoFollow = false;
 
+  // Contadores para seguidores y siguiendo
+  int _numeroSeguidores = 0;
+  int _numeroSiguiendo = 0;
+
   @override
   void initState() {
     super.initState();
@@ -99,19 +103,42 @@ class _PerfilState extends State<Perfil> {
 
     try {
       final datos = await _servicioFirestore.obtenerDatosUsuario(uid);
+      
+      // Cargar contadores de seguidores y siguiendo
+      final seguidores = await _servicioFirestore.obtenerNumeroSeguidores(uid);
+      final siguiendo = await _servicioFirestore.obtenerNumeroSiguiendo(uid);
+      
       if (!_esMiPerfil) {
-        final siguiendo = await _servicioFirestore.estaSiguiendo(uid);
-        if (mounted) setState(() => _loEstoySiguiendo = siguiendo);
+        final siguiendoStatus = await _servicioFirestore.estaSiguiendo(uid);
+        if (mounted) setState(() => _loEstoySiguiendo = siguiendoStatus);
       }
+      
       if (mounted) {
         setState(() {
           _datosUsuario = datos;
+          _numeroSeguidores = seguidores;
+          _numeroSiguiendo = siguiendo;
           _estaCargando = false;
         });
       }
     } catch (e) {
       print('Error cargando datos del usuario: $e');
       if (mounted) setState(() => _estaCargando = false);
+    }
+  }
+
+  Future<void> _refrescarContadores() async {
+    final uid = _uidPerfil;
+    if (uid.isEmpty) return;
+    
+    final seguidores = await _servicioFirestore.obtenerNumeroSeguidores(uid);
+    final siguiendo = await _servicioFirestore.obtenerNumeroSiguiendo(uid);
+    
+    if (mounted) {
+      setState(() {
+        _numeroSeguidores = seguidores;
+        _numeroSiguiendo = siguiendo;
+      });
     }
   }
 
@@ -812,11 +839,16 @@ class _PerfilState extends State<Perfil> {
       final uidObjetivo = _uidPerfil;
       if (_loEstoySiguiendo) {
         await _servicioFirestore.dejarDeSeguirUsuario(uidObjetivo);
+        setState(() {
+          _loEstoySiguiendo = false;
+          _numeroSeguidores--;
+        });
       } else {
         await _servicioFirestore.seguirUsuario(uidObjetivo);
-      }
-      if (mounted) {
-        setState(() => _loEstoySiguiendo = !_loEstoySiguiendo);
+        setState(() {
+          _loEstoySiguiendo = true;
+          _numeroSeguidores++;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -827,6 +859,152 @@ class _PerfilState extends State<Perfil> {
     } finally {
       if (mounted) setState(() => _cargandoFollow = false);
     }
+  }
+
+  void _mostrarListaUsuarios(String tipo) async {
+    final uid = _uidPerfil;
+    if (uid.isEmpty) return;
+
+    List<DatosUsuario> usuarios = [];
+    String titulo = '';
+
+    if (tipo == 'seguidores') {
+      titulo = 'Seguidores';
+      usuarios = await _servicioFirestore.obtenerSeguidores(uid);
+    } else {
+      titulo = 'Siguiendo';
+      usuarios = await _servicioFirestore.obtenerSiguiendo(uid);
+    }
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  titulo,
+                  style: EstilosApp.tituloMedio(context),
+                ),
+              ),
+              Expanded(
+                child: usuarios.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              tipo == 'seguidores'
+                                  ? 'No tienes seguidores aún'
+                                  : 'No sigues a nadie aún',
+                              style: EstilosApp.cuerpoMedio(context),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        itemCount: usuarios.length,
+                        itemBuilder: (context, index) {
+                          final usuario = usuarios[index];
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: AppColores.primario.withOpacity(0.1),
+                              backgroundImage: usuario.urlImagenPerfil != null &&
+                                      usuario.urlImagenPerfil!.isNotEmpty
+                                  ? NetworkImage(usuario.urlImagenPerfil!)
+                                  : null,
+                              child: usuario.urlImagenPerfil == null ||
+                                      usuario.urlImagenPerfil!.isEmpty
+                                  ? const Icon(Icons.person, color: AppColores.primario)
+                                  : null,
+                            ),
+                            title: Text(
+                              usuario.nombre,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              usuario.biografia?.isNotEmpty == true
+                                  ? usuario.biografia!
+                                  : 'Sin biografía',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                Navigator.pushNamed(
+                                  context,
+                                  '/perfil',
+                                  arguments: {'userId': usuario.uid},
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColores.primario,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Ver perfil'),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, int count, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            count.toString(),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColores.primario,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: EstilosApp.cuerpoPequeno(context),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _construirEncabezadoPerfil() {
@@ -942,6 +1120,15 @@ class _PerfilState extends State<Perfil> {
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // SECCIÓN DE SEGUIDORES Y SIGUIENDO (estilo Instagram)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatColumn('Seguidores', _numeroSeguidores, () => _mostrarListaUsuarios('seguidores')),
+              _buildStatColumn('Siguiendo', _numeroSiguiendo, () => _mostrarListaUsuarios('siguiendo')),
             ],
           ),
         ],

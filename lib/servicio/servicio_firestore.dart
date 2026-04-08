@@ -644,4 +644,80 @@ class ServicioFirestore {
 
     return doc.exists;
   }
+
+  // ==================== NUEVOS MÉTODOS PARA SEGUIDORES Y SIGUIENDO (CORREGIDOS) ====================
+
+  Future<int> obtenerNumeroSeguidores(String uid) async {
+    try {
+      final snapshot = await _firestore
+          .collection('usuarios')
+          .doc(uid)
+          .collection('seguidores')
+          .get();
+      return snapshot.docs.length;
+    } catch (e) {
+      print('Error obteniendo seguidores: $e');
+      return 0;
+    }
+  }
+
+  Future<int> obtenerNumeroSiguiendo(String uid) async {
+    try {
+      final snapshot = await _firestore
+          .collection('usuarios')
+          .doc(uid)
+          .collection('siguiendo')
+          .get();
+      return snapshot.docs.length;
+    } catch (e) {
+      print('Error obteniendo siguiendo: $e');
+      return 0;
+    }
+  }
+
+  Future<List<DatosUsuario>> obtenerSeguidores(String uid) async {
+    try {
+      final seguidoresSnapshot = await _firestore
+          .collection('usuarios')
+          .doc(uid)
+          .collection('seguidores')
+          .get();
+      
+      final List<DatosUsuario> seguidores = [];
+      for (var doc in seguidoresSnapshot.docs) {
+        final seguidorId = doc.id;
+        final seguidorData = await obtenerDatosUsuario(seguidorId);
+        if (seguidorData != null) {
+          seguidores.add(seguidorData);
+        }
+      }
+      return seguidores;
+    } catch (e) {
+      print('Error obteniendo seguidores: $e');
+      return [];
+    }
+  }
+
+  Future<List<DatosUsuario>> obtenerSiguiendo(String uid) async {
+    try {
+      final siguiendoSnapshot = await _firestore
+          .collection('usuarios')
+          .doc(uid)
+          .collection('siguiendo')
+          .get();
+      
+      final List<DatosUsuario> siguiendo = [];
+      for (var doc in siguiendoSnapshot.docs) {
+        final siguiendoId = doc.id;
+        final siguiendoData = await obtenerDatosUsuario(siguiendoId);
+        if (siguiendoData != null) {
+          siguiendo.add(siguiendoData);
+        }
+      }
+      return siguiendo;
+    } catch (e) {
+      print('Error obteniendo siguiendo: $e');
+      return [];
+    }
+  }
 }

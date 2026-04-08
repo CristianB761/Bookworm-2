@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'modelos.dart';
-import 'traductor_service.dart';
+// ELIMINAR: import 'traductor_service.dart';
 
 class LibriVoxService {
   static const String _urlBase = 'https://librivox.org/api/feed/audiobooks';
-  final TraductorService _traductorService = TraductorService();
+  // ELIMINAR: final TraductorService _traductorService = TraductorService();
 
   Future<List<Libro>> buscarLibros(String consulta, {String? genero, int limite = 20}) async {
     try {
@@ -117,17 +117,12 @@ class LibriVoxService {
       id: 'librivox_$id',
       titulo: json['title'] ?? 'Título no disponible',
       autores: autores,
-      descripcion: _limpiarHtml(json['description']) ?? 'Audiolibro gratuito',
+      descripcion: null, // 🔥 No usar descripción de LibriVox
       urlLectura: json['url_librivox'],
       esAudiolibro: true,
       urlVistaPrevia: json['url_zip_file'],
       precio: 0.0,
       moneda: 'EUR',
     );
-  }
-
-  String? _limpiarHtml(String? texto) {
-    if (texto == null) return null;
-    return texto.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), ' ').trim();
   }
 }

@@ -1,4 +1,4 @@
-import 'traductor_service.dart';
+import 'ollama_service.dart';  // Asegúrate de importar Ollama
 import 'google_books_service.dart';
 import 'gutendex_service.dart';
 import 'internet_archive_service.dart';
@@ -12,7 +12,9 @@ class BibliotecaServiceUnificado {
   final InternetArchiveService _archiveService;
   final OpenLibraryService _openLibraryService;
   final LibriVoxService _librivoxService;
-  final TraductorService _traductorService;
+  final OllamaService _ollamaService;  // Solo Ollama, sin traductor
+  
+  bool _ollamaDisponible = false;
   
   BibliotecaServiceUnificado({required String apiKey}) 
     : _googleService = GoogleBooksService(apiKey: apiKey),
@@ -20,7 +22,17 @@ class BibliotecaServiceUnificado {
       _archiveService = InternetArchiveService(),
       _openLibraryService = OpenLibraryService(),
       _librivoxService = LibriVoxService(),
-      _traductorService = TraductorService();
+      _ollamaService = OllamaService() {
+        _inicializarOllama();
+      }
+  
+  Future<void> _inicializarOllama() async {
+    _ollamaDisponible = await _ollamaService.verificarDisponibilidad();
+    print('Ollama disponible: $_ollamaDisponible');
+    if (!_ollamaDisponible) {
+      print('⚠️ ADVERTENCIA: Ollama no está disponible. Las descripciones no se generarán.');
+    }
+  }
 
   Future<List<Libro>> buscarLibros(String consulta, {String? genero, int limite = 20}) async {
     final List<Libro> todosLibros = [];
@@ -37,10 +49,11 @@ class BibliotecaServiceUnificado {
       final resultados = await Future.wait(futures);
       
       for (var libros in resultados) {
-        final librosMejorados = await Future.wait(
-          libros.map((libro) => _mejorarDescripcionEspanol(libro))
+        // 🔥 IMPORTANTE: Generar descripción con Ollama para CADA libro
+        final librosConDescripcionIA = await Future.wait(
+          libros.map((libro) => _generarDescripcionConOllama(libro))
         );
-        todosLibros.addAll(librosMejorados);
+        todosLibros.addAll(librosConDescripcionIA);
       }
     } catch (e) {
       print('Error en búsqueda unificada: $e');
@@ -49,25 +62,46 @@ class BibliotecaServiceUnificado {
     return todosLibros;
   }
 
-  Future<Libro> _mejorarDescripcionEspanol(Libro libro) async {
-    if (libro.descripcion == null || libro.descripcion!.isEmpty) {
-      return libro;
+  // 🔥 NUEVO: Método que SIEMPRE usa Ollama, ignora descripción original
+  Future<Libro> _generarDescripcionConOllama(Libro libro) async {
+    if (!_ollamaDisponible) {
+      print('⚠️ Ollama no disponible para: ${libro.titulo}');
+      // Devolver libro con descripción por defecto
+      return libro.copyWith(
+        descripcion: '📚 "No se pudo generar descripción con IA. Verifica que Ollama esté ejecutándose en tu ordenador."'
+      );
     }
     
-    final descripcion = libro.descripcion!;
-
-    if (_traductorService.esTextoEspanol(descripcion) || descripcion.length < 50) {
-      return libro;
-    }
-    
-    if (_traductorService.esTextoIngles(descripcion)) {
-      final traducido = await _traductorService.traducirTexto(descripcion);
-      if (traducido != null && traducido.isNotEmpty) {
-        return libro.copyWith(descripcion: traducido);
+    try {
+      print('🤖 Generando descripción con IA para: ${libro.titulo}');
+      
+      final descripcionGenerada = await _ollamaService.generarDescripcionLibro(
+        titulo: libro.titulo,
+        autores: libro.autores,
+        descripcionOriginal: libro.descripcion,
+        categorias: libro.categorias,
+        anoPublicacion: libro.fechaPublicacion != null 
+            ? int.tryParse(libro.fechaPublicacion!.split('-')[0]) 
+            : null,
+        numeroPaginas: libro.numeroPaginas,
+        esAudiolibro: libro.esAudiolibro,
+      );
+      
+      if (descripcionGenerada != null && descripcionGenerada.isNotEmpty) {
+        print('✅ Descripción generada para: ${libro.titulo}');
+        return libro.copyWith(descripcion: descripcionGenerada);
+      } else {
+        print('⚠️ No se pudo generar descripción para: ${libro.titulo}');
+        return libro.copyWith(
+          descripcion: '📖 "${libro.titulo}" - Una obra que vale la pena descubrir. Consulta más detalles en la biblioteca.'
+        );
       }
+    } catch (e) {
+      print('❌ Error generando descripción para ${libro.titulo}: $e');
+      return libro.copyWith(
+        descripcion: '📚 "${libro.titulo}" - Descripción no disponible temporalmente.'
+      );
     }
-    
-    return libro;
   }
 
   Future<Libro?> obtenerDetalles(String id) async {
@@ -87,7 +121,8 @@ class BibliotecaServiceUnificado {
       }
       
       if (libro != null) {
-        return await _mejorarDescripcionEspanol(libro);
+        // 🔥 Generar descripción con Ollama también para detalles
+        return await _generarDescripcionConOllama(libro);
       }
     } catch (e) {
       print('Error obteniendo detalles unificados: $e');
@@ -96,26 +131,22 @@ class BibliotecaServiceUnificado {
     return null;
   }
   
-Future<List<Libro>> obtenerLibrosPopulares({int limite = 20}) async {
-  final List<Libro> todosLibros = [];
-  
-  try {
-    final futures = [
-      _gutendexService.obtenerLibrosPopulares(limite: limite),
-    ];
+  Future<List<Libro>> obtenerLibrosPopulares({int limite = 20}) async {
+    final List<Libro> todosLibros = [];
     
-    final resultados = await Future.wait(futures);
-    
-    for (var libros in resultados) {
-      final librosMejorados = await Future.wait(
-        libros.map((libro) => _mejorarDescripcionEspanol(libro))
+    try {
+      final libros = await _gutendexService.obtenerLibrosPopulares(limite: limite);
+      
+      // 🔥 Generar descripción con Ollama para cada libro popular
+      final librosConDescripcionIA = await Future.wait(
+        libros.map((libro) => _generarDescripcionConOllama(libro))
       );
-      todosLibros.addAll(librosMejorados);
+      todosLibros.addAll(librosConDescripcionIA);
+      
+    } catch (e) {
+      print('Error obteniendo populares: $e');
     }
-  } catch (e) {
-    print('Error obteniendo populares: $e');
+    
+    return todosLibros.take(limite).toList();
   }
-  
-  return todosLibros.take(limite).toList();
-}
 }

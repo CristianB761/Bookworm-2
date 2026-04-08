@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'modelos.dart';
-import 'traductor_service.dart';
+// ELIMINAR: import 'traductor_service.dart';
 
 class GoogleBooksService {
   static const String _urlBase = 'https://www.googleapis.com/books/v1';
-  final TraductorService _traductorService = TraductorService();
+  // ELIMINAR: final TraductorService _traductorService = TraductorService();
   final String? _apiKey;
 
   GoogleBooksService({String? apiKey}) : _apiKey = apiKey;
@@ -76,13 +76,10 @@ class GoogleBooksService {
     String? urlCompra;
     List<OfertaTienda> ofertas = [];
 
-    // VERIFICAR MÚLTIPLES PRECIOS
     if (ventaInfo['saleability'] == 'FOR_SALE') {
-      // Intentar precio de lista primero
       precio = (ventaInfo['listPrice']?['amount'] as num?)?.toDouble();
       moneda = ventaInfo['listPrice']?['currencyCode'];
       
-      // Si no hay precio de lista, intentar precio minorista
       if (precio == null && ventaInfo['retailPrice'] != null) {
         precio = (ventaInfo['retailPrice']?['amount'] as num?)?.toDouble();
         moneda = ventaInfo['retailPrice']?['currencyCode'];
@@ -90,7 +87,6 @@ class GoogleBooksService {
       
       urlCompra = ventaInfo['buyLink'];
       
-      // Verificar si es un eBook o libro físico
       bool esEbook = ventaInfo['isEbook'] == true;
       String tipo = esEbook ? 'eBook' : 'Libro físico';
       
@@ -104,7 +100,6 @@ class GoogleBooksService {
       }
     }
 
-    // Extraer ISBNs
     for (var id in identificadores) {
       if (id['type'] == 'ISBN_10') {
         isbn10 = id['identifier'];
@@ -117,7 +112,7 @@ class GoogleBooksService {
       id: 'google_${json['id']}',
       titulo: info['title'] ?? 'Título no disponible',
       autores: List<String>.from(info['authors'] ?? []),
-      descripcion: _limpiarHtml(info['description']),
+      descripcion: null, // 🔥 IMPORTANTE: No usar descripción de Google
       urlMiniatura: imagenes['thumbnail'] ?? imagenes['smallThumbnail'],
       fechaPublicacion: info['publishedDate'],
       numeroPaginas: info['pageCount'],
@@ -132,10 +127,5 @@ class GoogleBooksService {
       urlCompra: urlCompra,
       ofertas: ofertas,
     );
-  }
-
-  String? _limpiarHtml(String? texto) {
-    if (texto == null) return null;
-    return texto.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), ' ').trim();
   }
 }

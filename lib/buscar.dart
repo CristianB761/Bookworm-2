@@ -7,11 +7,7 @@ import 'theme_provider.dart';
 import 'diseno.dart';
 import 'componentes.dart';
 import 'API/modelos.dart';
-import 'API/open_library.dart';
-import 'API/gutendex_service.dart';
-import 'API/librivox_service.dart';
-import 'API/google_books_service.dart';
-import 'API/internet_archive_service.dart';
+import 'API/biblioteca_service.dart';
 import 'servicio/servicio_firestore.dart';
 import 'modelos/datos_usuario.dart';
 
@@ -24,11 +20,9 @@ class Buscar extends StatefulWidget {
 
 class _BuscarState extends State<Buscar> {
   final TextEditingController _controladorBusqueda = TextEditingController();
-  final OpenLibraryService _servicioOpenLibrary = OpenLibraryService();
-  final GutendexService _servicioGutendex = GutendexService();
-  final LibriVoxService _servicioLibriVox = LibriVoxService();
-  final GoogleBooksService _servicioGoogleBooks = GoogleBooksService(apiKey: 'AIzaSyCiPj-QLleEc1jMnNMPuuSvM6Z7Q4zNvXA');
-  final InternetArchiveService _servicioInternetArchive = InternetArchiveService();
+  final BibliotecaServiceUnificado _servicioBiblioteca = BibliotecaServiceUnificado(
+    apiKey: 'AIzaSyCiPj-QLleEc1jMnNMPuuSvM6Z7Q4zNvXA',
+  );
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
@@ -196,52 +190,11 @@ class _BuscarState extends State<Buscar> {
         }
       }
       
-      List<Future<List<Libro>>> busquedas = [];
-      
-      if (_formatoSeleccionado == 'Todos los formatos' || _formatoSeleccionado == 'Libros') {
-        busquedas.add(_servicioOpenLibrary.buscarLibros(
-          consultaBusqueda,
-          genero: _generoSeleccionado == 'Todos los géneros' ? null : _generoSeleccionado,
-          limite: 20,
-        ));
-        
-        busquedas.add(_servicioGutendex.buscarLibros(
-          consultaBusqueda,
-          genero: _generoSeleccionado == 'Todos los géneros' ? null : _generoSeleccionado,
-          limite: 20,
-        ));
-        
-        busquedas.add(_servicioInternetArchive.buscarLibros(
-          consultaBusqueda,
-          genero: _generoSeleccionado == 'Todos los géneros' ? null : _generoSeleccionado,
-          limite: 15,
-        ));
-        
-        if (consultaBusqueda.isNotEmpty && 
-            !consultaBusqueda.toLowerCase().contains('populares') &&
-            !consultaBusqueda.toLowerCase().contains('fiction')) {
-          busquedas.add(_buscarEnGoogleBooksSeguro(consultaBusqueda));
-        }
-      }
-      
-      if (_formatoSeleccionado == 'Todos los formatos' || _formatoSeleccionado == 'Audiolibros') {
-        busquedas.add(_servicioLibriVox.buscarLibros(
-          consultaBusqueda,
-          genero: _generoSeleccionado == 'Todos los géneros' ? null : _generoSeleccionado,
-          limite: 15,
-        ));
-      }
-
-      final listasResultados = await Future.wait(busquedas);
-      List<Libro> resultados = [];
-      
-      for (var lista in listasResultados) {
-        for (var libro in lista) {
-          if (!_esLibroDuplicado(libro, resultados)) {
-            resultados.add(_procesarLibroConPrecio(libro));
-          }
-        }
-      }
+      List<Libro> resultados = await _servicioBiblioteca.buscarLibros(
+        consultaBusqueda,
+        genero: _generoSeleccionado == 'Todos los géneros' ? null : _generoSeleccionado,
+        limite: 20,
+      );
       
       if (_formatoSeleccionado != null && _formatoSeleccionado != 'Todos los formatos') {
         if (_formatoSeleccionado == 'Audiolibros') {
@@ -251,7 +204,14 @@ class _BuscarState extends State<Buscar> {
         }
       }
       
-      resultados.sort((a, b) {
+      List<Libro> resultadosProcesados = [];
+      for (var libro in resultados) {
+        if (!_esLibroDuplicado(libro, resultadosProcesados)) {
+          resultadosProcesados.add(_procesarLibroConPrecio(libro));
+        }
+      }
+      
+      resultadosProcesados.sort((a, b) {
         final precioA = a.precio ?? double.infinity;
         final precioB = b.precio ?? double.infinity;
         
@@ -260,11 +220,11 @@ class _BuscarState extends State<Buscar> {
         return precioA.compareTo(precioB);
       });
       
-      _cacheBusquedas[cacheKey] = resultados;
+      _cacheBusquedas[cacheKey] = resultadosProcesados;
       _cacheTiempos[cacheKey] = DateTime.now();
       
       setState(() {
-        _resultadosBusqueda = resultados;
+        _resultadosBusqueda = resultadosProcesados;
       });
     } catch (e) {
       _mostrarError('Error al buscar: $e');
@@ -301,20 +261,6 @@ class _BuscarState extends State<Buscar> {
     } catch (e) {
       _mostrarError('Error buscando usuarios: $e');
       if (mounted) setState(() => _cargandoUsuarios = false);
-    }
-  }
-
-  Future<List<Libro>> _buscarEnGoogleBooksSeguro(String consulta) async {
-    try {
-      return await _servicioGoogleBooks.buscarLibros(
-        consulta,
-        genero: _generoSeleccionado == 'Todos los géneros' ? null : _generoSeleccionado,
-        limite: 3,
-        pais: 'ES',
-      );
-    } catch (e) {
-      print('Google Books no disponible: $e');
-      return [];
     }
   }
 
@@ -445,7 +391,6 @@ class _BuscarState extends State<Buscar> {
     }
     
     precioBase = precioBase.clamp(0.0, 35.0);
-    
     precioBase = (precioBase.floorToDouble() + 0.99);
     
     return double.parse(precioBase.toStringAsFixed(2));
@@ -456,12 +401,10 @@ class _BuscarState extends State<Buscar> {
     
     for (var existente in listaExistente) {
       final tituloExistente = existente.titulo.toLowerCase().trim();
-      
       if (_sonTitulosSimilares(tituloLibro, tituloExistente)) {
         return true;
       }
     }
-    
     return false;
   }
 

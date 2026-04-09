@@ -27,7 +27,7 @@ class _BuscarState extends State<Buscar> {
   final OpenLibraryService _servicioOpenLibrary = OpenLibraryService();
   final GutendexService _servicioGutendex = GutendexService();
   final LibriVoxService _servicioLibriVox = LibriVoxService();
-  final GoogleBooksService _servicioGoogleBooks = GoogleBooksService(apiKey: 'AIzaSyDGyQmEOJsYJfoOMYbr5DIns3adtE13jFM');
+  final GoogleBooksService _servicioGoogleBooks = GoogleBooksService(apiKey: 'AIzaSyCiPj-QLleEc1jMnNMPuuSvM6Z7Q4zNvXA');
   final InternetArchiveService _servicioInternetArchive = InternetArchiveService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

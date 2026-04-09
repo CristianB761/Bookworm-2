@@ -14,7 +14,7 @@ class PublicDomain extends StatefulWidget {
 }
 
 class _PublicDomainState extends State<PublicDomain> {
-  final BibliotecaServiceUnificado _servicioBiblioteca = BibliotecaServiceUnificado(apiKey: 'AIzaSyDGyQmEOJsYJfoOMYbr5DIns3adtE13jFM');
+  final BibliotecaServiceUnificado _servicioBiblioteca = BibliotecaServiceUnificado(apiKey: 'AIzaSyCiPj-QLleEc1jMnNMPuuSvM6Z7Q4zNvXA');
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   

@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
 import 'diseno.dart';
 import 'componentes.dart';
 import 'servicio/servicio_firestore.dart';
@@ -13,6 +13,8 @@ import 'modelos/datos_usuario.dart';
 import 'modelos/progreso_lectura.dart';
 import 'API/modelos.dart';
 import 'theme_provider.dart';
+import 'lector_pdf.dart';
+import 'subir_pdf_dialog.dart';
 
 class Perfil extends StatefulWidget {
   final String? userId;
@@ -31,7 +33,6 @@ class _PerfilState extends State<Perfil> {
   final ServicioFirestore _servicioFirestore = ServicioFirestore();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   
   File? _imagenSeleccionada;
   bool _subiendoImagen = false;
@@ -48,7 +49,6 @@ class _PerfilState extends State<Perfil> {
   bool _loEstoySiguiendo = false;
   bool _cargandoFollow = false;
 
-  // Contadores para seguidores y siguiendo
   int _numeroSeguidores = 0;
   int _numeroSiguiendo = 0;
 
@@ -104,7 +104,6 @@ class _PerfilState extends State<Perfil> {
     try {
       final datos = await _servicioFirestore.obtenerDatosUsuario(uid);
       
-      // Cargar contadores de seguidores y siguiendo
       final seguidores = await _servicioFirestore.obtenerNumeroSeguidores(uid);
       final siguiendo = await _servicioFirestore.obtenerNumeroSiguiendo(uid);
       
@@ -124,21 +123,6 @@ class _PerfilState extends State<Perfil> {
     } catch (e) {
       print('Error cargando datos del usuario: $e');
       if (mounted) setState(() => _estaCargando = false);
-    }
-  }
-
-  Future<void> _refrescarContadores() async {
-    final uid = _uidPerfil;
-    if (uid.isEmpty) return;
-    
-    final seguidores = await _servicioFirestore.obtenerNumeroSeguidores(uid);
-    final siguiendo = await _servicioFirestore.obtenerNumeroSiguiendo(uid);
-    
-    if (mounted) {
-      setState(() {
-        _numeroSeguidores = seguidores;
-        _numeroSiguiendo = siguiendo;
-      });
     }
   }
 
@@ -194,6 +178,191 @@ class _PerfilState extends State<Perfil> {
     });
   }
 
+  // ==================== MÉTODO PARA SUBIR PDF A SUPABASE ====================
+  
+  Future<void> _subirPDF(String libroId, String tituloLibro) async {
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) {
+        _mostrarError('Debes iniciar sesión');
+        return;
+      }
+
+      FilePickerResult? resultado = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+
+      if (resultado == null || resultado.files.single.path == null) return;
+
+      final archivoPDF = File(resultado.files.single.path!);
+      
+      // Mostrar diálogo de subida a Supabase
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SubirPDFDialog(
+          libroId: libroId,
+          tituloLibro: tituloLibro,
+          onPDFSubido: () {
+            _cargarDatosUsuario();
+          },
+        ),
+      );
+    } catch (e) {
+      _mostrarError('Error al seleccionar PDF: $e');
+    }
+  }
+
+  void _abrirPDF(String pdfUrl, String titulo) {
+    if (pdfUrl.isEmpty) {
+      _mostrarError('No hay PDF disponible para este libro.\n\nPor favor, sube un PDF desde la sección de tu perfil.');
+      return;
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LectorPDF(
+          titulo: titulo,
+          pdfUrl: pdfUrl,
+        ),
+      ),
+    );
+  }
+
+  void _mostrarDialogoSeleccionarLibroParaPDF() {
+    final TextEditingController _nombreLibroController = TextEditingController();
+    String? _mensajeError;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Nuevo Libro con PDF'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Ingresa el nombre del libro que vas a subir:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _nombreLibroController,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre del libro',
+                    hintText: 'Ej: El Hobbit, La Odisea, etc',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: const Icon(Icons.book),
+                    errorText: _mensajeError,
+                  ),
+                  maxLines: 1,
+                  onChanged: (value) {
+                    if (_mensajeError != null) {
+                      setState(() {
+                        _mensajeError = null;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: const Text(
+                    '💡 Después podrás seleccionar el PDF de tu dispositivo. El archivo se subirá a Supabase Storage.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final nombreLibro = _nombreLibroController.text.trim();
+                
+                if (nombreLibro.isEmpty) {
+                  setState(() {
+                    _mensajeError = 'Por favor ingresa un nombre';
+                  });
+                  return;
+                }
+
+                Navigator.pop(context);
+                
+                final libroId = '${nombreLibro.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+                
+                _subirPDF(libroId, nombreLibro);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColores.primario,
+              ),
+              child: const Text('Siguiente'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _eliminarPDFSubido(String libroId, String pdfUrl) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar PDF'),
+        content: const Text('¿Estás seguro de que quieres eliminar este PDF? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) return;
+
+      // Nota: Eliminar de Supabase Storage requeriría implementación adicional
+      // Por ahora solo eliminamos la referencia en Firestore
+      await _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('libros_guardados')
+          .doc(libroId)
+          .update({'urlPDFSubido': null});
+
+      _mostrarExito('PDF eliminado exitosamente');
+      _cargarDatosUsuario();
+    } catch (e) {
+      _mostrarError('Error al eliminar PDF: $e');
+    }
+  }
+
+  // ==================== MÉTODOS PARA IMAGEN DE PERFIL ====================
+
   Future<void> _seleccionarImagen() async {
     final picker = ImagePicker();
     
@@ -236,43 +405,6 @@ class _PerfilState extends State<Perfil> {
       }
     } catch (e) {
       _mostrarError('Error al seleccionar imagen: $e');
-    }
-  }
-
-  Future<String?> _subirImagenAFirebase(File imagen) async {
-    try {
-      setState(() => _subiendoImagen = true);
-
-      final usuario = _auth.currentUser;
-      if (usuario == null) {
-        _mostrarError('Usuario no autenticado');
-        return null;
-      }
-
-      final nombreArchivo = '${usuario.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final Reference ref = _storage.ref().child('imagenes_perfil/$nombreArchivo');
-      
-      final UploadTask uploadTask = ref.putFile(
-        imagen,
-        SettableMetadata(
-          contentType: 'image/jpeg',
-        ),
-      );
-
-      final TaskSnapshot snapshot = await uploadTask;
-      final String url = await snapshot.ref.getDownloadURL();
-      
-      print('Imagen subida exitosamente. URL: $url');
-      return url;
-      
-    } catch (e) {
-      print('Error subiendo imagen: $e');
-      _mostrarError('Error al subir imagen: $e');
-      return null;
-    } finally {
-      if (mounted) {
-        setState(() => _subiendoImagen = false);
-      }
     }
   }
 
@@ -413,22 +545,11 @@ class _PerfilState extends State<Perfil> {
         return;
       }
 
-      String? nuevaUrl = _datosUsuario?.urlImagenPerfil;
-
-      if (imagenTemp != null) {
-        nuevaUrl = await _subirImagenAFirebase(imagenTemp);
-        if (nuevaUrl == null) return;
-      }
-
       final Map<String, dynamic> datosActualizados = {
         'nombre': nombre,
         'biografia': biografia,
         'ultimaActualizacion': FieldValue.serverTimestamp(),
       };
-
-      if (nuevaUrl != null) {
-        datosActualizados['urlImagenPerfil'] = nuevaUrl;
-      }
 
       await _servicioFirestore.actualizarDatosUsuario(
         _auth.currentUser!.uid,
@@ -446,6 +567,8 @@ class _PerfilState extends State<Perfil> {
       _mostrarError('Error al actualizar perfil: $e');
     }
   }
+
+  // ==================== MÉTODOS DE PROGRESO ====================
 
   Future<void> _eliminarProgreso(String progresoId, String libroId) async {
     final confirmar = await showDialog<bool>(
@@ -778,52 +901,6 @@ class _PerfilState extends State<Perfil> {
     }
   }
 
-  void _mostrarDialogoEditarTiempoTotal() {
-    final tiempoActual = _datosUsuario?.estadisticas['tiempoLectura'] ?? 0;
-    final tiempoCtrl = TextEditingController(text: tiempoActual.toString());
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Tiempo Total'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Ajusta el tiempo total de lectura registrado.'),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: tiempoCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Minutos totales',
-                border: OutlineInputBorder(),
-                suffixText: 'min',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final nuevoTiempo = int.tryParse(tiempoCtrl.text) ?? tiempoActual;
-              await _servicioFirestore.actualizarDatosUsuario(
-                _auth.currentUser!.uid,
-                {'estadisticas.tiempoLectura': nuevoTiempo},
-              );
-              await _cargarDatosUsuario();
-              if (mounted) Navigator.pop(context);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _cerrarSesion() async {
     await _auth.signOut();
     if (mounted) {
@@ -1123,7 +1200,6 @@ class _PerfilState extends State<Perfil> {
             ],
           ),
           const SizedBox(height: 20),
-          // SECCIÓN DE SEGUIDORES Y SIGUIENDO (estilo Instagram)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -1191,12 +1267,32 @@ class _PerfilState extends State<Perfil> {
   }
 
   Widget _construirSeccionInformacion() {
+    final librosConPDF = _todosLosLibrosUsuario.where((libro) {
+      return libro['urlPDFSubido'] != null && libro['urlPDFSubido'].toString().isNotEmpty;
+    }).toList();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: EstilosApp.tarjeta(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Mis PDFs Subidos',
+            style: EstilosApp.tituloMedio(context),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Libros que has subido en formato PDF a Supabase',
+            style: EstilosApp.cuerpoMedio(context),
+          ),
+          const SizedBox(height: 16),
+          _construirListaPDFsSubidos(librosConPDF),
+          
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 16),
+          
           Text(
             'Información Personal',
             style: EstilosApp.tituloMedio(context),
@@ -1257,6 +1353,150 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
+  Widget _construirListaPDFsSubidos(List<Map<String, dynamic>> librosConPDF) {
+    if (librosConPDF.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: EstilosApp.tarjetaPlana(context),
+        child: Column(
+          children: [
+            const Icon(Icons.picture_as_pdf, size: 48, color: Colors.grey),
+            const SizedBox(height: 12),
+            Text(
+              'No tienes PDFs subidos',
+              style: EstilosApp.tituloPequeno(context),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sube tus libros en formato PDF para leerlos desde la app',
+              style: EstilosApp.cuerpoPequeno(context),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            if (_esMiPerfil)
+              ElevatedButton.icon(
+                onPressed: _mostrarDialogoSeleccionarLibroParaPDF,
+                icon: const Icon(Icons.upload_file),
+                label: const Text('Subir PDF a Supabase'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColores.primario,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        ...librosConPDF.map((libroMap) {
+          final pdfUrl = libroMap['urlPDFSubido'].toString();
+          final titulo = libroMap['titulo'] ?? 'Sin título';
+          final autores = List<String>.from(libroMap['autores'] ?? []);
+          final miniatura = libroMap['urlMiniatura'];
+          
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: EstilosApp.tarjetaPlana(context),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: miniatura != null && miniatura.isNotEmpty
+                      ? Image.network(
+                          miniatura,
+                          width: 50,
+                          height: 70,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 50,
+                              height: 70,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.picture_as_pdf, size: 30, color: Colors.red),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: 50,
+                          height: 70,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.picture_as_pdf, size: 30, color: Colors.red),
+                        ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titulo,
+                        style: EstilosApp.tituloPequeno(context),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (autores.isNotEmpty)
+                        Text(
+                          autores.join(', '),
+                          style: EstilosApp.cuerpoPequeno(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.picture_as_pdf, size: 12, color: Colors.red),
+                            SizedBox(width: 4),
+                            Text('PDF en Supabase', style: TextStyle(fontSize: 10, color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.visibility, color: AppColores.primario),
+                      onPressed: () => _abrirPDF(pdfUrl, titulo),
+                      tooltip: 'Leer PDF',
+                    ),
+                    if (_esMiPerfil)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () => _eliminarPDFSubido(libroMap['id'], pdfUrl),
+                        tooltip: 'Eliminar PDF',
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+        if (_esMiPerfil)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: ElevatedButton.icon(
+              onPressed: _mostrarDialogoSeleccionarLibroParaPDF,
+              icon: const Icon(Icons.add),
+              label: const Text('Subir otro PDF a Supabase'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColores.primario,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _construirListaLibros({required List<Map<String, dynamic>> libros, required bool esFavoritos}) {
     if (_cargandoLibros) {
       return const Center(child: CircularProgressIndicator());
@@ -1285,7 +1525,10 @@ class _PerfilState extends State<Perfil> {
           categorias: List<String>.from(libroMap['categorias'] ?? []),
           urlLectura: libroMap['urlLectura'],
           esAudiolibro: libroMap['esAudiolibro'] ?? false,
+          urlPDFSubido: libroMap['urlPDFSubido'],
         );
+        
+        final bool tienePDFSubido = libro.tienePDFSubido;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -1347,22 +1590,10 @@ class _PerfilState extends State<Perfil> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
-                          if (esFavoritos)
-                            const Icon(Icons.favorite, size: 16, color: Colors.red)
-                          else
-                            const Icon(Icons.bookmark, size: 16, color: AppColores.primario),
-                          const SizedBox(width: 4),
-                          Text(
-                            esFavoritos ? 'Favorito' : 'Guardado',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: esFavoritos ? Colors.red : AppColores.primario,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
@@ -1371,18 +1602,46 @@ class _PerfilState extends State<Perfil> {
                             ),
                             child: Text(
                               _obtenerTextoEstado(libroMap['estado']),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.white,
-                              ),
+                              style: const TextStyle(fontSize: 10, color: Colors.white),
                             ),
                           ),
+                          if (esFavoritos)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.favorite, size: 12, color: Colors.red),
+                                  SizedBox(width: 4),
+                                  Text('Favorito', style: TextStyle(fontSize: 10, color: Colors.red)),
+                                ],
+                              ),
+                            ),
+                          if (tienePDFSubido)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColores.primario.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.picture_as_pdf, size: 12, color: AppColores.primario),
+                                  SizedBox(width: 4),
+                                  Text('PDF Subido', style: TextStyle(fontSize: 10, color: AppColores.primario)),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
                 Column(
                   children: [
                     if (libro.urlLectura != null)
@@ -1390,6 +1649,22 @@ class _PerfilState extends State<Perfil> {
                         icon: const Icon(Icons.open_in_browser, size: 20, color: AppColores.secundario),
                         onPressed: () => _abrirUrlLectura(libro.urlLectura),
                         tooltip: 'Leer Online',
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                      ),
+                    if (tienePDFSubido)
+                      IconButton(
+                        icon: const Icon(Icons.picture_as_pdf, size: 20, color: Colors.red),
+                        onPressed: () => _abrirPDF(libro.urlPDFSubido!, libro.titulo),
+                        tooltip: 'Leer PDF',
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                      ),
+                    if (!tienePDFSubido && _esMiPerfil && libroMap['estado'] != 'completado')
+                      IconButton(
+                        icon: const Icon(Icons.upload_file, size: 20, color: AppColores.primario),
+                        onPressed: () => _subirPDF(libroMap['libroId'] ?? libroMap['id'], libro.titulo),
+                        tooltip: 'Subir PDF a Supabase',
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
                       ),
@@ -1531,6 +1806,7 @@ class _PerfilState extends State<Perfil> {
                           categorias: List<String>.from(libroMap['categorias'] ?? []),
                           urlLectura: libroMap['urlLectura'],
                           esAudiolibro: libroMap['esAudiolibro'] ?? false,
+                          urlPDFSubido: libroMap['urlPDFSubido'],
                         );
                       } else {
                         libro = Libro(
@@ -1846,210 +2122,6 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
-  Widget _construirSeccionConfiguracion() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: EstilosApp.tarjeta(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Configuración',
-            style: EstilosApp.tituloMedio(context),
-          ),
-          const SizedBox(height: 16),
-          ElementoConfiguracion(
-            titulo: 'Modo oscuro',
-            subtitulo: themeProvider.esModoOscuro ? 'Actualmente activado' : 'Actualmente desactivado',
-            icono: themeProvider.esModoOscuro ? Icons.dark_mode : Icons.light_mode,
-            tieneSwitch: true,
-            valorSwitch: themeProvider.esModoOscuro,
-            alCambiarSwitch: (_) => themeProvider.alternarTema(),
-          ),
-          ElementoConfiguracion(
-            titulo: 'Sincronización',
-            subtitulo: 'Gestionar datos offline',
-            icono: Icons.sync,
-            alPresionar: () => Navigator.pushNamed(context, '/sincronizacion'),
-          ),
-          ElementoConfiguracion(
-            titulo: 'Privacidad',
-            subtitulo: 'Configurar privacidad de tu perfil',
-            icono: Icons.security,
-            alPresionar: () => _mostrarDialogoPrivacidad(),
-          ),
-          ElementoConfiguracion(
-            titulo: 'Ayuda y Soporte',
-            subtitulo: 'Contactar soporte técnico',
-            icono: Icons.help,
-            alPresionar: () => _mostrarDialogoAyuda(),
-          ),
-          ElementoConfiguracion(
-            titulo: 'Cerrar sesión',
-            subtitulo: 'Salir de tu cuenta actual',
-            icono: Icons.logout,
-            alPresionar: _cerrarSesion,
-          ),
-          ElementoConfiguracion(
-            titulo: 'Eliminar cuenta',
-            subtitulo: 'Acción irreversible',
-            icono: Icons.delete_forever,
-            alPresionar: _eliminarCuenta,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _iniciarProgresoLectura(Map<String, dynamic> libro) async {
-    try {
-      final usuario = _auth.currentUser;
-      if (usuario == null) return;
-
-      final libroId = libro['libroId'];
-      if (libroId == null) {
-        _mostrarError('ID de libro no válido');
-        return;
-      }
-
-      final progresoExistenteQuery = await _firestore
-          .collection('progreso_lectura')
-          .where('usuarioId', isEqualTo: usuario.uid)
-          .where('libroId', isEqualTo: libroId)
-          .limit(1)
-          .get();
-
-      if (progresoExistenteQuery.docs.isNotEmpty) {
-        _mostrarExito('Ya tienes este libro en progreso.');
-        final data = progresoExistenteQuery.docs.first.data();
-        data['id'] = progresoExistenteQuery.docs.first.id;
-        final progreso = ProgresoLectura.fromMap(data);
-        _mostrarDialogoActualizarProgreso(progreso);
-        return;
-      }
-
-      final progresoId = _firestore.collection('progreso_lectura').doc().id;
-      
-      await _firestore.collection('progreso_lectura').doc(progresoId).set({
-        'id': progresoId,
-        'usuarioId': usuario.uid,
-        'libroId': libroId,
-        'tituloLibro': libro['titulo'],
-        'autoresLibro': libro['autores'] ?? [],
-        'miniaturaLibro': libro['urlMiniatura'],
-        'estado': 'leyendo',
-        'paginaActual': 0,
-        'paginasTotales': libro['numeroPaginas'] ?? 0,
-        'fechaInicio': FieldValue.serverTimestamp(),
-        'calificacion': 0.0,
-      });
-
-      await _firestore
-          .collection('usuarios')
-          .doc(usuario.uid)
-          .collection('libros_guardados')
-          .doc(libroId)
-          .update({'estado': 'leyendo'});
-
-      _mostrarExito('Progreso iniciado para "${libro['titulo']}"');
-    } catch (e) {
-      _mostrarError('Error al iniciar progreso: $e');
-    }
-  }
-
-  Future<void> _eliminarLibroGuardado(String libroId) async {
-    try {
-      final usuario = _auth.currentUser;
-      if (usuario == null) return;
-
-      await _firestore
-          .collection('usuarios')
-          .doc(usuario.uid)
-          .collection('libros_guardados')
-          .doc(libroId)
-          .delete();
-
-      _mostrarExito('Libro eliminado de tu biblioteca');
-    } catch (e) {
-      _mostrarError('Error eliminando libro: $e');
-    }
-  }
-
-  Color _obtenerColorEstado(String estado) {
-    switch (estado) {
-      case 'leyendo':
-        return AppColores.primario;
-      case 'completado':
-        return AppColores.secundario;
-      default:
-        return const Color(0xFF9E9E9E);
-    }
-  }
-
-  String _obtenerTextoEstado(String estado) {
-    switch (estado) {
-      case 'guardado':
-        return 'Guardado';
-      case 'leyendo':
-        return 'Leyendo';
-      case 'completado':
-        return 'Completado';
-      default:
-        return 'Guardado';
-    }
-  }
-
-  Widget _construirItemInformacion({
-    required IconData icono,
-    required String titulo,
-    required String valor,
-  }) {
-    return Row(
-      children: [
-        Icon(icono, color: AppColores.primario, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(titulo, style: EstilosApp.cuerpoPequeno(context).copyWith(color: const Color(0xFF9E9E9E))),
-              const SizedBox(height: 4),
-              Text(valor, style: EstilosApp.cuerpoMedio(context)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _construirEstadisticaItem({
-    required String valor,
-    required String titulo,
-    required IconData icono,
-  }) {
-    return Column(
-      children: [
-        Icon(icono, size: 32, color: AppColores.primario),
-        const SizedBox(height: 8),
-        Text(
-          valor,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppColores.primario,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          titulo,
-          style: EstilosApp.cuerpoPequeno(context),
-        ),
-      ],
-    );
-  }
-
   void _mostrarDialogoGenerosFavoritos() {
     final generosSeleccionados = List<String>.from(_datosUsuario?.generosFavoritos ?? []);
     
@@ -2213,6 +2285,63 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
+  Widget _construirSeccionConfiguracion() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: EstilosApp.tarjeta(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Configuración',
+            style: EstilosApp.tituloMedio(context),
+          ),
+          const SizedBox(height: 16),
+          ElementoConfiguracion(
+            titulo: 'Modo oscuro',
+            subtitulo: themeProvider.esModoOscuro ? 'Actualmente activado' : 'Actualmente desactivado',
+            icono: themeProvider.esModoOscuro ? Icons.dark_mode : Icons.light_mode,
+            tieneSwitch: true,
+            valorSwitch: themeProvider.esModoOscuro,
+            alCambiarSwitch: (_) => themeProvider.alternarTema(),
+          ),
+          ElementoConfiguracion(
+            titulo: 'Sincronización',
+            subtitulo: 'Gestionar datos offline',
+            icono: Icons.sync,
+            alPresionar: () => Navigator.pushNamed(context, '/sincronizacion'),
+          ),
+          ElementoConfiguracion(
+            titulo: 'Privacidad',
+            subtitulo: 'Configurar privacidad de tu perfil',
+            icono: Icons.security,
+            alPresionar: () => _mostrarDialogoPrivacidad(),
+          ),
+          ElementoConfiguracion(
+            titulo: 'Ayuda y Soporte',
+            subtitulo: 'Contactar soporte técnico',
+            icono: Icons.help,
+            alPresionar: () => _mostrarDialogoAyuda(),
+          ),
+          ElementoConfiguracion(
+            titulo: 'Cerrar sesión',
+            subtitulo: 'Salir de tu cuenta actual',
+            icono: Icons.logout,
+            alPresionar: _cerrarSesion,
+          ),
+          ElementoConfiguracion(
+            titulo: 'Eliminar cuenta',
+            subtitulo: 'Acción irreversible',
+            icono: Icons.delete_forever,
+            alPresionar: _eliminarCuenta,
+          ),
+        ],
+      ),
+    );
+  }
+
   void _mostrarDialogoPrivacidad() {
     bool perfilPublico = _datosUsuario?.preferencias['perfil_publico'] ?? true;
     bool actividadPublica = _datosUsuario?.preferencias['actividad_publica'] ?? true;
@@ -2299,6 +2428,7 @@ class _PerfilState extends State<Perfil> {
               Text('- ¿Cómo guardar libros?'),
               Text('- ¿Cómo iniciar progreso de lectura?'),
               Text('- ¿Cómo editar mi perfil?'),
+              Text('- ¿Cómo subir un PDF de un libro?'),
             ],
           ),
         ),
@@ -2309,6 +2439,97 @@ class _PerfilState extends State<Perfil> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _eliminarLibroGuardado(String libroId) async {
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) return;
+
+      await _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('libros_guardados')
+          .doc(libroId)
+          .delete();
+
+      _mostrarExito('Libro eliminado de tu biblioteca');
+    } catch (e) {
+      _mostrarError('Error eliminando libro: $e');
+    }
+  }
+
+  Color _obtenerColorEstado(String estado) {
+    switch (estado) {
+      case 'leyendo':
+        return AppColores.primario;
+      case 'completado':
+        return AppColores.secundario;
+      default:
+        return const Color(0xFF9E9E9E);
+    }
+  }
+
+  String _obtenerTextoEstado(String estado) {
+    switch (estado) {
+      case 'guardado':
+        return 'Guardado';
+      case 'leyendo':
+        return 'Leyendo';
+      case 'completado':
+        return 'Completado';
+      default:
+        return 'Guardado';
+    }
+  }
+
+  Widget _construirItemInformacion({
+    required IconData icono,
+    required String titulo,
+    required String valor,
+  }) {
+    return Row(
+      children: [
+        Icon(icono, color: AppColores.primario, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(titulo, style: EstilosApp.cuerpoPequeno(context).copyWith(color: const Color(0xFF9E9E9E))),
+              const SizedBox(height: 4),
+              Text(valor, style: EstilosApp.cuerpoMedio(context)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _construirEstadisticaItem({
+    required String valor,
+    required String titulo,
+    required IconData icono,
+  }) {
+    return Column(
+      children: [
+        Icon(icono, size: 32, color: AppColores.primario),
+        const SizedBox(height: 8),
+        Text(
+          valor,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppColores.primario,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          titulo,
+          style: EstilosApp.cuerpoPequeno(context),
+        ),
+      ],
     );
   }
 

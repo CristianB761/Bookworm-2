@@ -1,4 +1,4 @@
-import 'ollama_service.dart';  // Asegúrate de importar Ollama
+import 'ollama_service.dart';  
 import 'google_books_service.dart';
 import 'gutendex_service.dart';
 import 'internet_archive_service.dart';
@@ -12,7 +12,7 @@ class BibliotecaServiceUnificado {
   final InternetArchiveService _archiveService;
   final OpenLibraryService _openLibraryService;
   final LibriVoxService _librivoxService;
-  final OllamaService _ollamaService;  // Solo Ollama, sin traductor
+  final OllamaService _ollamaService; 
   
   bool _ollamaDisponible = false;
   
@@ -30,7 +30,7 @@ class BibliotecaServiceUnificado {
     _ollamaDisponible = await _ollamaService.verificarDisponibilidad();
     print('Ollama disponible: $_ollamaDisponible');
     if (!_ollamaDisponible) {
-      print('⚠️ ADVERTENCIA: Ollama no está disponible. Las descripciones no se generarán.');
+      print('ADVERTENCIA: Ollama no está disponible. Las descripciones no se generarán.');
     }
   }
 
@@ -49,7 +49,6 @@ class BibliotecaServiceUnificado {
       final resultados = await Future.wait(futures);
       
       for (var libros in resultados) {
-        // 🔥 IMPORTANTE: Generar descripción con Ollama para CADA libro
         final librosConDescripcionIA = await Future.wait(
           libros.map((libro) => _generarDescripcionConOllama(libro))
         );
@@ -62,13 +61,12 @@ class BibliotecaServiceUnificado {
     return todosLibros;
   }
 
-  // 🔥 NUEVO: Método que SIEMPRE usa Ollama, ignora descripción original
   Future<Libro> _generarDescripcionConOllama(Libro libro) async {
     if (!_ollamaDisponible) {
       print('⚠️ Ollama no disponible para: ${libro.titulo}');
       // Devolver libro con descripción por defecto
       return libro.copyWith(
-        descripcion: '📚 "No se pudo generar descripción con IA. Verifica que Ollama esté ejecutándose en tu ordenador."'
+        descripcion: '"No se pudo generar descripción con IA. Verifica que Ollama esté ejecutándose en tu ordenador."'
       );
     }
     

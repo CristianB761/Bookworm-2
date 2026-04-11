@@ -3,9 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as prov;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'autenticacion.dart';
 import 'buscar.dart';
@@ -26,14 +27,23 @@ import 'servicio/servicio_notificaciones.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar Supabase PRIMERO
+  await Supabase.initialize(
+    url: 'https://hhuygktefnjvkbtzlnvc.supabase.co',
+    anonKey: 'sb_publishable_5DEg7-OKTm7IBnn1Cuvj2Q_DWoBVj0a',
+  );
+  
+  // Luego Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
   runApp(
-    MultiProvider(
+    prov.MultiProvider(
       providers: [
-        ChangeNotifierProvider(
+        prov.ChangeNotifierProvider(
           create: (_) => ThemeProvider(),
         ),
-        ChangeNotifierProvider(
+        prov.ChangeNotifierProvider(
           create: (_) => ServicioNotificaciones(),
         ),
       ],
@@ -47,7 +57,7 @@ class AppBookWorm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = prov.Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       title: 'BookWorm',
@@ -105,8 +115,8 @@ class AppBookWorm extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       initialRoute: '/',
       routes: {
-        '/': (context) => StreamBuilder<User?>(
-              stream: FirebaseAuth.instance.authStateChanges(),
+        '/': (context) => StreamBuilder<firebase_auth.User?>(
+              stream: firebase_auth.FirebaseAuth.instance.authStateChanges(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
@@ -184,7 +194,7 @@ class PaginaInicio extends StatefulWidget {
 
 class _PaginaInicioState extends State<PaginaInicio> {
   bool _mostrarTodosAccesosRapidos = false;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Libro> _librosAleatorios = [];
   bool _cargandoAleatorios = false;
@@ -192,9 +202,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
   @override
   void initState() {
     super.initState();
-    // Inicializar el servicio de notificaciones
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
+      prov.Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
     });
     _cargarLibrosAleatorios();
   }
@@ -242,7 +251,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = prov.Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.esModoOscuro;
 
     return Scaffold(

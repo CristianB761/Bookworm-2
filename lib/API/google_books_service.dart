@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'modelos.dart';
-// ELIMINAR: import 'traductor_service.dart';
 
 class GoogleBooksService {
   static const String _urlBase = 'https://www.googleapis.com/books/v1';
-  // ELIMINAR: final TraductorService _traductorService = TraductorService();
   final String? _apiKey;
 
   GoogleBooksService({String? apiKey}) : _apiKey = apiKey;
@@ -112,7 +110,7 @@ class GoogleBooksService {
       id: 'google_${json['id']}',
       titulo: info['title'] ?? 'Título no disponible',
       autores: List<String>.from(info['authors'] ?? []),
-      descripcion: null, // 🔥 IMPORTANTE: No usar descripción de Google
+      descripcion: null, 
       urlMiniatura: imagenes['thumbnail'] ?? imagenes['smallThumbnail'],
       fechaPublicacion: info['publishedDate'],
       numeroPaginas: info['pageCount'],

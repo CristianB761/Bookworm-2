@@ -1,3 +1,4 @@
+// lib/API/modelos.dart
 class OfertaTienda {
   final String tienda;
   final double precio;
@@ -49,7 +50,8 @@ class Libro {
   final List<OfertaTienda> ofertas;
   final String? isbn10;
   final String? isbn13;
-  final String? urlCompra; 
+  final String? urlCompra;
+  final String? urlPDFSubido;
 
   Libro({
     required this.id,
@@ -71,6 +73,7 @@ class Libro {
     this.isbn10,
     this.isbn13,
     this.urlCompra,
+    this.urlPDFSubido,
   });
 
   Map<String, dynamic> toMap() {
@@ -94,6 +97,7 @@ class Libro {
       'isbn10': isbn10,
       'isbn13': isbn13,
       'urlCompra': urlCompra,
+      'urlPDFSubido': urlPDFSubido,
     };
   }
 
@@ -177,6 +181,7 @@ class Libro {
       isbn10: map['isbn10'],
       isbn13: map['isbn13'],
       urlCompra: map['urlCompra'],
+      urlPDFSubido: map['urlPDFSubido'],
     );
   }
 
@@ -200,6 +205,7 @@ class Libro {
     String? isbn10,
     String? isbn13,
     String? urlCompra,
+    String? urlPDFSubido,
   }) {
     return Libro(
       id: id ?? this.id,
@@ -221,10 +227,13 @@ class Libro {
       isbn10: isbn10 ?? this.isbn10,
       isbn13: isbn13 ?? this.isbn13,
       urlCompra: urlCompra ?? this.urlCompra,
+      urlPDFSubido: urlPDFSubido ?? this.urlPDFSubido,
     );
   }
 
   String? get isbn => isbn13 ?? isbn10;
+  
+  bool get tienePDFSubido => urlPDFSubido != null && urlPDFSubido!.isNotEmpty;
 
   List<OfertaTienda> get ofertasConSimuladas {
     if (ofertas.isNotEmpty) {
@@ -251,34 +260,16 @@ class Libro {
     final busqueda = titulo;
     
     final tiendas = [
-      (
-        'Amazon',
-        'https://www.amazon.es/s?k=${Uri.encodeComponent(busqueda)}&i=stripbooks'
-      ),
-      (
-        'Casa del Libro',
-        'https://www.casadellibro.com/busqueda-libros?q=${Uri.encodeComponent(busqueda)}'
-      ),
-      (
-        'Fnac',
-        'https://www.fnac.es/ia?Search=${Uri.encodeComponent(busqueda)}'
-      ),
-      (
-        'El Corte Inglés',
-        'https://www.elcorteingles.es/libros/search/?q=${Uri.encodeComponent(busqueda)}'
-      ),
+      ('Amazon', 'https://www.amazon.es/s?k=${Uri.encodeComponent(busqueda)}&i=stripbooks'),
+      ('Casa del Libro', 'https://www.casadellibro.com/busqueda-libros?q=${Uri.encodeComponent(busqueda)}'),
+      ('Fnac', 'https://www.fnac.es/ia?Search=${Uri.encodeComponent(busqueda)}'),
+      ('El Corte Inglés', 'https://www.elcorteingles.es/libros/search/?q=${Uri.encodeComponent(busqueda)}'),
     ];
     
     if (esAudiolibro) {
       tiendas.addAll([
-        (
-          'Audible',
-          'https://www.audible.es/search?keywords=${Uri.encodeComponent(busqueda)}'
-        ),
-        (
-          'Storytel',
-          'https://www.storytel.com/es/es/search?q=${Uri.encodeComponent(busqueda)}'
-        ),
+        ('Audible', 'https://www.audible.es/search?keywords=${Uri.encodeComponent(busqueda)}'),
+        ('Storytel', 'https://www.storytel.com/es/es/search?q=${Uri.encodeComponent(busqueda)}'),
       ]);
     }
     

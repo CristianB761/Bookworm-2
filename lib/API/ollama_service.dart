@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class OllamaService {
-  static const String baseUrl = 'http://192.168.0.138:11434';
+  static const String baseUrl = 'http://localhost:11434';
   final String model;
 
   OllamaService({this.model = 'phi3:mini'});
@@ -98,6 +98,12 @@ Instrucciones IMPORTANTES:
 5. NO incluyas frases como "Aquí tienes..." o "Claro, aquí va..."
 6. NO incluyas calificaciones numéricas ni estrellas
 7. Comienza directamente con la descripción del libro
+8. NO menciones el título del libro
+9. NO menciones el nombre del autor
+10. NO menciones la fecha de publicación
+11. NO menciones el género o subgénero del libro
+12. Solo menciona el nombre del protagonista principal, ningún otro personaje debe ser nombrado
+13. Narra la historia de forma general, sin revelar eventos clave ni finales
 
 Descripción:''';
   }

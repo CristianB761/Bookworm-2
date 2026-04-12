@@ -206,7 +206,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -299,7 +299,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -316,7 +316,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
                 color: AppColores.texto,
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               'Te redirigiremos a la tienda seleccionada',
               style: TextStyle(
@@ -325,7 +325,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             
             Expanded(
               child: ListView(
@@ -363,7 +363,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -486,7 +486,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -724,10 +724,11 @@ class _DetallesLibroState extends State<DetallesLibro> {
   }
 
   Widget _construirEncabezado() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColores.primario.withOpacity(0.1),
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -738,7 +739,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
             height: 180,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFFEEEEEE),
+              color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFEEEEEE),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
@@ -779,10 +780,10 @@ class _DetallesLibroState extends State<DetallesLibro> {
               children: [
                 Text(
                   widget.libroObjeto.titulo,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
@@ -791,9 +792,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                 if (widget.libroObjeto.autores.isNotEmpty)
                   Text(
                     'Por ${widget.libroObjeto.autores.join(', ')}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      color: Colors.black54,
+                      color: isDark ? Colors.white70 : Colors.black54,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -802,18 +803,18 @@ class _DetallesLibroState extends State<DetallesLibro> {
                 if (widget.libroObjeto.fechaPublicacion != null)
                   Text(
                     'Publicado: ${widget.libroObjeto.fechaPublicacion}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Colors.black45,
+                      color: isDark ? Colors.white60 : Colors.black45,
                     ),
                   ),
                 if (widget.libroObjeto.numeroPaginas != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     '${widget.libroObjeto.numeroPaginas} páginas',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Colors.black45,
+                      color: isDark ? Colors.white60 : Colors.black45,
                     ),
                   ),
                 ],
@@ -825,17 +826,18 @@ class _DetallesLibroState extends State<DetallesLibro> {
                       const SizedBox(width: 4),
                       Text(
                         '${widget.libroObjeto.calificacionPromedio!.toStringAsFixed(1)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white : Colors.black87,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '(${widget.libroObjeto.numeroCalificaciones ?? 0} reseñas)',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.black54,
+                          color: isDark ? Colors.white70 : Colors.black54,
                         ),
                       ),
                     ],
@@ -928,23 +930,25 @@ class _DetallesLibroState extends State<DetallesLibro> {
   Widget _construirSeccionCompra() {
     final bool tieneUrl = widget.libroObjeto.urlLectura != null;
     final bool esAudiolibro = widget.libroObjeto.esAudiolibro;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (tieneUrl) ...[
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Acceso Gratuito',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF424242),
+              color: isDark ? Colors.white : const Color(0xFF424242),
             ),
           ),
           const SizedBox(height: 12),
           Card(
             elevation: 2,
+            color: Theme.of(context).cardColor,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -970,9 +974,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                               esAudiolibro 
                                 ? 'Este audiolibro está disponible para escuchar gratis'
                                 : 'Este libro está disponible para leer gratis',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF757575),
+                                color: isDark ? Colors.white70 : const Color(0xFF757575),
                               ),
                             ),
                           ],
@@ -1006,12 +1010,13 @@ class _DetallesLibroState extends State<DetallesLibro> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF424242),
+            color: isDark ? Colors.white : const Color(0xFF424242),
           ),
         ),
         const SizedBox(height: 12),
         Card(
           elevation: 2,
+          color: Theme.of(context).cardColor,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -1026,7 +1031,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
                         children: [
                           Text(
                             esAudiolibro ? 'Buscar en plataformas' : 'Buscar en tiendas',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: AppColores.primario,
@@ -1037,9 +1042,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                             esAudiolibro 
                               ? 'Encuentra este audiolibro en Audible, Storytel, y más.'
                               : 'Encuentra este libro en Amazon, Fnac, y más.',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF757575),
+                              color: isDark ? Colors.white70 : const Color(0xFF757575),
                             ),
                           ),
                         ],
@@ -1063,63 +1068,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _construirTiendaAudiolibro(String nombre, String url, IconData icono, Color color) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color,
-          child: Icon(icono, color: Colors.white),
-        ),
-        title: Text(
-          nombre,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: const Text('Haz clic para buscar este audiolibro'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          _abrirURL(url);
-        },
-      ),
-    );
-  }
-
-  Widget _construirTarjetaTienda(OfertaTienda oferta) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      child: InkWell(
-        onTap: oferta.url != null && oferta.url!.isNotEmpty ? () {
-          _abrirURL(oferta.url!);
-        } : null,
-        borderRadius: BorderRadius.circular(8),
-        child: ListTile(
-          contentPadding: const EdgeInsets.all(16),
-          leading: _iconoTienda(oferta.tienda),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                oferta.tienda,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Icon(Icons.arrow_forward_ios, size: 16, color: AppColores.primario),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -1179,50 +1127,37 @@ class _DetallesLibroState extends State<DetallesLibro> {
     );
   }
 
-  String _calcularDiferenciaPrecio(double precioTienda, double precioBase) {
-    final diferencia = precioTienda - precioBase;
-    if (diferencia == 0) return 'Mismo precio';
-    if (diferencia < 0) return '${diferencia.abs().toStringAsFixed(2)}€ más barato';
-    return '${diferencia.toStringAsFixed(2)}€ más caro';
-  }
-
-  Color _obtenerColorDiferencia(double precioTienda, double precioBase) {
-    final diferencia = precioTienda - precioBase;
-    if (diferencia < 0) return Colors.green;
-    if (diferencia > 0) return Colors.red;
-    return const Color(0xFF9E9E9E);
-  }
-
   Widget _construirDescripcion() {
     if (widget.libroObjeto.descripcion == null || widget.libroObjeto.descripcion!.isEmpty) {
       return Container();
     }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'Descripción',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF424242),
+            color: isDark ? Colors.white : const Color(0xFF424242),
           ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
+            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFFAFAFA),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFEEEEEE)),
+            border: Border.all(color: isDark ? const Color(0xFF444444) : const Color(0xFFEEEEEE)),
           ),
           child: Text(
             widget.libroObjeto.descripcion!,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
-              color: Color(0xFF616161),
+              color: isDark ? Colors.white70 : const Color(0xFF616161),
               height: 1.5,
             ),
           ),
@@ -1235,17 +1170,18 @@ class _DetallesLibroState extends State<DetallesLibro> {
     if (widget.libroObjeto.categorias.isEmpty) {
       return Container();
     }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'Categorías',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF424242),
+            color: isDark ? Colors.white : const Color(0xFF424242),
           ),
         ),
         const SizedBox(height: 8),
@@ -1265,6 +1201,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
   }
 
   Widget _construirBotonesAccion() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Padding(
@@ -1329,7 +1266,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColores.fondo,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('Detalles del Libro', style: EstilosApp.tituloGrande(context)),
         backgroundColor: AppColores.primario,
@@ -1343,7 +1280,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
             _construirEncabezado(),
             _construirDescripcion(),
             _construirCategorias(),
-            _construirSeccionCompra(), 
+            _construirSeccionCompra(),
             _construirBotonesAccion(),
             const SizedBox(height: 40),
           ],

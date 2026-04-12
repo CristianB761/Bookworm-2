@@ -1,32 +1,12 @@
 import 'dart:io';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class SupabaseStorageService {
-  static final supabase = Supabase.instance.client;
+  static final supabase.SupabaseClient supabaseClient = supabase.Supabase.instance.client;
   static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   static const String bucketName = 'bookworm-pdfs';
-
-  /// Sincroniza la autenticación de Firebase con Supabase
-  static Future<void> _sincronizarAuth() async {
-    final firebaseUser = _firebaseAuth.currentUser;
-    if (firebaseUser == null) {
-      throw Exception('Usuario no autenticado en Firebase');
-    }
-
-    // Verificar si ya hay sesión en Supabase
-    final supabaseUser = supabase.auth.currentUser;
-    
-    if (supabaseUser == null) {
-      // Si no hay sesión en Supabase, iniciar sesión con email/contraseña
-      // Nota: Necesitas tener el mismo email/contraseña en ambos sistemas
-      if (firebaseUser.email != null && firebaseUser.email!.isNotEmpty) {
-        // Esta es la parte complicada - necesitas la contraseña
-        print('Necesitas implementar autenticación en Supabase');
-        print('El email es: ${firebaseUser.email}');
-      }
-    }
-  }
 
   static Future<String> subirPDF({
     required File archivo,
@@ -34,26 +14,24 @@ class SupabaseStorageService {
     required String nombrePDF,
   }) async {
     try {
-      // Verificar autenticación en Firebase
       final firebaseUser = _firebaseAuth.currentUser;
       if (firebaseUser == null) {
         throw Exception('Usuario no autenticado en Firebase');
       }
 
-      // Intentar sincronizar con Supabase
-      await _sincronizarAuth();
-
-      final supabaseUser = supabase.auth.currentUser;
+      final supabaseUser = supabaseClient.auth.currentUser;
       if (supabaseUser == null) {
-        // Si no podemos autenticar en Supabase, usar Firebase Storage como fallback
-        print('Usando Firebase Storage como fallback');
+        print('Sin sesión en Supabase, usando Firebase Storage');
         return await _subirAFirebaseStorage(archivo, nombreLibro, nombrePDF, firebaseUser);
       }
 
-      // Subir a Supabase Storage
       return await _subirASupabaseStorage(archivo, nombreLibro, nombrePDF, supabaseUser);
     } catch (e) {
       print('Error al subir PDF: $e');
+      final firebaseUser = _firebaseAuth.currentUser;
+      if (firebaseUser != null) {
+        return await _subirAFirebaseStorage(archivo, nombreLibro, nombrePDF, firebaseUser);
+      }
       throw Exception('Error al subir PDF: $e');
     }
   }
@@ -62,7 +40,7 @@ class SupabaseStorageService {
     File archivo,
     String nombreLibro,
     String nombrePDF,
-    User supabaseUser,
+    supabase.User supabaseUser,
   ) async {
     final nombreLibroLimpio = nombreLibro
         .replaceAll(' ', '_')
@@ -81,17 +59,16 @@ class SupabaseStorageService {
 
     final bytes = await archivo.readAsBytes();
 
-    await supabase.storage.from(bucketName).uploadBinary(
-          rutaArchivo,
-          bytes,
-          fileOptions: const FileOptions(
-            contentType: 'application/pdf',
-            cacheControl: '3600',
-          ),
-        );
+    await supabaseClient.storage.from(bucketName).uploadBinary(
+      rutaArchivo,
+      bytes,
+      fileOptions: const supabase.FileOptions(
+        contentType: 'application/pdf',
+        cacheControl: '3600',
+      ),
+    );
 
-    final urlPublica = supabase.storage.from(bucketName).getPublicUrl(rutaArchivo);
-    
+    final urlPublica = supabaseClient.storage.from(bucketName).getPublicUrl(rutaArchivo);
     print('PDF subido exitosamente a Supabase: $urlPublica');
     return urlPublica;
   }
@@ -103,7 +80,7 @@ class SupabaseStorageService {
     User firebaseUser,
   ) async {
     final storage = FirebaseStorage.instance;
-    
+
     final nombreLibroLimpio = nombreLibro
         .replaceAll(' ', '_')
         .replaceAll(RegExp(r'[^a-zA-Z0-9_áéíóúñÑ]'), '')

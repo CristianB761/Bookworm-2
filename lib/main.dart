@@ -24,17 +24,16 @@ import 'historial.dart';
 import 'desafios.dart';
 import 'theme_provider.dart';
 import 'servicio/servicio_notificaciones.dart';
+import 'lista_chats.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar Supabase PRIMERO
   await Supabase.initialize(
     url: 'https://hhuygktefnjvkbtzlnvc.supabase.co',
     anonKey: 'sb_publishable_5DEg7-OKTm7IBnn1Cuvj2Q_DWoBVj0a',
   );
   
-  // Luego Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
   runApp(
@@ -180,6 +179,7 @@ class AppBookWorm extends StatelessWidget {
           }
           return const Scaffold(body: Center(child: Text('Error: Datos de lectura no encontrados')));
         },
+        '/lista_chats': (context) => const ListaChats(),
       },
     );
   }
@@ -264,6 +264,11 @@ class _PaginaInicioState extends State<PaginaInicio> {
         automaticallyImplyLeading: false,
         actions: [
           const BotonNotificaciones(),
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+            onPressed: () => Navigator.pushNamed(context, '/lista_chats'),
+            tooltip: 'Mensajes',
+          ),
           TextButton(
             onPressed: () => themeProvider.alternarTema(),
             style: ButtonStyle(

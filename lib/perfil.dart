@@ -15,6 +15,7 @@ import 'API/modelos.dart';
 import 'theme_provider.dart';
 import 'lector_pdf.dart';
 import 'subir_pdf_dialog.dart';
+import 'chat_messages_screen.dart';
 
 class Perfil extends StatefulWidget {
   final String? userId;
@@ -178,8 +179,21 @@ class _PerfilState extends State<Perfil> {
     });
   }
 
-  // ==================== MÉTODO PARA SUBIR PDF A SUPABASE ====================
-  
+  void _iniciarConversacion() async {
+    final otroUsuarioId = _uidPerfil;
+    final otroUsuarioNombre = _datosUsuario?.nombre ?? 'Usuario';
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatMessagesScreen(
+          otroUsuarioId: otroUsuarioId,
+          otroUsuarioNombre: otroUsuarioNombre,
+        ),
+      ),
+    );
+  }
+
   Future<void> _subirPDF(String libroId, String tituloLibro) async {
     try {
       final usuario = _auth.currentUser;
@@ -198,7 +212,6 @@ class _PerfilState extends State<Perfil> {
 
       final archivoPDF = File(resultado.files.single.path!);
       
-      // Mostrar diálogo de subida a Supabase
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -345,8 +358,6 @@ class _PerfilState extends State<Perfil> {
       final usuario = _auth.currentUser;
       if (usuario == null) return;
 
-      // Nota: Eliminar de Supabase Storage requeriría implementación adicional
-      // Por ahora solo eliminamos la referencia en Firestore
       await _firestore
           .collection('usuarios')
           .doc(usuario.uid)
@@ -360,8 +371,6 @@ class _PerfilState extends State<Perfil> {
       _mostrarError('Error al eliminar PDF: $e');
     }
   }
-
-  // ==================== MÉTODOS PARA IMAGEN DE PERFIL ====================
 
   Future<void> _seleccionarImagen() async {
     final picker = ImagePicker();
@@ -567,8 +576,6 @@ class _PerfilState extends State<Perfil> {
       _mostrarError('Error al actualizar perfil: $e');
     }
   }
-
-  // ==================== MÉTODOS DE PROGRESO ====================
 
   Future<void> _eliminarProgreso(String progresoId, String libroId) async {
     final confirmar = await showDialog<bool>(
@@ -1106,6 +1113,12 @@ class _PerfilState extends State<Perfil> {
               Text(_esMiPerfil ? 'Mi Perfil' : _datosUsuario?.nombre ?? 'Perfil', style: EstilosApp.tituloMedio(context)),
               Row(
                 children: [
+                  if (!_esMiPerfil)
+                    IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline, color: AppColores.primario, size: 28),
+                      onPressed: _iniciarConversacion,
+                      tooltip: 'Enviar mensaje',
+                    ),
                   if (_esMiPerfil)
                     ElevatedButton(
                       onPressed: _mostrarDialogoEditarPerfil,
@@ -1187,11 +1200,11 @@ class _PerfilState extends State<Perfil> {
                     if (_datosUsuario?.biografia != null && _datosUsuario!.biografia!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: TextoConLinks(
-                          texto: _datosUsuario!.biografia!,
-                          estilo: EstilosApp.cuerpoPequeno(context),
-                          maxLineas: 2,
-                          desbordamiento: TextOverflow.ellipsis,
+                        child: Text(
+                          _datosUsuario!.biografia!,
+                          style: EstilosApp.cuerpoPequeno(context),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                   ],
@@ -1324,9 +1337,9 @@ class _PerfilState extends State<Perfil> {
               children: [
                 Text('Biografía', style: EstilosApp.tituloPequeno(context)),
                 const SizedBox(height: 8),
-                TextoConLinks(
-                  texto: _datosUsuario!.biografia!,
-                  estilo: EstilosApp.cuerpoMedio(context),
+                Text(
+                  _datosUsuario!.biografia!,
+                  style: EstilosApp.cuerpoMedio(context),
                 ),
               ],
             ),

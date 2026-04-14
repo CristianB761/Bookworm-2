@@ -24,7 +24,7 @@ import 'historial.dart';
 import 'desafios.dart';
 import 'theme_provider.dart';
 import 'servicio/servicio_notificaciones.dart';
-import 'lista_chats.dart';
+import 'mensajes_directos.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -179,7 +179,7 @@ class AppBookWorm extends StatelessWidget {
           }
           return const Scaffold(body: Center(child: Text('Error: Datos de lectura no encontrados')));
         },
-        '/lista_chats': (context) => const ListaChats(),
+        '/mensajes_directos': (context) => const MensajesDirectos(),
       },
     );
   }
@@ -266,7 +266,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
           const BotonNotificaciones(),
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            onPressed: () => Navigator.pushNamed(context, '/lista_chats'),
+            onPressed: () => Navigator.pushNamed(context, '/mensajes_directos'),
             tooltip: 'Mensajes',
           ),
           TextButton(

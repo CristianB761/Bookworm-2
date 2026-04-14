@@ -572,8 +572,6 @@ class ServicioFirestore {
     }
   }
 
-  // ==================== BÚSQUEDA DE USUARIOS ====================
-
   Future<List<DatosUsuario>> buscarUsuarios(String termino) async {
     try {
       final uidActual = _auth.currentUser?.uid;
@@ -594,8 +592,6 @@ class ServicioFirestore {
     }
   }
 
-  // ==================== SISTEMA DE SEGUIR USUARIOS ====================
-
   Future<void> seguirUsuario(String uidObjetivo) async {
     final uidActual = _auth.currentUser?.uid;
     if (uidActual == null) return;
@@ -613,6 +609,7 @@ class ServicioFirestore {
     );
 
     await batch.commit();
+    print('Usuario seguido: $uidObjetivo');
   }
 
   Future<void> dejarDeSeguirUsuario(String uidObjetivo) async {
@@ -629,6 +626,7 @@ class ServicioFirestore {
     );
 
     await batch.commit();
+    print('Dejado de seguir usuario: $uidObjetivo');
   }
 
   Future<bool> estaSiguiendo(String uidObjetivo) async {
@@ -644,8 +642,6 @@ class ServicioFirestore {
 
     return doc.exists;
   }
-
-  // ==================== NUEVOS MÉTODOS PARA SEGUIDORES Y SIGUIENDO (CORREGIDOS) ====================
 
   Future<int> obtenerNumeroSeguidores(String uid) async {
     try {

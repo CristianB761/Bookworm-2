@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../diseno.dart';
 
 class ChatMessagesScreen extends StatefulWidget {
   final String otroUsuarioId;
@@ -21,6 +23,9 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ScrollController _scrollController = ScrollController();
+  
+  bool _enviando = false;
+  String? _fotoUrlOtroUsuario;
 
   String get _chatId {
     String uidActual = _auth.currentUser!.uid;
@@ -32,6 +37,7 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
   @override
   void initState() {
     super.initState();
+    _cargarFotoUsuario();
     _marcarMensajesComoLeidos();
   }
 
@@ -40,6 +46,23 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
     _mensajeController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _cargarFotoUsuario() async {
+    try {
+      final userDoc = await _firestore
+          .collection('usuarios')
+          .doc(widget.otroUsuarioId)
+          .get();
+      
+      if (userDoc.exists) {
+        setState(() {
+          _fotoUrlOtroUsuario = userDoc.data()?['urlImagenPerfil'];
+        });
+      }
+    } catch (e) {
+      print('Error cargando foto: $e');
+    }
   }
 
   void _marcarMensajesComoLeidos() async {
@@ -59,31 +82,44 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
   }
 
   Future<void> _enviarMensaje() async {
-    if (_mensajeController.text.trim().isEmpty) return;
+    if (_mensajeController.text.trim().isEmpty || _enviando) return;
 
     String uidActual = _auth.currentUser!.uid;
     String mensaje = _mensajeController.text.trim();
     _mensajeController.clear();
+    
+    setState(() => _enviando = true);
 
-    await _firestore.collection('chats').doc(_chatId).set({
-      'participantes': [uidActual, widget.otroUsuarioId],
-      'ultimoMensaje': mensaje,
-      'ultimaActividad': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    try {
+      await _firestore.collection('chats').doc(_chatId).set({
+        'participantes': [uidActual, widget.otroUsuarioId],
+        'ultimoMensaje': mensaje,
+        'ultimaActividad': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
-    await _firestore
-        .collection('chats')
-        .doc(_chatId)
-        .collection('mensajes')
-        .add({
-      'emisorId': uidActual,
-      'receptorId': widget.otroUsuarioId,
-      'mensaje': mensaje,
-      'timestamp': FieldValue.serverTimestamp(),
-      'leido': false,
-    });
+      await _firestore
+          .collection('chats')
+          .doc(_chatId)
+          .collection('mensajes')
+          .add({
+        'emisorId': uidActual,
+        'receptorId': widget.otroUsuarioId,
+        'mensaje': mensaje,
+        'timestamp': FieldValue.serverTimestamp(),
+        'leido': false,
+      });
 
-    _scrollToBottom();
+      _scrollToBottom();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al enviar mensaje: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _enviando = false);
+    }
   }
 
   void _scrollToBottom() {
@@ -98,13 +134,51 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
     });
   }
 
+  Future<void> _verPerfil() async {
+    Navigator.pushNamed(
+      context,
+      '/perfil',
+      arguments: {'userId': widget.otroUsuarioId},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.otroUsuarioNombre),
-        backgroundColor: const Color(0xFF20B2AA),
+        title: GestureDetector(
+          onTap: _verPerfil,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColores.primario.withOpacity(0.1),
+                backgroundImage: _fotoUrlOtroUsuario != null && _fotoUrlOtroUsuario!.isNotEmpty
+                    ? NetworkImage(_fotoUrlOtroUsuario!)
+                    : null,
+                child: _fotoUrlOtroUsuario == null || _fotoUrlOtroUsuario!.isEmpty
+                    ? const Icon(Icons.person, size: 18, color: AppColores.primario)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                widget.otroUsuarioNombre,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ],
+          ),
+        ),
+        backgroundColor: AppColores.primario,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: _verPerfil,
+            tooltip: 'Ver perfil',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -118,7 +192,23 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Error al cargar mensajes'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text('Error al cargar mensajes: ${snapshot.error}'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {});
+                          },
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -126,15 +216,22 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text('No hay mensajes aún', style: TextStyle(color: Colors.grey)),
-                        SizedBox(height: 8),
-                        Text('Envía el primer mensaje', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade400),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No hay mensajes aún',
+                          style: EstilosApp.tituloPequeno(context),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Envía el primer mensaje a ${widget.otroUsuarioNombre}',
+                          style: EstilosApp.cuerpoPequeno(context),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   );
@@ -142,6 +239,12 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
 
                 String uidActual = _auth.currentUser!.uid;
                 final mensajes = snapshot.data!.docs;
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_scrollController.hasClients && mounted) {
+                    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                  }
+                });
 
                 return ListView.builder(
                   controller: _scrollController,
@@ -165,7 +268,7 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
               },
             ),
           ),
-          _buildMessageInput(),
+          _buildMessageInput(isDark),
         ],
       ),
     );
@@ -177,92 +280,125 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
     required DateTime timestamp,
     required bool leido,
   }) {
-    return Align(
-      alignment: esMio ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        child: Column(
-          crossAxisAlignment: esMio ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: esMio ? const Color(0xFF20B2AA) : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                mensaje,
-                style: TextStyle(
-                  color: esMio ? Colors.white : Colors.black87,
-                  fontSize: 14,
-                ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: esMio ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!esMio)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: AppColores.primario.withOpacity(0.1),
+                backgroundImage: _fotoUrlOtroUsuario != null && _fotoUrlOtroUsuario!.isNotEmpty
+                    ? NetworkImage(_fotoUrlOtroUsuario!)
+                    : null,
+                child: _fotoUrlOtroUsuario == null || _fotoUrlOtroUsuario!.isEmpty
+                    ? const Icon(Icons.person, size: 14, color: AppColores.primario)
+                    : null,
               ),
             ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: esMio ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                Text(
-                  _formatTime(timestamp),
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
-                ),
-                if (esMio) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    leido ? Icons.done_all : Icons.done,
-                    size: 12,
-                    color: leido ? const Color(0xFF20B2AA) : Colors.grey,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: esMio 
+                        ? AppColores.primario 
+                        : (isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade200),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
+                  child: Text(
+                    mensaje,
+                    style: TextStyle(
+                      color: esMio ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _formatTime(timestamp),
+                      style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
+                    if (esMio) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        leido ? Icons.done_all : Icons.done,
+                        size: 12,
+                        color: leido ? AppColores.primario : Colors.grey,
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMessageInput() {
+  Widget _buildMessageInput(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
-          top: BorderSide(color: Colors.grey.shade300),
+          top: BorderSide(color: isDark ? const Color(0xFF444444) : Colors.grey.shade300),
         ),
       ),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _mensajeController,
-              decoration: InputDecoration(
-                hintText: 'Escribe un mensaje...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(30),
               ),
-              onSubmitted: (_) => _enviarMensaje(),
+              child: TextField(
+                controller: _mensajeController,
+                decoration: const InputDecoration(
+                  hintText: 'Escribe un mensaje...',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                ),
+                onSubmitted: (_) => _enviarMensaje(),
+                maxLines: null,
+                textCapitalization: TextCapitalization.sentences,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           GestureDetector(
             onTap: _enviarMensaje,
             child: Container(
-              width: 48,
-              height: 48,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF20B2AA),
+                color: AppColores.primario,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.send, color: Colors.white, size: 20),
+              child: _enviando
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.send, color: Colors.white, size: 20),
             ),
           ),
         ],
@@ -274,8 +410,10 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
     DateTime now = DateTime.now();
     if (time.day == now.day && time.month == now.month && time.year == now.year) {
       return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-    } else {
+    } else if (time.year == now.year) {
       return '${time.day}/${time.month} ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    } else {
+      return '${time.day}/${time.month}/${time.year}';
     }
   }
 }

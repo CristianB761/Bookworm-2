@@ -292,7 +292,7 @@ class _PerfilState extends State<Perfil> {
                     border: Border.all(color: Colors.blue.withOpacity(0.3)),
                   ),
                   child: const Text(
-                    '💡 Después podrás seleccionar el PDF de tu dispositivo. El archivo se subirá a Supabase Storage.',
+                    'Después podrás seleccionar el PDF de tu dispositivo. El archivo se subirá a Supabase Storage.',
                     style: TextStyle(fontSize: 12, color: Colors.blue),
                   ),
                 ),
@@ -384,10 +384,6 @@ class _PerfilState extends State<Perfil> {
           TextButton(
             onPressed: () => Navigator.pop(context, ImageSource.gallery),
             child: const Text('Galería'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, ImageSource.camera),
-            child: const Text('Cámara'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),

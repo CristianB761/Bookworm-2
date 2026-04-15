@@ -249,13 +249,83 @@ class _PerfilState extends State<Perfil> {
   void _mostrarDialogoSubirPDF() {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => SubirPDFDialog(
-        libroId: null,
-        tituloLibro: null,
-        onPDFSubido: () {
-          _cargarDatosUsuario();
-        },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Nuevo Libro con PDF'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Ingresa el nombre del libro que vas a subir:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _nombreLibroController,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre del libro',
+                    hintText: 'Ej: El Hobbit, La Odisea, etc',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: const Icon(Icons.book),
+                    errorText: _mensajeError,
+                  ),
+                  maxLines: 1,
+                  onChanged: (value) {
+                    if (_mensajeError != null) {
+                      setState(() {
+                        _mensajeError = null;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: const Text(
+                    '💡 Después podrás seleccionar el PDF de tu dispositivo. El archivo se subirá a Supabase Storage.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final nombreLibro = _nombreLibroController.text.trim();
+                
+                if (nombreLibro.isEmpty) {
+                  setState(() {
+                    _mensajeError = 'Por favor ingresa un nombre';
+                  });
+                  return;
+                }
+
+                Navigator.pop(context);
+                
+                final libroId = '${nombreLibro.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+                
+                _subirPDF(libroId, nombreLibro);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColores.primario,
+              ),
+              child: const Text('Siguiente'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -314,10 +384,6 @@ class _PerfilState extends State<Perfil> {
           TextButton(
             onPressed: () => Navigator.pop(context, ImageSource.gallery),
             child: const Text('Galería'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, ImageSource.camera),
-            child: const Text('Cámara'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),

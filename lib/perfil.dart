@@ -54,6 +54,9 @@ class _PerfilState extends State<Perfil> {
   int _numeroSeguidores = 0;
   int _numeroSiguiendo = 0;
 
+  final TextEditingController _nombreLibroController = TextEditingController();
+  String? _mensajeError;
+
   @override
   void initState() {
     super.initState();
@@ -290,7 +293,7 @@ class _PerfilState extends State<Perfil> {
                     border: Border.all(color: Colors.blue.withOpacity(0.3)),
                   ),
                   child: const Text(
-                    '💡 Después podrás seleccionar el PDF de tu dispositivo. El archivo se subirá a Supabase Storage.',
+                    'Después podrás seleccionar el PDF de tu dispositivo. El archivo se subirá a Firebase Storage.',
                     style: TextStyle(fontSize: 12, color: Colors.blue),
                   ),
                 ),
@@ -1552,7 +1555,7 @@ class _PerfilState extends State<Perfil> {
                             color: const Color(0xFFEEEEEE),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.book, size: 30, color: Color(0xFF9E9E9E)),
+                          child: const Icon(Icons.book, size: 30, color: const Color(0xFF9E9E9E)),
                         );
                       },
                     ),
@@ -1565,7 +1568,7 @@ class _PerfilState extends State<Perfil> {
                       color: const Color(0xFFEEEEEE),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.book, size: 30, color: Color(0xFF9E9E9E)),
+                    child: const Icon(Icons.book, size: 30, color: const Color(0xFF9E9E9E)),
                   ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1957,7 +1960,6 @@ class _PerfilState extends State<Perfil> {
     final int paginasLeidas = _progresosLectura.fold(0, (sum, p) => sum + p.paginaActual);
 
     final Map<String, int> conteoGeneros = {};
-    int totalCategorias = 0;
     
     for (final libro in _todosLosLibrosUsuario) {
       if (libro['categorias'] != null) {
@@ -1965,7 +1967,6 @@ class _PerfilState extends State<Perfil> {
         for (final c in categorias) {
           final categoria = c.toString();
           conteoGeneros[categoria] = (conteoGeneros[categoria] ?? 0) + 1;
-          totalCategorias++;
         }
       }
     }

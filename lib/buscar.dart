@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -45,6 +46,8 @@ class _BuscarState extends State<Buscar> {
   bool _cargandoUsuarios = false;
   bool _haBuscadoUsuarios = false;
   final ServicioFirestore _servicioFirestore = ServicioFirestore();
+  
+  Timer? _debounceTimer;
 
   List<String> _obtenerItemsFormato() {
     final lista = ['Audiolibros', 'Libros'];
@@ -64,6 +67,22 @@ class _BuscarState extends State<Buscar> {
     _generoSeleccionado = _obtenerItemsGenero().first;
     _formatoSeleccionado = 'Todos los formatos';
     _escucharCambiosBiblioteca();
+    
+    // Listener para búsqueda en tiempo real de usuarios
+    _controladorBusqueda.addListener(() {
+      if (_busquedaUsuarios && _controladorBusqueda.text.isNotEmpty) {
+        _debounceBuscarUsuarios();
+      }
+    });
+  }
+
+  void _debounceBuscarUsuarios() {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (_busquedaUsuarios && _controladorBusqueda.text.isNotEmpty && mounted) {
+        _buscarUsuarios();
+      }
+    });
   }
 
   void _escucharCambiosBiblioteca() {
@@ -91,6 +110,7 @@ class _BuscarState extends State<Buscar> {
   @override
   void dispose() {
     _controladorBusqueda.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -241,7 +261,10 @@ class _BuscarState extends State<Buscar> {
   Future<void> _buscarUsuarios() async {
     final query = _controladorBusqueda.text.trim();
     if (query.isEmpty) {
-      _mostrarError('Ingresa un nombre para buscar');
+      setState(() {
+        _resultadosUsuarios = [];
+        _haBuscadoUsuarios = false;
+      });
       return;
     }
 
@@ -885,6 +908,83 @@ class _BuscarState extends State<Buscar> {
     );
   }
 
+  Widget _seccionResultadosUsuarios() {
+    if (_cargandoUsuarios) {
+      return const IndicadorCarga(mensaje: 'Buscando usuarios...');
+    }
+
+    if (_controladorBusqueda.text.isNotEmpty && !_haBuscadoUsuarios && _cargandoUsuarios) {
+      return const IndicadorCarga(mensaje: 'Escribiendo...');
+    }
+
+    if (!_haBuscadoUsuarios || _controladorBusqueda.text.isEmpty) {
+      return const EstadoVacio(
+        icono: Icons.people_outline,
+        titulo: 'Busca usuarios',
+        descripcion: 'Escribe un nombre para encontrar lectores en Bookworm',
+      );
+    }
+
+    if (_resultadosUsuarios.isEmpty) {
+      return const EstadoVacio(
+        icono: Icons.person_off_outlined,
+        titulo: 'Sin resultados',
+        descripcion: 'No se encontraron usuarios con ese nombre',
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _resultadosUsuarios.length,
+      separatorBuilder: (context, index) => const Divider(),
+      itemBuilder: (context, index) {
+        final usuario = _resultadosUsuarios[index];
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundColor: AppColores.primario.withOpacity(0.1),
+            backgroundImage: usuario.urlImagenPerfil != null &&
+                    usuario.urlImagenPerfil!.isNotEmpty
+                ? NetworkImage(usuario.urlImagenPerfil!)
+                : null,
+            child: usuario.urlImagenPerfil == null ||
+                    usuario.urlImagenPerfil!.isEmpty
+                ? const Icon(Icons.person, color: AppColores.primario)
+                : null,
+          ),
+          title: Text(
+            usuario.nombre,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            usuario.biografia?.isNotEmpty == true
+                ? usuario.biografia!
+                : 'Sin biografía',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/perfil',
+                arguments: {'userId': usuario.uid},
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColores.primario,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Ver perfil'),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1018,6 +1118,13 @@ class _BuscarState extends State<Buscar> {
       onTap: () {
         setState(() {
           _busquedaUsuarios = texto == 'Usuarios';
+          // Limpiar el campo de búsqueda al cambiar de pestaña
+          _controladorBusqueda.clear();
+          _resultadosBusqueda = [];
+          _resultadosUsuarios = [];
+          _haBuscado = false;
+          _haBuscadoUsuarios = false;
+          _cargandoUsuarios = false;
         });
       },
       child: Container(
@@ -1043,79 +1150,6 @@ class _BuscarState extends State<Buscar> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _seccionResultadosUsuarios() {
-    if (_cargandoUsuarios) {
-      return const IndicadorCarga(mensaje: 'Buscando usuarios...');
-    }
-
-    if (!_haBuscadoUsuarios) {
-      return const EstadoVacio(
-        icono: Icons.people_outline,
-        titulo: 'Busca usuarios',
-        descripcion: 'Escribe un nombre para encontrar lectores en Bookworm',
-      );
-    }
-
-    if (_resultadosUsuarios.isEmpty) {
-      return const EstadoVacio(
-        icono: Icons.person_off_outlined,
-        titulo: 'Sin resultados',
-        descripcion: 'No se encontraron usuarios con ese nombre',
-      );
-    }
-
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _resultadosUsuarios.length,
-      separatorBuilder: (context, index) => const Divider(),
-      itemBuilder: (context, index) {
-        final usuario = _resultadosUsuarios[index];
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: AppColores.primario.withOpacity(0.1),
-            backgroundImage: usuario.urlImagenPerfil != null &&
-                    usuario.urlImagenPerfil!.isNotEmpty
-                ? NetworkImage(usuario.urlImagenPerfil!)
-                : null,
-            child: usuario.urlImagenPerfil == null ||
-                    usuario.urlImagenPerfil!.isEmpty
-                ? const Icon(Icons.person, color: AppColores.primario)
-                : null,
-          ),
-          title: Text(
-            usuario.nombre,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            usuario.biografia?.isNotEmpty == true
-                ? usuario.biografia!
-                : 'Sin biografía',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/perfil',
-                arguments: {'userId': usuario.uid},
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColores.primario,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Ver perfil'),
-          ),
-        );
-      },
     );
   }
 }

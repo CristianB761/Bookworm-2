@@ -6,7 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart' as prov;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'autenticacion.dart';
 import 'buscar.dart';
@@ -28,11 +27,6 @@ import 'mensajes_directos.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await Supabase.initialize(
-    url: 'https://hhuygktefnjvkbtzlnvc.supabase.co',
-    anonKey: 'sb_publishable_5DEg7-OKTm7IBnn1Cuvj2Q_DWoBVj0a',
-  );
   
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   

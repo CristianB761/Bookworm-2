@@ -1,20 +1,21 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 import '../diseno.dart';
-import 'API/supabase_storage_service.dart';
+import 'API/firebase_storage_service.dart';
 
 class SubirPDFDialog extends StatefulWidget {
-  final String libroId;
-  final String tituloLibro;
+  final String? libroId;
+  final String? tituloLibro;
   final VoidCallback onPDFSubido;
 
   const SubirPDFDialog({
     super.key,
-    required this.libroId,
-    required this.tituloLibro,
+    this.libroId,
+    this.tituloLibro,
     required this.onPDFSubido,
   });
 
@@ -28,6 +29,18 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
   String? _mensajeError;
   File? _archivoSeleccionado;
   String? _nombreArchivo;
+  Timer? _timer;
+  
+  final TextEditingController _nombreLibroController = TextEditingController();
+  final TextEditingController _autorController = TextEditingController();
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _nombreLibroController.dispose();
+    _autorController.dispose();
+    super.dispose();
+  }
 
   Future<void> _seleccionarPDF() async {
     try {
@@ -52,6 +65,15 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
   }
 
   Future<void> _subirPDF() async {
+    final titulo = _nombreLibroController.text.trim();
+    
+    if (titulo.isEmpty) {
+      setState(() {
+        _mensajeError = 'Por favor ingresa el nombre del libro';
+      });
+      return;
+    }
+    
     if (_archivoSeleccionado == null) {
       setState(() {
         _mensajeError = 'Por favor, selecciona un archivo PDF primero';
@@ -65,15 +87,12 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
       _mensajeError = null;
     });
 
-    // Simular progreso
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) setState(() => _progresoSubida = 0.3);
-    });
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (mounted) setState(() => _progresoSubida = 0.6);
-    });
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) setState(() => _progresoSubida = 0.8);
+    _timer = Timer.periodic(const Duration(milliseconds: 200), (t) {
+      if (mounted && _subiendo && _progresoSubida < 0.95) {
+        setState(() {
+          _progresoSubida = (_progresoSubida + 0.05).clamp(0.0, 0.95);
+        });
+      }
     });
 
     try {
@@ -82,30 +101,49 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
         throw Exception('Usuario no autenticado');
       }
 
-      // Generar nombre único para el PDF
-      final nombrePDF = '${widget.tituloLibro.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final libroId = widget.libroId ?? 'pdf_${titulo.replaceAll(' ', '_')}_$timestamp';
+      final nombrePDF = '${titulo.replaceAll(' ', '_')}_$timestamp';
 
-      // Subir a Supabase Storage
-      final urlPDF = await SupabaseStorageService.subirPDF(
+      final urlPDF = await FirebaseStorageService.subirPDF(
         archivo: _archivoSeleccionado!,
-        nombreLibro: widget.tituloLibro,
+        nombreLibro: titulo,
         nombrePDF: nombrePDF,
       );
 
-      setState(() => _progresoSubida = 1.0);
+      _timer?.cancel();
+      if (mounted) {
+        setState(() => _progresoSubida = 1.0);
+      }
 
-      // Actualizar URL en Firestore
+      final libroData = {
+        'id': libroId,
+        'libroId': libroId,
+        'titulo': titulo,
+        'autores': _autorController.text.trim().isNotEmpty 
+            ? [_autorController.text.trim()] 
+            : ['Usuario'],
+        'descripcion': 'Libro subido por el usuario',
+        'urlMiniatura': null,
+        'fechaPublicacion': null,
+        'numeroPaginas': null,
+        'categorias': [],
+        'urlLectura': null,
+        'esAudiolibro': false,
+        'urlPDFSubido': urlPDF,
+        'nombrePDF': _nombreArchivo,
+        'fechaSubida': FieldValue.serverTimestamp(),
+        'fechaGuardado': FieldValue.serverTimestamp(),
+        'estado': 'guardado',
+        'favorito': false,
+      };
+
       await FirebaseFirestore.instance
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('libros_guardados')
-          .doc(widget.libroId)
-          .set({
-        'id': widget.libroId,
-        'titulo': widget.tituloLibro,
-        'urlPDFSubido': urlPDF,
-        'fechaSubida': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+          .doc(libroId)
+          .set(libroData);
 
       if (mounted) {
         widget.onPDFSubido();
@@ -113,17 +151,20 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('PDF subido exitosamente a Supabase'),
+            content: Text('PDF subido exitosamente a Firebase Storage'),
             backgroundColor: AppColores.secundario,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } catch (e) {
-      setState(() {
-        _mensajeError = 'Error al subir PDF: $e';
-        _subiendo = false;
-      });
+      _timer?.cancel();
+      if (mounted) {
+        setState(() {
+          _mensajeError = 'Error al subir PDF: $e';
+          _subiendo = false;
+        });
+      }
     }
   }
 
@@ -136,12 +177,35 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              widget.tituloLibro,
-              style: EstilosApp.tituloPequeno(context),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
+            if (widget.tituloLibro == null) ...[
+              TextField(
+                controller: _nombreLibroController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del libro',
+                  hintText: 'Ej: El Hobbit, La Odisea',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.book),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _autorController,
+                decoration: const InputDecoration(
+                  labelText: 'Autor (opcional)',
+                  hintText: 'Ej: J.R.R. Tolkien',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ] else ...[
+              Text(
+                widget.tituloLibro!,
+                style: EstilosApp.tituloPequeno(context),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+            ],
             
             if (_archivoSeleccionado == null) ...[
               ElevatedButton.icon(
@@ -158,6 +222,26 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
                 style: TextStyle(fontSize: 12, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Los PDFs se almacenan en Firebase Storage de forma segura',
+                        style: TextStyle(fontSize: 11, color: Colors.blue),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ] else ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -168,7 +252,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.green, size: 40),
+                    const Icon(Icons.picture_as_pdf, color: Colors.green, size: 40),
                     const SizedBox(height: 8),
                     Text(
                       _nombreArchivo ?? 'Archivo seleccionado',
@@ -190,7 +274,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
               LinearProgressIndicator(value: _progresoSubida),
               const SizedBox(height: 8),
               Text(
-                'Subiendo a Supabase... ${(_progresoSubida * 100).toStringAsFixed(1)}%',
+                'Subiendo a Firebase Storage... ${(_progresoSubida * 100).toStringAsFixed(1)}%',
                 style: EstilosApp.cuerpoPequeno(context),
               ),
             ],
@@ -218,7 +302,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
           onPressed: _subiendo ? null : () => Navigator.pop(context),
           child: const Text('Cancelar'),
         ),
-        if (_archivoSeleccionado != null)
+        if (_archivoSeleccionado != null || widget.tituloLibro != null)
           ElevatedButton(
             onPressed: _subiendo ? null : _subirPDF,
             style: ElevatedButton.styleFrom(
@@ -230,7 +314,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Subir a Supabase'),
+                : const Text('Subir a Firebase Storage'),
           ),
       ],
     );

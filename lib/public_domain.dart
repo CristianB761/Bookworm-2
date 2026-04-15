@@ -126,32 +126,6 @@ class _PublicDomainState extends State<PublicDomain> {
     }
   }
 
-  Future<void> _guardarLibro(Libro libro) async {
-    try {
-      final usuario = _auth.currentUser;
-      if (usuario == null) {
-        _mostrarError('Debes iniciar sesión para guardar libros');
-        return;
-      }
-
-      final datosLibro = libro.toMap();
-      datosLibro['fechaGuardado'] = FieldValue.serverTimestamp();
-      datosLibro['estado'] = 'guardado';
-      datosLibro['libroId'] = libro.id;
-
-      await _firestore
-          .collection('usuarios')
-          .doc(usuario.uid)
-          .collection('libros_guardados')
-          .doc(libro.id)
-          .set(datosLibro);
-
-      _mostrarExito('"${libro.titulo}" guardado en tu biblioteca');
-    } catch (e) {
-      _mostrarError('Error al guardar libro: $e');
-    }
-  }
-
   void _mostrarError(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mensaje), backgroundColor: Colors.red),

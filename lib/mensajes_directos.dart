@@ -95,14 +95,6 @@ class _MensajesDirectosState extends State<MensajesDirectos> {
     }
   }
 
-  List<DatosUsuario> get _usuariosQueSigo {
-    return [];
-  }
-  
-  List<DatosUsuario> get _usuariosFiltrados {
-    return [];
-  }
-
   void _iniciarConversacion(DatosUsuario usuario) async {
     if (_uidActual == null) return;
     
@@ -115,12 +107,6 @@ class _MensajesDirectosState extends State<MensajesDirectos> {
         ),
       ),
     );
-  }
-  
-  String _generarChatId(String uid1, String uid2) {
-    List<String> ids = [uid1, uid2];
-    ids.sort();
-    return 'chat_${ids.join('_')}';
   }
 
   @override

@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'diseno.dart';
 import 'API/modelos.dart';
-import 'modelos/progreso_lectura.dart';
 
 class DetallesLibro extends StatefulWidget {
   final Libro libroObjeto;
@@ -198,93 +197,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
     } else {
       _mostrarError('No se puede abrir el enlace');
     }
-  }
-
-  void _mostrarOpcionesLectura() {
-    final bool esGratuito = widget.libroObjeto.precio == 0.0;
-    final bool esAudiolibro = widget.libroObjeto.esAudiolibro;
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '¿Cómo quieres ${esAudiolibro ? 'escuchar' : 'leer'} "${widget.libroObjeto.titulo}"?',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColores.texto,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            
-            if (widget.libroObjeto.urlLectura != null && esGratuito)
-              ListTile(
-                leading: const Icon(Icons.public, color: Colors.green, size: 28),
-                title: const Text('Leer online gratis'),
-                subtitle: Text(esAudiolibro ? 'Escuchar audiolibro completo' : 'Leer libro completo'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.pop(context);
-                  _abrirURLEnApp(widget.libroObjeto.urlLectura!);
-                },
-              ),
-            
-            if (widget.libroObjeto.precio != null && widget.libroObjeto.precio! > 0)
-              ListTile(
-                leading: const Icon(Icons.shopping_cart, color: AppColores.secundario, size: 28),
-                title: const Text('Comprar libro'),
-                subtitle: const Text('Ver todas las tiendas disponibles'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.pop(context);
-                  _mostrarSeleccionTienda();
-                },
-              ),
-            
-            if (esAudiolibro)
-              ListTile(
-                leading: const Icon(Icons.headset, color: Color(0xFFF7991C), size: 28),
-                title: const Text('Plataformas de audiolibros'),
-                subtitle: const Text('Audible, Storytel y más'),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.pop(context);
-                  _mostrarPlataformasAudiolibros();
-                },
-              ),
-            
-            ListTile(
-              leading: const Icon(Icons.store, color: Colors.blue, size: 28),
-              title: Text(esAudiolibro ? 'Buscar audiolibro' : 'Buscar en tiendas'),
-              subtitle: Text(esAudiolibro ? 'Audible, Storytel...' : 'Amazon, Fnac, Casa del Libro...'),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.pop(context);
-                _abrirBusquedaTiendas();
-              },
-            ),
-            
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColores.textoClaro,
-              ),
-              child: const Text('Cancelar'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _mostrarSeleccionTienda() {
@@ -599,9 +511,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
         
         setState(() {
           _estaGuardado = true;
-          if (favorito != null) {
-            _esFavorito = favorito;
-          }
+          _esFavorito = favorito;
         });
       }
 
@@ -652,7 +562,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
           .limit(1)
           .get();
 
-      ProgresoLectura? progreso;
       if (progresoExistenteQuery.docs.isEmpty) {
         final nuevoProgresoId = _firestore.collection('progreso_lectura').doc().id;
         final nuevoProgresoData = {
@@ -673,17 +582,11 @@ class _DetallesLibroState extends State<DetallesLibro> {
         
         final mapLocal = Map<String, dynamic>.from(nuevoProgresoData);
         mapLocal['fechaInicio'] = Timestamp.now();
-        progreso = ProgresoLectura.fromMap(mapLocal);
 
         _mostrarExito('Comenzaste a leer "${widget.libroObjeto.titulo}"');
       } else {
-        final data = progresoExistenteQuery.docs.first.data();
-        data['id'] = progresoExistenteQuery.docs.first.id;
-        progreso = ProgresoLectura.fromMap(data);
         _mostrarExito('Continuando la lectura de "${widget.libroObjeto.titulo}"');
       }
-
-      setState(() { _estaGuardado = true; });
       
       if (mounted) {
         Navigator.pushNamed(
@@ -1201,7 +1104,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
   }
 
   Widget _construirBotonesAccion() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Padding(

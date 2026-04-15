@@ -1,4 +1,3 @@
-// lib/API/modelos.dart
 class OfertaTienda {
   final String tienda;
   final double precio;
@@ -52,6 +51,8 @@ class Libro {
   final String? isbn13;
   final String? urlCompra;
   final String? urlPDFSubido;
+  final String? urlAudioSubido;
+  final String? tipoAudio;
 
   Libro({
     required this.id,
@@ -74,6 +75,8 @@ class Libro {
     this.isbn13,
     this.urlCompra,
     this.urlPDFSubido,
+    this.urlAudioSubido,
+    this.tipoAudio,
   });
 
   Map<String, dynamic> toMap() {
@@ -98,6 +101,8 @@ class Libro {
       'isbn13': isbn13,
       'urlCompra': urlCompra,
       'urlPDFSubido': urlPDFSubido,
+      'urlAudioSubido': urlAudioSubido,
+      'tipoAudio': tipoAudio,
     };
   }
 
@@ -182,6 +187,8 @@ class Libro {
       isbn13: map['isbn13'],
       urlCompra: map['urlCompra'],
       urlPDFSubido: map['urlPDFSubido'],
+      urlAudioSubido: map['urlAudioSubido'],
+      tipoAudio: map['tipoAudio'],
     );
   }
 
@@ -206,6 +213,8 @@ class Libro {
     String? isbn13,
     String? urlCompra,
     String? urlPDFSubido,
+    String? urlAudioSubido,
+    String? tipoAudio,
   }) {
     return Libro(
       id: id ?? this.id,
@@ -228,12 +237,16 @@ class Libro {
       isbn13: isbn13 ?? this.isbn13,
       urlCompra: urlCompra ?? this.urlCompra,
       urlPDFSubido: urlPDFSubido ?? this.urlPDFSubido,
+      urlAudioSubido: urlAudioSubido ?? this.urlAudioSubido,
+      tipoAudio: tipoAudio ?? this.tipoAudio,
     );
   }
 
   String? get isbn => isbn13 ?? isbn10;
   
   bool get tienePDFSubido => urlPDFSubido != null && urlPDFSubido!.isNotEmpty;
+  
+  bool get tieneAudioSubido => urlAudioSubido != null && urlAudioSubido!.isNotEmpty;
 
   List<OfertaTienda> get ofertasConSimuladas {
     if (ofertas.isNotEmpty) {

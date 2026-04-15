@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:open_file/open_file.dart';
@@ -23,7 +22,6 @@ class LectorPDF extends StatefulWidget {
 class _LectorPDFState extends State<LectorPDF> {
   bool _isLoading = true;
   String? _error;
-  File? _pdfFile;
   double _progress = 0.0;
 
   @override
@@ -73,7 +71,6 @@ class _LectorPDFState extends State<LectorPDF> {
 
       if (mounted) {
         setState(() {
-          _pdfFile = file;
           _isLoading = false;
         });
 

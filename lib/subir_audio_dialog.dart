@@ -7,23 +7,23 @@ import 'package:file_picker/file_picker.dart';
 import '../diseno.dart';
 import 'API/firebase_storage_service.dart';
 
-class SubirPDFDialog extends StatefulWidget {
+class SubirAudioDialog extends StatefulWidget {
   final String? libroId;
   final String? tituloLibro;
-  final VoidCallback onPDFSubido;
+  final VoidCallback onAudioSubido;
 
-  const SubirPDFDialog({
+  const SubirAudioDialog({
     super.key,
     this.libroId,
     this.tituloLibro,
-    required this.onPDFSubido,
+    required this.onAudioSubido,
   });
 
   @override
-  State<SubirPDFDialog> createState() => _SubirPDFDialogState();
+  State<SubirAudioDialog> createState() => _SubirAudioDialogState();
 }
 
-class _SubirPDFDialogState extends State<SubirPDFDialog> {
+class _SubirAudioDialogState extends State<SubirAudioDialog> {
   bool _subiendo = false;
   double _progresoSubida = 0;
   String? _mensajeError;
@@ -42,11 +42,10 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
     super.dispose();
   }
 
-  Future<void> _seleccionarPDF() async {
+  Future<void> _seleccionarAudio() async {
     try {
       FilePickerResult? resultado = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
+        type: FileType.audio,
         allowMultiple: false,
       );
 
@@ -64,10 +63,10 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
     }
   }
 
-  Future<void> _subirPDF() async {
+  Future<void> _subirAudio() async {
     final titulo = _nombreLibroController.text.trim();
     
-    if (titulo.isEmpty) {
+    if (titulo.isEmpty && widget.tituloLibro == null) {
       setState(() {
         _mensajeError = 'Por favor ingresa el nombre del libro';
       });
@@ -76,7 +75,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
     
     if (_archivoSeleccionado == null) {
       setState(() {
-        _mensajeError = 'Por favor, selecciona un archivo PDF primero';
+        _mensajeError = 'Por favor, selecciona un archivo de audio primero';
       });
       return;
     }
@@ -101,14 +100,15 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
         throw Exception('Usuario no autenticado');
       }
 
+      final nombreLibro = widget.tituloLibro ?? titulo;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final libroId = widget.libroId ?? 'pdf_${titulo.replaceAll(' ', '_')}_$timestamp';
-      final nombrePDF = '${titulo.replaceAll(' ', '_')}_$timestamp';
+      final libroId = widget.libroId ?? 'audio_${nombreLibro.replaceAll(' ', '_')}_$timestamp';
+      final nombreAudio = '${nombreLibro.replaceAll(' ', '_')}_$timestamp';
 
-      final urlPDF = await FirebaseStorageService.subirPDF(
+      final urlAudio = await FirebaseStorageService.subirAudio(
         archivo: _archivoSeleccionado!,
-        nombreLibro: titulo,
-        nombrePDF: nombrePDF,
+        nombreLibro: nombreLibro,
+        nombreAudio: nombreAudio,
       );
 
       _timer?.cancel();
@@ -116,22 +116,31 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
         setState(() => _progresoSubida = 1.0);
       }
 
+      final extension = _archivoSeleccionado!.path.split('.').last.toLowerCase();
+      String tipoAudio = 'mp3';
+      if (extension == 'mp3') tipoAudio = 'mp3';
+      else if (extension == 'm4a') tipoAudio = 'm4a';
+      else if (extension == 'wav') tipoAudio = 'wav';
+      else if (extension == 'ogg') tipoAudio = 'ogg';
+      else if (extension == 'aac') tipoAudio = 'aac';
+
       final libroData = {
         'id': libroId,
         'libroId': libroId,
-        'titulo': titulo,
+        'titulo': nombreLibro,
         'autores': _autorController.text.trim().isNotEmpty 
             ? [_autorController.text.trim()] 
             : ['Usuario'],
-        'descripcion': 'Libro subido por el usuario',
+        'descripcion': 'Audiolibro subido por el usuario',
         'urlMiniatura': null,
         'fechaPublicacion': null,
         'numeroPaginas': null,
         'categorias': [],
-        'urlLectura': null,
-        'esAudiolibro': false,
-        'urlPDFSubido': urlPDF,
-        'nombrePDF': _nombreArchivo,
+        'urlLectura': urlAudio,
+        'esAudiolibro': true,
+        'urlAudioSubido': urlAudio,
+        'tipoAudio': tipoAudio,
+        'nombreAudio': _nombreArchivo,
         'fechaSubida': FieldValue.serverTimestamp(),
         'fechaGuardado': FieldValue.serverTimestamp(),
         'estado': 'guardado',
@@ -146,12 +155,12 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
           .set(libroData);
 
       if (mounted) {
-        widget.onPDFSubido();
+        widget.onAudioSubido();
         Navigator.pop(context);
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('PDF subido exitosamente a Firebase Storage'),
+            content: Text('Audiolibro subido exitosamente a Firebase Storage'),
             backgroundColor: AppColores.secundario,
             behavior: SnackBarBehavior.floating,
           ),
@@ -161,7 +170,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
       _timer?.cancel();
       if (mounted) {
         setState(() {
-          _mensajeError = 'Error al subir PDF: $e';
+          _mensajeError = 'Error al subir audio: $e';
           _subiendo = false;
         });
       }
@@ -171,7 +180,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Subir PDF del Libro'),
+      title: const Text('Subir Audiolibro'),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -209,16 +218,16 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
             
             if (_archivoSeleccionado == null) ...[
               ElevatedButton.icon(
-                onPressed: _subiendo ? null : _seleccionarPDF,
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Seleccionar PDF'),
+                onPressed: _subiendo ? null : _seleccionarAudio,
+                icon: const Icon(Icons.audiotrack),
+                label: const Text('Seleccionar Audio'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColores.primario,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Selecciona un archivo PDF de tu dispositivo',
+                'Formatos soportados: MP3, M4A, WAV, OGG, AAC',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
@@ -235,7 +244,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Los PDFs se almacenan en Firebase Storage de forma segura',
+                        'Los audiolibros se almacenan en Firebase Storage y se pueden reproducir offline',
                         style: TextStyle(fontSize: 11, color: Colors.blue),
                       ),
                     ),
@@ -252,7 +261,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.picture_as_pdf, color: Colors.green, size: 40),
+                    const Icon(Icons.audiotrack, color: Colors.green, size: 40),
                     const SizedBox(height: 8),
                     Text(
                       _nombreArchivo ?? 'Archivo seleccionado',
@@ -261,7 +270,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
                     ),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: _subiendo ? null : _seleccionarPDF,
+                      onPressed: _subiendo ? null : _seleccionarAudio,
                       child: const Text('Cambiar archivo'),
                     ),
                   ],
@@ -304,7 +313,7 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
         ),
         if (_archivoSeleccionado != null || widget.tituloLibro != null)
           ElevatedButton(
-            onPressed: _subiendo ? null : _subirPDF,
+            onPressed: _subiendo ? null : _subirAudio,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColores.primario,
             ),

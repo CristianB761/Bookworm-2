@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'modelos.dart';
-import 'traductor_service.dart';
 
 class OpenLibraryService {
   static const String _urlBase = 'https://openlibrary.org';
-  final TraductorService _traductorService = TraductorService();
 
   Future<List<Libro>> buscarLibros(String consulta, {String? genero, int limite = 20}) async {
     try {

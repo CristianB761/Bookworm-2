@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 
 class OllamaService {
   static const String baseUrl = 'http://localhost:11434';

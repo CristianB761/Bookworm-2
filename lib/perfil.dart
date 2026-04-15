@@ -15,6 +15,8 @@ import 'API/modelos.dart';
 import 'theme_provider.dart';
 import 'lector_pdf.dart';
 import 'subir_pdf_dialog.dart';
+import 'subir_audio_dialog.dart';
+import 'reproductor_audio.dart';
 import 'chat_messages_screen.dart';
 import 'API/firebase_storage_service.dart';
 
@@ -198,57 +200,6 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
-  Future<void> _subirPDF(String libroId, String tituloLibro) async {
-    try {
-      final usuario = _auth.currentUser;
-      if (usuario == null) {
-        _mostrarError('Debes iniciar sesión');
-        return;
-      }
-
-      FilePickerResult? resultado = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-        allowMultiple: false,
-      );
-
-      if (resultado == null || resultado.files.single.path == null) return;
-
-      final archivoPDF = File(resultado.files.single.path!);
-      
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => SubirPDFDialog(
-          libroId: libroId,
-          tituloLibro: tituloLibro,
-          onPDFSubido: () {
-            _cargarDatosUsuario();
-          },
-        ),
-      );
-    } catch (e) {
-      _mostrarError('Error al seleccionar PDF: $e');
-    }
-  }
-
-  void _abrirPDF(String pdfUrl, String titulo) {
-    if (pdfUrl.isEmpty) {
-      _mostrarError('No hay PDF disponible para este libro.');
-      return;
-    }
-    
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LectorPDF(
-          titulo: titulo,
-          pdfUrl: pdfUrl,
-        ),
-      ),
-    );
-  }
-
   void _mostrarDialogoSubirPDF() {
     showDialog(
       context: context,
@@ -333,6 +284,188 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
+  void _mostrarDialogoSubirAudio() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Nuevo Audiolibro'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Ingresa el nombre del audiolibro que vas a subir:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _nombreLibroController,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre del audiolibro',
+                    hintText: 'Ej: El Hobbit, La Odisea, etc',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: const Icon(Icons.book),
+                    errorText: _mensajeError,
+                  ),
+                  maxLines: 1,
+                  onChanged: (value) {
+                    if (_mensajeError != null) {
+                      setState(() {
+                        _mensajeError = null;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: const Text(
+                    'Después podrás seleccionar el archivo de audio de tu dispositivo. El archivo se subirá a Firebase Storage.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final nombreLibro = _nombreLibroController.text.trim();
+                
+                if (nombreLibro.isEmpty) {
+                  setState(() {
+                    _mensajeError = 'Por favor ingresa un nombre';
+                  });
+                  return;
+                }
+
+                Navigator.pop(context);
+                
+                final libroId = '${nombreLibro.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+                
+                _subirAudio(libroId, nombreLibro);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColores.primario,
+              ),
+              child: const Text('Siguiente'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _subirPDF(String libroId, String tituloLibro) async {
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) {
+        _mostrarError('Debes iniciar sesión');
+        return;
+      }
+
+      FilePickerResult? resultado = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+
+      if (resultado == null || resultado.files.single.path == null) return;
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SubirPDFDialog(
+          libroId: libroId,
+          tituloLibro: tituloLibro,
+          onPDFSubido: () {
+            _cargarDatosUsuario();
+          },
+        ),
+      );
+    } catch (e) {
+      _mostrarError('Error al seleccionar PDF: $e');
+    }
+  }
+
+  Future<void> _subirAudio(String libroId, String tituloLibro) async {
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) {
+        _mostrarError('Debes iniciar sesión');
+        return;
+      }
+
+      FilePickerResult? resultado = await FilePicker.pickFiles(
+        type: FileType.audio,
+        allowMultiple: false,
+      );
+
+      if (resultado == null || resultado.files.single.path == null) return;
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SubirAudioDialog(
+          libroId: libroId,
+          tituloLibro: tituloLibro,
+          onAudioSubido: () {
+            _cargarDatosUsuario();
+          },
+        ),
+      );
+    } catch (e) {
+      _mostrarError('Error al seleccionar audio: $e');
+    }
+  }
+
+  void _abrirPDF(String pdfUrl, String titulo) {
+    if (pdfUrl.isEmpty) {
+      _mostrarError('No hay PDF disponible para este libro.');
+      return;
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LectorPDF(
+          titulo: titulo,
+          pdfUrl: pdfUrl,
+        ),
+      ),
+    );
+  }
+
+  void _reproducirAudio(String audioUrl, String titulo, List<String> autores) {
+    if (audioUrl.isEmpty) {
+      _mostrarError('No hay audio disponible para este audiolibro.');
+      return;
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReproductorAudio(
+          titulo: titulo,
+          audioUrl: audioUrl,
+          autores: autores.isNotEmpty ? autores.join(', ') : null,
+        ),
+      ),
+    );
+  }
+
   Future<void> _eliminarPDFSubido(String libroId, String pdfUrl) async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -359,7 +492,7 @@ class _PerfilState extends State<Perfil> {
       final usuario = _auth.currentUser;
       if (usuario == null) return;
 
-      await FirebaseStorageService.eliminarPDF(pdfUrl);
+      await FirebaseStorageService.eliminarArchivo(pdfUrl);
 
       await _firestore
           .collection('usuarios')
@@ -372,6 +505,48 @@ class _PerfilState extends State<Perfil> {
       _cargarDatosUsuario();
     } catch (e) {
       _mostrarError('Error al eliminar PDF: $e');
+    }
+  }
+
+  Future<void> _eliminarAudioSubido(String libroId, String audioUrl) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Audiolibro'),
+        content: const Text('¿Estás seguro de que quieres eliminar este audiolibro? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) return;
+
+      await FirebaseStorageService.eliminarArchivo(audioUrl);
+
+      await _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('libros_guardados')
+          .doc(libroId)
+          .delete();
+
+      _mostrarExito('Audiolibro eliminado exitosamente');
+      _cargarDatosUsuario();
+    } catch (e) {
+      _mostrarError('Error al eliminar audiolibro: $e');
     }
   }
 
@@ -1283,6 +1458,10 @@ class _PerfilState extends State<Perfil> {
       return libro['urlPDFSubido'] != null && libro['urlPDFSubido'].toString().isNotEmpty;
     }).toList();
 
+    final librosConAudio = _todosLosLibrosUsuario.where((libro) {
+      return libro['urlAudioSubido'] != null && libro['urlAudioSubido'].toString().isNotEmpty;
+    }).toList();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: EstilosApp.tarjeta(context),
@@ -1312,6 +1491,34 @@ class _PerfilState extends State<Perfil> {
           ),
           const SizedBox(height: 16),
           _construirListaPDFsSubidos(librosConPDF),
+          
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 16),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Mis Audiolibros', style: EstilosApp.tituloMedio(context)),
+              if (_esMiPerfil)
+                ElevatedButton.icon(
+                  onPressed: _mostrarDialogoSubirAudio,
+                  icon: const Icon(Icons.upload_file, size: 18),
+                  label: const Text('Subir Audio'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColores.primario,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Audiolibros que has subido. Puedes escucharlos desde la app.',
+            style: EstilosApp.cuerpoMedio(context),
+          ),
+          const SizedBox(height: 16),
+          _construirListaAudiosSubidos(librosConAudio),
           
           const SizedBox(height: 24),
           const Divider(),
@@ -1497,6 +1704,127 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
+  Widget _construirListaAudiosSubidos(List<Map<String, dynamic>> librosConAudio) {
+    if (librosConAudio.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: EstilosApp.tarjetaPlana(context),
+        child: Column(
+          children: [
+            const Icon(Icons.audiotrack, size: 48, color: Colors.grey),
+            const SizedBox(height: 12),
+            Text(
+              'No tienes audiolibros subidos',
+              style: EstilosApp.tituloPequeno(context),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sube tus audiolibros para escucharlos desde la app',
+              style: EstilosApp.cuerpoPequeno(context),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: librosConAudio.map((libroMap) {
+        final audioUrl = libroMap['urlAudioSubido'].toString();
+        final titulo = libroMap['titulo'] ?? 'Sin título';
+        final autores = List<String>.from(libroMap['autores'] ?? []);
+        final miniatura = libroMap['urlMiniatura'];
+        final tipoAudio = libroMap['tipoAudio'] ?? 'mp3';
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: EstilosApp.tarjetaPlana(context),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: miniatura != null && miniatura.isNotEmpty
+                    ? Image.network(
+                        miniatura,
+                        width: 50,
+                        height: 70,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 50,
+                            height: 70,
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.audiotrack, size: 30, color: AppColores.primario),
+                          );
+                        },
+                      )
+                    : Container(
+                        width: 50,
+                        height: 70,
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.audiotrack, size: 30, color: AppColores.primario),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titulo,
+                      style: EstilosApp.tituloPequeno(context),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (autores.isNotEmpty)
+                      Text(
+                        autores.join(', '),
+                        style: EstilosApp.cuerpoPequeno(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColores.primario.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.audiotrack, size: 12, color: AppColores.primario),
+                          const SizedBox(width: 4),
+                          Text('Audio ($tipoAudio) en Firebase Storage', style: TextStyle(fontSize: 10, color: AppColores.primario)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.play_arrow, color: AppColores.primario),
+                    onPressed: () => _reproducirAudio(audioUrl, titulo, autores),
+                    tooltip: 'Reproducir',
+                  ),
+                  if (_esMiPerfil)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _eliminarAudioSubido(libroMap['id'], audioUrl),
+                      tooltip: 'Eliminar Audio',
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _construirListaLibros({required List<Map<String, dynamic>> libros, required bool esFavoritos}) {
     if (_cargandoLibros) {
       return const Center(child: CircularProgressIndicator());
@@ -1526,9 +1854,12 @@ class _PerfilState extends State<Perfil> {
           urlLectura: libroMap['urlLectura'],
           esAudiolibro: libroMap['esAudiolibro'] ?? false,
           urlPDFSubido: libroMap['urlPDFSubido'],
+          urlAudioSubido: libroMap['urlAudioSubido'],
+          tipoAudio: libroMap['tipoAudio'],
         );
         
         final bool tienePDFSubido = libro.tienePDFSubido;
+        final bool tieneAudioSubido = libro.tieneAudioSubido;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -1625,15 +1956,31 @@ class _PerfilState extends State<Perfil> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.picture_as_pdf, size: 12, color: Colors.red),
+                                  SizedBox(width: 4),
+                                  Text('PDF', style: TextStyle(fontSize: 10, color: Colors.red)),
+                                ],
+                              ),
+                            ),
+                          if (tieneAudioSubido)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
                                 color: AppColores.primario.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.picture_as_pdf, size: 12, color: AppColores.primario),
+                                  Icon(Icons.audiotrack, size: 12, color: AppColores.primario),
                                   SizedBox(width: 4),
-                                  Text('PDF', style: TextStyle(fontSize: 10, color: AppColores.primario)),
+                                  Text('Audio', style: TextStyle(fontSize: 10, color: AppColores.primario)),
                                 ],
                               ),
                             ),
@@ -1644,7 +1991,7 @@ class _PerfilState extends State<Perfil> {
                 ),
                 Column(
                   children: [
-                    if (libro.urlLectura != null)
+                    if (libro.urlLectura != null && !tieneAudioSubido && !libro.esAudiolibro)
                       IconButton(
                         icon: const Icon(Icons.open_in_browser, size: 20, color: AppColores.secundario),
                         onPressed: () => _abrirUrlLectura(libro.urlLectura),
@@ -1660,11 +2007,27 @@ class _PerfilState extends State<Perfil> {
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
                       ),
-                    if (!tienePDFSubido && _esMiPerfil && libroMap['estado'] != 'completado')
+                    if (tieneAudioSubido)
+                      IconButton(
+                        icon: const Icon(Icons.play_arrow, size: 20, color: AppColores.primario),
+                        onPressed: () => _reproducirAudio(libro.urlAudioSubido!, libro.titulo, libro.autores),
+                        tooltip: 'Escuchar',
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                      ),
+                    if (!tienePDFSubido && !tieneAudioSubido && _esMiPerfil && libroMap['estado'] != 'completado' && !libro.esAudiolibro)
                       IconButton(
                         icon: const Icon(Icons.upload_file, size: 20, color: AppColores.primario),
                         onPressed: () => _subirPDF(libroMap['libroId'] ?? libroMap['id'], libro.titulo),
                         tooltip: 'Subir PDF',
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                      ),
+                    if (!tieneAudioSubido && _esMiPerfil && libroMap['estado'] != 'completado' && libro.esAudiolibro)
+                      IconButton(
+                        icon: const Icon(Icons.upload_file, size: 20, color: AppColores.primario),
+                        onPressed: () => _subirAudio(libroMap['libroId'] ?? libroMap['id'], libro.titulo),
+                        tooltip: 'Subir Audio',
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.all(4),
                       ),
@@ -1807,6 +2170,8 @@ class _PerfilState extends State<Perfil> {
                           urlLectura: libroMap['urlLectura'],
                           esAudiolibro: libroMap['esAudiolibro'] ?? false,
                           urlPDFSubido: libroMap['urlPDFSubido'],
+                          urlAudioSubido: libroMap['urlAudioSubido'],
+                          tipoAudio: libroMap['tipoAudio'],
                         );
                       } else {
                         libro = Libro(
@@ -2421,12 +2786,12 @@ class _PerfilState extends State<Perfil> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('¿Necesitas ayuda?', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text('Preguntas frecuentes:'),
               Text('- ¿Cómo guardar libros?'),
               Text('- ¿Cómo iniciar progreso de lectura?'),
               Text('- ¿Cómo editar mi perfil?'),
-              Text('- ¿Cómo subir un PDF de un libro?'),
+              Text('- ¿Cómo subir un PDF o audio de un libro?'),
             ],
           ),
         ),

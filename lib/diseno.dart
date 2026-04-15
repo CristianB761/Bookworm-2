@@ -19,7 +19,7 @@ class AppColores {
   static Color get negroOBlanco => _getColor(Colors.black, Colors.white);
 
   static Color _getColor(Color light, Color dark) {
-    final brightness = WidgetsBinding.instance?.window.platformBrightness ?? Brightness.light;
+    final brightness = WidgetsBinding.instance.window.platformBrightness;
     return brightness == Brightness.light ? light : dark;
   }
 

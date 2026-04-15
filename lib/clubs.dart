@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 import 'diseno.dart';
@@ -16,7 +15,6 @@ class Clubs extends StatefulWidget {
 class _ClubsState extends State<Clubs> {
   final TextEditingController _controladorBusqueda = TextEditingController();
   final ServicioFirestore _servicioFirestore = ServicioFirestore();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   int _seccionSeleccionada = 0;
   
   List<Map<String, dynamic>> _misClubs = [];

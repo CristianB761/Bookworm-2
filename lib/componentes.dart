@@ -422,16 +422,6 @@ class TarjetaLibro extends StatelessWidget {
             ],
           ),
         ],
-
-        if (libro.descripcion != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            libro.descripcion!,
-            style: EstilosApp.cuerpoPequeno(context),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ],
     );
   }

@@ -190,8 +190,6 @@ class _PaginaInicioState extends State<PaginaInicio> {
   bool _mostrarTodosAccesosRapidos = false;
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  List<Libro> _librosAleatorios = [];
-  bool _cargandoAleatorios = false;
 
   @override
   void initState() {
@@ -199,48 +197,6 @@ class _PaginaInicioState extends State<PaginaInicio> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       prov.Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
     });
-    _cargarLibrosAleatorios();
-  }
-
-  Future<void> _cargarLibrosAleatorios() async {
-    if (!mounted) return;
-    setState(() => _cargandoAleatorios = true);
-
-    try {
-      final temas = ['ficcion', 'misterio', 'fantasia', 'historia', 'ciencia', 'romance', 'aventura', 'tecnologia'];
-      final tema = temas[Random().nextInt(temas.length)];
-
-      final url = Uri.parse('https://www.googleapis.com/books/v1/volumes?q=subject:$tema&maxResults=10&langRestrict=es&orderBy=newest');
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['items'] != null) {
-          final List<Libro> libros = [];
-          for (var item in data['items']) {
-            final volumeInfo = item['volumeInfo'];
-            libros.add(Libro(
-              id: item['id'],
-              titulo: volumeInfo['title'] ?? 'Sin título',
-              autores: List<String>.from(volumeInfo['authors'] ?? ['Desconocido']),
-              descripcion: volumeInfo['description'],
-              urlMiniatura: volumeInfo['imageLinks']?['thumbnail']?.toString().replaceAll('http:', 'https:'),
-              fechaPublicacion: volumeInfo['publishedDate'],
-              numeroPaginas: volumeInfo['pageCount'],
-              categorias: List<String>.from(volumeInfo['categories'] ?? []),
-              urlLectura: volumeInfo['previewLink'],
-            ));
-          }
-          if (mounted) {
-            setState(() => _librosAleatorios = libros);
-          }
-        }
-      }
-    } catch (e) {
-      print('Error cargando libros aleatorios: $e');
-    } finally {
-      if (mounted) setState(() => _cargandoAleatorios = false);
-    }
   }
 
   @override
@@ -691,97 +647,6 @@ class _PaginaInicioState extends State<PaginaInicio> {
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 24),
-
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Descubre algo nuevo',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFFfffafa) : const Color(0xFF121212),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_cargandoAleatorios)
-                    const Center(child: CircularProgressIndicator())
-                  else if (_librosAleatorios.isEmpty)
-                    Center(
-                      child: Text(
-                        'No se encontraron sugerencias',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF696969),
-                        ),
-                      ),
-                    )
-                  else
-                    SizedBox(
-                      height: 240,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _librosAleatorios.length,
-                        separatorBuilder: (context, index) => const SizedBox(width: 16),
-                        itemBuilder: (context, index) {
-                          final libro = _librosAleatorios[index];
-                          return GestureDetector(
-                            onTap: () => Navigator.pushNamed(context, '/detalles_libro', arguments: libro),
-                            child: SizedBox(
-                              width: 140,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: libro.urlMiniatura != null
-                                            ? Image.network(
-                                                libro.urlMiniatura!,
-                                                fit: BoxFit.cover,
-                                                width: double.infinity,
-                                                errorBuilder: (context, error, stackTrace) =>
-                                                    Container(color: const Color(0xFFdcdcdc), child: const Icon(Icons.book, color: Color(0xFFdcdcdc), size: 40)),
-                                              )
-                                            : Container(color: const Color(0xFFdcdcdc), child: const Icon(Icons.book, color: Color(0xFFdcdcdc), size: 40)),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    libro.titulo,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    libro.autores.isNotEmpty ? libro.autores.first : 'Desconocido',
-                                    style: const TextStyle(color: Color(0xFFdcdcdc), fontSize: 12),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
             ),
           ],
         ),

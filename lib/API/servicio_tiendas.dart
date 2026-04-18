@@ -3,9 +3,8 @@ import 'package:http/http.dart' as http;
 import 'modelos.dart';
 
 class ServicioTiendas {
-  static const String _googleBooksApi = 'https://www.googleapis.com/books/v1/volumes';
   static const String _openLibraryApi = 'https://openlibrary.org/api/books';
-  
+
   // Método para buscar precios en múltiples tiendas
   Future<List<OfertaTienda>> buscarPreciosLibro({
     required String titulo,
@@ -14,68 +13,21 @@ class ServicioTiendas {
     bool esAudiolibro = false,
   }) async {
     final List<OfertaTienda> ofertas = [];
-    
-    // Buscar en Google Books API
-    final ofertasGoogle = await _buscarEnGoogleBooks(titulo, autores, isbn);
-    ofertas.addAll(ofertasGoogle);
-    
+
     // Buscar en Open Library (para libros gratuitos)
     if (isbn != null) {
       final ofertasOpenLib = await _buscarEnOpenLibrary(isbn);
       ofertas.addAll(ofertasOpenLib);
     }
-    
+
     // Para audiolibros, añadir tiendas específicas
     if (esAudiolibro) {
       ofertas.addAll(_crearOfertasAudiolibros(titulo, autores));
     }
-    
+
     // Añadir tiendas de búsqueda genérica
     ofertas.addAll(_crearOfertasBusqueda(titulo, autores, esAudiolibro));
-    
-    return ofertas;
-  }
-  
-  Future<List<OfertaTienda>> _buscarEnGoogleBooks(String titulo, List<String>? autores, String? isbn) async {
-    final List<OfertaTienda> ofertas = [];
-    
-    try {
-      String query = '';
-      if (isbn != null) {
-        query = 'isbn:$isbn';
-      } else {
-        query = 'intitle:$titulo';
-        if (autores != null && autores.isNotEmpty) {
-          query += '+inauthor:${autores.first}';
-        }
-      }
-      
-      final url = Uri.parse('$_googleBooksApi?q=${Uri.encodeComponent(query)}&maxResults=3');
-      final response = await http.get(url);
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['items'] != null) {
-          for (final item in data['items']) {
-            final saleInfo = item['saleInfo'];
-            if (saleInfo['saleability'] == 'FOR_SALE') {
-              final precio = saleInfo['listPrice']?['amount']?.toDouble() ?? 0;
-              if (precio > 0) {
-                ofertas.add(OfertaTienda(
-                  tienda: 'Google Play Books',
-                  precio: precio,
-                  moneda: saleInfo['listPrice']?['currencyCode'] ?? 'EUR',
-                  url: saleInfo['buyLink'],
-                ));
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('Error Google Books API: $e');
-    }
-    
+
     return ofertas;
   }
   

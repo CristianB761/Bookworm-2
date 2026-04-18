@@ -3,9 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'diseno.dart';
 import 'API/modelos.dart';
+import 'API/ollama_service.dart';
 
 class DetallesLibro extends StatefulWidget {
   final Libro libroObjeto;
@@ -18,11 +20,15 @@ class DetallesLibro extends StatefulWidget {
 class _DetallesLibroState extends State<DetallesLibro> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final OllamaService _ollamaService = OllamaService();
   bool _estaCargando = false;
   bool _esFavorito = false;
   bool _estaGuardado = false;
   List<OfertaTienda> _ofertasReales = [];
   bool _cargandoOfertas = false;
+  bool _mostrarDescripcion = false;
+  String? _descripcionOllama;
+  bool _cargandoDescripcion = false;
 
   @override
   void initState() {
@@ -30,6 +36,32 @@ class _DetallesLibroState extends State<DetallesLibro> {
     _verificarEstadoLibro();
     if (widget.libroObjeto.precio != null && widget.libroObjeto.precio! > 0) {
       _buscarOfertasReales();
+    }
+    _cargarDescripcionCache();
+  }
+
+  Future<void> _cargarDescripcionCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'desc_${widget.libroObjeto.id}';
+      final cached = prefs.getString(key);
+      if (cached != null && cached.isNotEmpty) {
+        setState(() {
+          _descripcionOllama = cached;
+        });
+      }
+    } catch (e) {
+      print('Error cargando descripción cache: $e');
+    }
+  }
+
+  Future<void> _guardarDescripcionCache(String descripcion) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'desc_${widget.libroObjeto.id}';
+      await prefs.setString(key, descripcion);
+    } catch (e) {
+      print('Error guardando descripción cache: $e');
     }
   }
 
@@ -87,37 +119,11 @@ class _DetallesLibroState extends State<DetallesLibro> {
 
   Future<List<OfertaTienda>> _buscarPorISBN(String isbn) async {
     final List<OfertaTienda> ofertas = [];
-    
-    try {
-      final googleUrl = Uri.parse('https://www.googleapis.com/books/v1/volumes?q=isbn:$isbn');
-      final googleResponse = await http.get(googleUrl);
-      
-      if (googleResponse.statusCode == 200) {
-        final googleData = json.decode(googleResponse.body);
-        if (googleData['items'] != null && googleData['items'].isNotEmpty) {
-          final item = googleData['items'][0];
-          final saleInfo = item['saleInfo'];
-          if (saleInfo['saleability'] == 'FOR_SALE') {
-            final precio = saleInfo['listPrice']?['amount']?.toDouble() ?? 0;
-            if (precio > 0) {
-              ofertas.add(OfertaTienda(
-                tienda: 'Google Play Books',
-                precio: precio,
-                moneda: saleInfo['listPrice']?['currencyCode'] ?? 'EUR',
-                url: saleInfo['buyLink'],
-              ));
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('Error Google Books API: $e');
-    }
-    
+
     try {
       final openLibUrl = Uri.parse('https://openlibrary.org/api/books?bibkeys=ISBN:$isbn&format=json&jscmd=data');
       final openLibResponse = await http.get(openLibUrl);
-      
+
       if (openLibResponse.statusCode == 200) {
         final openLibData = json.decode(openLibResponse.body);
         final key = 'ISBN:$isbn';
@@ -133,41 +139,33 @@ class _DetallesLibroState extends State<DetallesLibro> {
     } catch (e) {
       print('Error Open Library API: $e');
     }
-    
+
     return ofertas;
   }
 
   Future<List<OfertaTienda>> _buscarPorTitulo(String query) async {
     final List<OfertaTienda> ofertas = [];
-    
+
     try {
-      final googleUrl = Uri.parse('https://www.googleapis.com/books/v1/volumes?q=${Uri.encodeComponent(query)}&maxResults=5');
-      final googleResponse = await http.get(googleUrl);
-      
-      if (googleResponse.statusCode == 200) {
-        final googleData = json.decode(googleResponse.body);
-        if (googleData['items'] != null && googleData['items'].isNotEmpty) {
-          for (final item in googleData['items']) {
-            final saleInfo = item['saleInfo'];
-            if (saleInfo['saleability'] == 'FOR_SALE') {
-              final precio = saleInfo['listPrice']?['amount']?.toDouble() ?? 0;
-              if (precio > 0) {
-                ofertas.add(OfertaTienda(
-                  tienda: 'Google Play Books',
-                  precio: precio,
-                  moneda: saleInfo['listPrice']?['currencyCode'] ?? 'EUR',
-                  url: saleInfo['buyLink'],
-                ));
-                break;
-              }
-            }
-          }
+      final openLibUrl = Uri.parse('https://openlibrary.org/api/books?bibkeys=ISBN:${Uri.encodeComponent(query)}&format=json&jscmd=data');
+      final openLibResponse = await http.get(openLibUrl);
+
+      if (openLibResponse.statusCode == 200) {
+        final openLibData = json.decode(openLibResponse.body);
+        if (openLibData.values.isNotEmpty) {
+          final firstBook = openLibData.values.first;
+          ofertas.add(OfertaTienda(
+            tienda: 'Open Library',
+            precio: 0.0,
+            moneda: 'EUR',
+            url: firstBook['url'] ?? 'https://openlibrary.org',
+          ));
         }
       }
     } catch (e) {
-      print('Error buscando por título: $e');
+      print('Error buscando en Open Library: $e');
     }
-    
+
     return ofertas;
   }
 
@@ -1030,10 +1028,41 @@ class _DetallesLibroState extends State<DetallesLibro> {
     );
   }
 
-  Widget _construirDescripcion() {
-    if (widget.libroObjeto.descripcion == null || widget.libroObjeto.descripcion!.isEmpty) {
-      return Container();
+  Future<void> _generarDescripcionOllama() async {
+    if (_descripcionOllama != null) return;
+    setState(() => _cargandoDescripcion = true);
+    try {
+      final descripcion = await _ollamaService.generarDescripcionLibro(
+        titulo: widget.libroObjeto.titulo,
+        autores: widget.libroObjeto.autores,
+        categorias: widget.libroObjeto.categorias,
+        anoPublicacion: widget.libroObjeto.fechaPublicacion != null
+            ? int.tryParse(widget.libroObjeto.fechaPublicacion!.split('-')[0])
+            : null,
+        numeroPaginas: widget.libroObjeto.numeroPaginas,
+        esAudiolibro: widget.libroObjeto.esAudiolibro,
+      );
+      if (mounted) {
+        final descFinal = descripcion ?? 'No se pudo generar la descripción.';
+        setState(() {
+          _descripcionOllama = descFinal;
+          _cargandoDescripcion = false;
+        });
+        if (descFinal != 'No se pudo generar la descripción.' && !descFinal.startsWith('Error al generar')) {
+          await _guardarDescripcionCache(descFinal);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _descripcionOllama = 'Error al generar descripción: $e';
+          _cargandoDescripcion = false;
+        });
+      }
     }
+  }
+
+  Widget _construirDescripcion() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -1048,23 +1077,42 @@ class _DetallesLibroState extends State<DetallesLibro> {
             color: isDark ? Colors.white : const Color(0xFF424242),
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isDark ? const Color(0xFF444444) : const Color(0xFFEEEEEE)),
-          ),
-          child: Text(
-            widget.libroObjeto.descripcion!,
-            style: TextStyle(
-              fontSize: 15,
-              color: isDark ? Colors.white70 : const Color(0xFF616161),
-              height: 1.5,
+        const SizedBox(height: 12),
+        ElevatedButton(
+          onPressed: () {
+            if (_mostrarDescripcion) {
+              setState(() => _mostrarDescripcion = false);
+            } else {
+              setState(() => _mostrarDescripcion = true);
+              if (_descripcionOllama == null) {
+                _generarDescripcionOllama();
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColores.primario,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
           ),
+          child: Text(_mostrarDescripcion ? 'Ocultar' : 'Mostrar'),
         ),
+        if (_mostrarDescripcion) ...[
+          const SizedBox(height: 16),
+          _cargandoDescripcion
+              ? const Center(child: CircularProgressIndicator())
+              : _descripcionOllama != null
+                  ? Text(
+                      _descripcionOllama!,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: isDark ? Colors.white70 : const Color(0xFF616161),
+                        height: 1.5,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+        ],
       ],
     );
   }

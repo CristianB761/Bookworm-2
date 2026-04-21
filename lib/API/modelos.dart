@@ -2,13 +2,13 @@ class OfertaTienda {
   final String tienda;
   final double precio;
   final String moneda;
-  final String? url;
+  final String url;
 
   OfertaTienda({
     required this.tienda,
     required this.precio,
     required this.moneda,
-    this.url,
+    required this.url,
   });
 
   Map<String, dynamic> toMap() {
@@ -23,9 +23,9 @@ class OfertaTienda {
   factory OfertaTienda.fromMap(Map<String, dynamic> map) {
     return OfertaTienda(
       tienda: map['tienda'] ?? '',
-      precio: (map['precio'] as num).toDouble(),
-      moneda: map['moneda'] ?? '',
-      url: map['url'],
+      precio: (map['precio'] as num?)?.toDouble() ?? 0.0,
+      moneda: map['moneda'] ?? 'EUR',
+      url: map['url'] ?? '',
     );
   }
 }
@@ -96,7 +96,7 @@ class Libro {
       'urlVistaPrevia': urlVistaPrevia,
       'precio': precio,
       'moneda': moneda,
-      'ofertas': ofertas.map((o) => o.toMap()).toList(),
+      'ofertas': ofertas.isNotEmpty ? ofertas.map((o) => o.toMap()).toList() : [],
       'isbn10': isbn10,
       'isbn13': isbn13,
       'urlCompra': urlCompra,
@@ -151,9 +151,9 @@ class Libro {
       fechaPublicacion: informacionVolumen['publishedDate'],
       numeroPaginas: informacionVolumen['pageCount'],
       categorias: List<String>.from(informacionVolumen['categories'] ?? []),
-      calificacionPromedio: informacionVolumen['averageRating']?.toDouble(),
+      calificacionPromedio: _toDouble(informacionVolumen['averageRating']),
       numeroCalificaciones: informacionVolumen['ratingsCount'],
-      precio: precio,
+      precio: _toDouble(precio),
       moneda: moneda,
       ofertas: ofertas,
       isbn10: isbn10,
@@ -172,12 +172,12 @@ class Libro {
       fechaPublicacion: map['fechaPublicacion'],
       numeroPaginas: map['numeroPaginas'],
       categorias: List<String>.from(map['categorias'] ?? []),
-      calificacionPromedio: (map['calificacionPromedio'] as num?)?.toDouble(),
+      calificacionPromedio: _toDouble(map['calificacionPromedio']),
       numeroCalificaciones: map['numeroCalificaciones'],
       urlLectura: map['urlLectura'],
       esAudiolibro: map['esAudiolibro'] ?? false,
       urlVistaPrevia: map['urlVistaPrevia'],
-      precio: (map['precio'] as num?)?.toDouble(),
+      precio: _toDouble(map['precio']),
       moneda: map['moneda'],
       ofertas: (map['ofertas'] as List<dynamic>?)
               ?.map((o) => OfertaTienda.fromMap(o as Map<String, dynamic>))
@@ -190,6 +190,15 @@ class Libro {
       urlAudioSubido: map['urlAudioSubido'],
       tipoAudio: map['tipoAudio'],
     );
+  }
+
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Libro copyWith({
@@ -272,7 +281,7 @@ class Libro {
     
     final busqueda = titulo;
     
-    final tiendas = [
+    final List<(String, String)> tiendas = [
       ('Amazon', 'https://www.amazon.es/s?k=${Uri.encodeComponent(busqueda)}&i=stripbooks'),
       ('Casa del Libro', 'https://www.casadellibro.com/busqueda-libros?q=${Uri.encodeComponent(busqueda)}'),
       ('Fnac', 'https://www.fnac.es/ia?Search=${Uri.encodeComponent(busqueda)}'),
@@ -371,5 +380,17 @@ class Libro {
     }
     
     return precioBase;
+  }
+}
+
+extension LibroRecomendacionExtension on Libro {
+  static final Map<String, double> _puntuaciones = {};
+
+  double get puntuacionRecomendacion {
+    return _puntuaciones[id] ?? 0.0;
+  }
+
+  set puntuacionRecomendacion(double value) {
+    _puntuaciones[id] = value;
   }
 }

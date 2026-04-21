@@ -199,7 +199,7 @@ class DatosApp {
   static final List<Map<String, dynamic>> accionesRapidas = [
     {'etiqueta': 'Buscar', 'icono': Icons.search},
     {'etiqueta': 'Favoritos', 'icono': Icons.favorite},
-    {'etiqueta': 'Recomendados', 'icono': Icons.star},
+    {'etiqueta': 'Recomendaciones', 'icono': Icons.recommend},
     {'etiqueta': 'Desafíos', 'icono': Icons.emoji_events},
     {'etiqueta': 'Clubs', 'icono': Icons.group},
     {'etiqueta': 'Historial', 'icono': Icons.history},

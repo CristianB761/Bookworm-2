@@ -132,12 +132,6 @@ class _PublicDomainState extends State<PublicDomain> {
     );
   }
 
-  void _mostrarExito(String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensaje), backgroundColor: AppColores.secundario),
-    );
-  }
-
   void _mostrarDetallesLibro(Libro libro) {
     Navigator.pushNamed(context, '/detalles_libro', arguments: libro);
   }

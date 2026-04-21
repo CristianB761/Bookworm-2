@@ -83,9 +83,6 @@ class OpenLibraryService {
       urlMiniatura = 'https://covers.openlibrary.org/b/id/${doc['cover_i']}-M.jpg';
     }
 
-    final languages = doc['language'] as List?;
-    final idiomas = languages != null ? List<String>.from(languages) : [];
-
     return Libro(
       id: doc['key'] ?? '',
       titulo: doc['title'] ?? 'Título no disponible',
@@ -107,11 +104,6 @@ class OpenLibraryService {
     if (json['covers'] != null && json['covers'].isNotEmpty) {
       urlMiniatura = 'https://covers.openlibrary.org/b/id/${json['covers'][0]}-M.jpg';
     }
-
-    final languages = json['languages'] as List?;
-    final idiomas = languages != null 
-        ? languages.map((l) => l['key']?.toString().split('/').last ?? '').toList()
-        : [];
 
     return Libro(
       id: json['key'] ?? '',

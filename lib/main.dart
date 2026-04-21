@@ -1,11 +1,8 @@
-import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart' as prov;
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'autenticacion.dart';
 import 'buscar.dart';
@@ -24,6 +21,8 @@ import 'desafios.dart';
 import 'theme_provider.dart';
 import 'servicio/servicio_notificaciones.dart';
 import 'mensajes_directos.dart';
+import 'pantalla_recomendaciones.dart';
+import 'recomendaciones_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,14 +30,10 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
   runApp(
-    prov.MultiProvider(
+    MultiProvider(
       providers: [
-        prov.ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
-        ),
-        prov.ChangeNotifierProvider(
-          create: (_) => ServicioNotificaciones(),
-        ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ServicioNotificaciones()),
       ],
       child: const AppBookWorm(),
     ),
@@ -50,7 +45,7 @@ class AppBookWorm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = prov.Provider.of<ThemeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       title: 'BookWorm',
@@ -132,6 +127,7 @@ class AppBookWorm extends StatelessWidget {
           }
           return const Perfil();
         },
+        '/recomendaciones': (context) => const PantallaRecomendaciones(),
         '/chat_club': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           if (args is Map<String, dynamic>) {
@@ -195,13 +191,13 @@ class _PaginaInicioState extends State<PaginaInicio> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      prov.Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
+      Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = prov.Provider.of<ThemeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.esModoOscuro;
 
     return Scaffold(
@@ -325,16 +321,20 @@ class _PaginaInicioState extends State<PaginaInicio> {
                         onTap: () {
                           if (accion['etiqueta'] == 'Buscar') {
                             Navigator.pushNamed(context, '/search');
-                          } else if (accion['etiqueta'] == 'Libros Recomendados') {
-                            Navigator.pushNamed(context, '/public_domain');
+                          } else if (accion['etiqueta'] == 'Recomendaciones') {
+                            Navigator.pushNamed(context, '/recomendaciones');
                           } else if (accion['etiqueta'] == 'Clubs') {
                             Navigator.pushNamed(context, '/clubs');
                           } else if (accion['etiqueta'] == 'Historial') {
                             Navigator.pushNamed(context, '/historial');
                           } else if (accion['etiqueta'] == 'Desafíos') {
                             Navigator.pushNamed(context, '/desafios');
-                          } else if (['Favoritos', 'Configuración'].contains(accion['etiqueta'])) {
-                            Navigator.pushNamed(context, '/perfil');
+                          } else if (accion['etiqueta'] == 'Favoritos') {
+                            Navigator.pushNamed(context, '/perfil', arguments: {'seccionIndex': 0});
+                          } else if (accion['etiqueta'] == 'Configuración') {
+                            Navigator.pushNamed(context, '/perfil', arguments: {'seccionIndex': 4});
+                          } else if (accion['etiqueta'] == 'Ayuda') {
+                            _mostrarDialogoAyuda();
                           }
                         },
                         child: Container(
@@ -648,8 +648,41 @@ class _PaginaInicioState extends State<PaginaInicio> {
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            const RecomendacionesWidget(),
+            const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  void _mostrarDialogoAyuda() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ayuda'),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('¿Necesitas ayuda?', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('Preguntas frecuentes:'),
+              Text('- ¿Cómo guardar libros?'),
+              Text('- ¿Cómo iniciar progreso de lectura?'),
+              Text('- ¿Cómo editar mi perfil?'),
+              Text('- ¿Cómo subir un PDF o audio de un libro?'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+        ],
       ),
     );
   }

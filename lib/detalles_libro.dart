@@ -24,7 +24,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
   bool _estaCargando = false;
   bool _esFavorito = false;
   bool _estaGuardado = false;
-  List<OfertaTienda> _ofertasReales = [];
   bool _cargandoOfertas = false;
   bool _mostrarDescripcion = false;
   String? _descripcionOllama;
@@ -100,16 +99,13 @@ class _DetallesLibroState extends State<DetallesLibro> {
       if (widget.libroObjeto.isbn != null) {
         final ofertasISBN = await _buscarPorISBN(widget.libroObjeto.isbn!);
         if (ofertasISBN.isNotEmpty) {
-          setState(() => _ofertasReales = ofertasISBN);
           return;
         }
       }
       
       final query = '${widget.libroObjeto.titulo} ${widget.libroObjeto.autores.isNotEmpty ? widget.libroObjeto.autores.first : ''}';
-      final ofertasTitulo = await _buscarPorTitulo(query);
-      if (ofertasTitulo.isNotEmpty) {
-        setState(() => _ofertasReales = ofertasTitulo);
-      }
+      await _buscarPorTitulo(query);
+      // Ofertas encontradas
     } catch (e) {
       print('Error buscando ofertas reales: $e');
     } finally {
@@ -195,77 +191,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
     } else {
       _mostrarError('No se puede abrir el enlace');
     }
-  }
-
-  void _mostrarSeleccionTienda() {
-    final ofertas = _ofertasReales.isNotEmpty 
-        ? _ofertasReales 
-        : widget.libroObjeto.ofertasConSimuladas;
-    
-    if (ofertas.isEmpty) {
-      _abrirBusquedaTiendas();
-      return;
-    }
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Selecciona una tienda',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColores.texto,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Te redirigiremos a la tienda seleccionada',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColores.textoClaro,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            
-            Expanded(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  ...ofertas.map((oferta) => ListTile(
-                    leading: _iconoTienda(oferta.tienda),
-                    title: Text(oferta.tienda),
-                    subtitle: const Text('Ir a la tienda'),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      Navigator.pop(context);
-                      if (oferta.url != null && oferta.url!.isNotEmpty) {
-                        _abrirURL(oferta.url!);
-                      }
-                    },
-                  )).toList(),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _abrirBusquedaTiendas() {
@@ -379,80 +304,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
                 },
               ),
             ],
-            
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _mostrarPlataformasAudiolibros() {
-    final busqueda = widget.libroObjeto.titulo;
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Plataformas de audiolibros',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColores.texto,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '"${widget.libroObjeto.titulo}"',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColores.textoClaro,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFFF7991C),
-                child: Icon(Icons.headset, color: Colors.white),
-              ),
-              title: const Text('Audible'),
-              subtitle: const Text('Amazon - Suscripción mensual'),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.pop(context);
-                final url = 'https://www.audible.es/search?keywords=${Uri.encodeComponent(busqueda)}';
-                _abrirURL(url);
-              },
-            ),
-            
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF00A8FF),
-                child: Icon(Icons.volume_up, color: Colors.white),
-              ),
-              title: const Text('Storytel'),
-              subtitle: const Text('Streaming ilimitado'),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.pop(context);
-                final url = 'https://www.storytel.com/es/es/search?q=${Uri.encodeComponent(busqueda)}';
-                _abrirURL(url);
-              },
-            ),
             
             const SizedBox(height: 10),
             TextButton(
@@ -969,62 +820,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _iconoTienda(String tienda) {
-    Map<String, Map<String, dynamic>> iconosTiendas = {
-      'Amazon': {
-        'icono': Icons.shopping_bag,
-        'color': const Color(0xFFFF9900),
-      },
-      'Casa del Libro': {
-        'icono': Icons.store,
-        'color': const Color(0xFFE2001A),
-      },
-      'Fnac': {
-        'icono': Icons.shopping_cart,
-        'color': const Color(0xFF0D5FA6),
-      },
-      'Google Play Books': {
-        'icono': Icons.play_circle_filled,
-        'color': Colors.green,
-      },
-      'Audible': {
-        'icono': Icons.headset,
-        'color': const Color(0xFFF7991C),
-      },
-      'Storytel': {
-        'icono': Icons.volume_up,
-        'color': const Color(0xFF00A8FF),
-      },
-      'Open Library': {
-        'icono': Icons.library_books,
-        'color': Colors.purple,
-      },
-      'Project Gutenberg': {
-        'icono': Icons.public,
-        'color': Colors.teal,
-      },
-      'El Corte Inglés': {
-        'icono': Icons.shopping_basket,
-        'color': Colors.pink,
-      },
-    };
-
-    final datosTienda = iconosTiendas[tienda] ?? {
-      'icono': Icons.store,
-      'color': const Color(0xFF9E9E9E),
-    };
-
-    return CircleAvatar(
-      backgroundColor: datosTienda['color'] as Color,
-      radius: 24,
-      child: Icon(
-        datosTienda['icono'] as IconData,
-        color: Colors.white,
-        size: 24,
-      ),
     );
   }
 

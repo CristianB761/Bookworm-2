@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'modelos.dart';
+import 'modelos.dart' show OfertaTienda;
 
 class ServicioTiendas {
   static const String _openLibraryApi = 'https://openlibrary.org/api/books';

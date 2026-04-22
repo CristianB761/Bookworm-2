@@ -80,7 +80,9 @@ class BibliotecaServiceUnificado {
 
   Future<List<Manga>> buscarManga(String consulta, {int limite = 20}) async {
     try {
+      print('📚 Servicio: Buscando manga "$consulta"');
       final mangas = await _mangaDexService.buscarManga(consulta, limite: limite);
+      print('📚 Servicio: Encontrados ${mangas.length} mangas');
 
       // Enriquecer con datos de AniList en paralelo
       final mangasEnriquecidas = await Future.wait(
@@ -88,8 +90,9 @@ class BibliotecaServiceUnificado {
         eagerError: false,
       );
 
-      return mangasEnriquecidas.whereType<Manga>().toList();
+      return mangasEnriquecidas;
     } catch (e) {
+      print('❌ Error en servicio: $e');
       return [];
     }
   }
@@ -116,7 +119,7 @@ class BibliotecaServiceUnificado {
         eagerError: false,
       );
 
-      return mangasEnriquecidas.whereType<Manga>().toList();
+      return mangasEnriquecidas;
     } catch (e) {
       return [];
     }

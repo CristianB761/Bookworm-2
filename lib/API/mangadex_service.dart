@@ -3,29 +3,91 @@ import 'package:http/http.dart' as http;
 import 'modelos.dart';
 
 class MangaDexService {
-  static const String _urlBase = 'https://api.mangadex.org/v5';
+  static const String _urlBase = 'https://api.mangadex.org';
 
   Future<List<Manga>> buscarManga(String consulta, {int limite = 20}) async {
     try {
-      final url = Uri.parse(
-        '$_urlBase/manga?title=${Uri.encodeComponent(consulta)}&limit=$limite&order[rating]=desc&includes[]=author&includes[]=artist&includes[]=cover_art',
-      );
-
-      final respuesta = await http.get(url);
+      if (consulta.isEmpty) return [];
+      
+      // 🔥 CORRECCIÓN: Usar el endpoint correcto de búsqueda
+      final encodedQuery = Uri.encodeComponent(consulta);
+      
+      // Método 1: Búsqueda por título usando el endpoint de búsqueda
+      String url = '$_urlBase/manga?limit=$limite&includes[]=cover_art&includes[]=author&includes[]=artist&order[followedCount]=desc';
+      
+      // Añadir filtro de título si hay consulta
+      if (consulta.isNotEmpty) {
+        url += '&title=$encodedQuery';
+      }
+      
+      print('🔍 Buscando: $consulta');
+      print('📡 URL: $url');
+      
+      final respuesta = await http.get(Uri.parse(url));
+      print('📊 Status code: ${respuesta.statusCode}');
 
       if (respuesta.statusCode == 200) {
         final datos = json.decode(respuesta.body);
         final mangasJson = (datos['data'] as List?) ?? [];
+        
+        print('📚 Mangas encontrados (raw): ${mangasJson.length}');
 
         final mangas = <Manga>[];
         for (final mangaJson in mangasJson) {
           final manga = _mapearManga(mangaJson);
-          mangas.add(manga);
+          // Verificar que el título coincida (filtro adicional)
+          if (consulta.isEmpty || 
+              manga.titulo.toLowerCase().contains(consulta.toLowerCase())) {
+            mangas.add(manga);
+          }
         }
-        return mangas;
+        
+        print('📚 Mangas después de filtrar: ${mangas.length}');
+        return mangas.take(limite).toList();
+      } else if (respuesta.statusCode == 404) {
+        // Si el endpoint de título falla, usar búsqueda general
+        print('⚠️ 404, intentando búsqueda general...');
+        return await _buscarGeneral(consulta, limite);
+      } else {
+        print('❌ Error HTTP: ${respuesta.statusCode}');
+        print('📝 Respuesta: ${respuesta.body}');
+        return [];
+      }
+    } catch (e) {
+      print('❌ Excepción: $e');
+      return [];
+    }
+  }
+
+  // Método alternativo de búsqueda
+  Future<List<Manga>> _buscarGeneral(String consulta, int limite) async {
+    try {
+      // Usar búsqueda por texto completo
+      final url = Uri.parse('$_urlBase/manga?limit=$limite&includes[]=cover_art&includes[]=author&includes[]=artist&order[followedCount]=desc');
+      
+      final respuesta = await http.get(url);
+      
+      if (respuesta.statusCode == 200) {
+        final datos = json.decode(respuesta.body);
+        final mangasJson = (datos['data'] as List?) ?? [];
+        
+        // Filtrar manualmente por coincidencia en título
+        final mangasFiltrados = mangasJson.where((manga) {
+          final attrs = manga['attributes'] as Map<String, dynamic>?;
+          final title = attrs?['title'] as Map<String, dynamic>?;
+          final titleEn = title?['en']?.toString().toLowerCase() ?? '';
+          final titleJa = title?['ja']?.toString().toLowerCase() ?? '';
+          final queryLower = consulta.toLowerCase();
+          return titleEn.contains(queryLower) || titleJa.contains(queryLower);
+        }).toList();
+        
+        print('📚 Búsqueda general encontró: ${mangasFiltrados.length} mangas');
+        
+        return mangasFiltrados.take(limite).map((m) => _mapearManga(m)).toList();
       }
       return [];
     } catch (e) {
+      print('❌ Error en búsqueda general: $e');
       return [];
     }
   }
@@ -74,25 +136,34 @@ class MangaDexService {
     final attributes = json['attributes'] as Map<String, dynamic>? ?? {};
     final relationships = json['relationships'] as List? ?? [];
 
-    final titulo = attributes['title'] as Map<String, dynamic>?;
-    final tituloTexto = titulo?['en'] ?? 'Título no disponible';
+    // Obtener título en varios idiomas
+    final title = attributes['title'] as Map<String, dynamic>?;
+    String tituloTexto = title?['es'] ?? 
+                         title?['en'] ?? 
+                         title?['ja'] ?? 
+                         'Título no disponible';
+    
+    // Si el título es demasiado largo, usar versión más corta
+    if (tituloTexto.length > 100 && title?['en'] != null) {
+      tituloTexto = title!['en'];
+    }
 
-    // Extraer descripción
+    // Descripción
     final description = attributes['description'] as Map<String, dynamic>?;
-    final sinopsis = description?['en'] ?? '';
+    String sinopsis = description?['es'] ?? description?['en'] ?? '';
 
     // Estado
     final status = attributes['status'] as String? ?? '';
     String estadoMapeado = '';
     switch (status) {
       case 'ongoing':
-        estadoMapeado = 'Serializing';
+        estadoMapeado = 'En publicación';
         break;
       case 'completed':
-        estadoMapeado = 'Finished';
+        estadoMapeado = 'Finalizado';
         break;
       case 'hiatus':
-        estadoMapeado = 'Hiatus';
+        estadoMapeado = 'En pausa';
         break;
       default:
         estadoMapeado = status;
@@ -107,9 +178,9 @@ class MangaDexService {
     for (final rel in relationships) {
       final relType = rel['type'] as String?;
       if (relType == 'author' || relType == 'artist') {
-        final attributes = rel['attributes'] as Map<String, dynamic>?;
-        final nombre = attributes?['name'] as String?;
-        if (nombre != null) {
+        final attrs = rel['attributes'] as Map<String, dynamic>?;
+        final nombre = attrs?['name'] as String?;
+        if (nombre != null && !autores.contains(nombre)) {
           autores.add(nombre);
         }
       }
@@ -121,41 +192,25 @@ class MangaDexService {
       if (rel['type'] == 'cover_art') {
         final coverAttributes = rel['attributes'] as Map<String, dynamic>?;
         final fileName = coverAttributes?['fileName'] as String?;
-        if (fileName != null) {
+        if (fileName != null && id.isNotEmpty) {
           urlPortada = 'https://uploads.mangadex.org/covers/$id/$fileName';
         }
         break;
       }
     }
 
-    // Géneros y temas
+    // Géneros
     final tags = attributes['tags'] as List? ?? [];
     final generos = <String>[];
-    final temas = <String>[];
 
     for (final tag in tags) {
       final tagAttributes = tag['attributes'] as Map<String, dynamic>?;
       final name = tagAttributes?['name'] as Map<String, dynamic>?;
-      final nombre = name?['en'] as String?;
-      final group = tagAttributes?['group'] as String?;
-
+      final nombre = name?['es'] ?? name?['en'];
       if (nombre != null) {
-        if (group == 'genre') {
-          generos.add(nombre);
-        } else if (group == 'theme') {
-          temas.add(nombre);
-        }
+        generos.add(nombre);
       }
     }
-
-    // Stats
-    final statistics = attributes['statistics'] as Map<String, dynamic>?;
-    final manga = statistics?['manga:0'] as Map<String, dynamic>?;
-    final rating2 = manga?['rating'] as Map<String, dynamic>?;
-    final numeroVotos = rating2?['distribution'] != null
-        ? (rating2!['distribution'] as Map<String, dynamic>).values
-            .fold<int>(0, (sum, count) => sum + (count as int))
-        : null;
 
     return Manga(
       id: 'mdex_$id',
@@ -164,11 +219,17 @@ class MangaDexService {
       sinopsis: sinopsis.isNotEmpty ? sinopsis : null,
       urlPortada: urlPortada,
       calificacionMangaDex: calificacion?.toDouble(),
-      numeroVotos: numeroVotos,
+      numeroVotos: null,
+      popularidad: null,
       estado: estadoMapeado,
       generos: generos.take(10).toList(),
-      temas: temas.take(10).toList(),
+      temas: [],
+      ultimoCapituloLanzado: null,
+      numeroCapitulos: null,
+      adaptacionAnime: null,
       urlMangaDex: 'https://mangadex.org/title/$id',
+      urlAniList: null,
+      calificacionAniList: null,
     );
   }
 }

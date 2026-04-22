@@ -5,7 +5,7 @@ import 'modelos.dart';
 class AniListService {
   static const String _url = 'https://graphql.anilist.co';
 
-  Future<Manga?> enriquecerMangaConAniList(Manga manga) async {
+  Future<Manga> enriquecerMangaConAniList(Manga manga) async {
     try {
       final datosAniList = await _buscarMangaEnAniList(manga.titulo);
       if (datosAniList == null) return manga;

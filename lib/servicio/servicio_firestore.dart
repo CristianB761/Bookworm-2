@@ -13,9 +13,7 @@ class ServicioFirestore {
           .collection('usuarios')
           .doc(datosUsuario.uid)
           .set(datosUsuario.toMap());
-      print('Usuario creado en Firestore: ${datosUsuario.uid}');
     } catch (e) {
-      print('Error al crear usuario: $e');
       throw Exception('Error al crear usuario: $e');
     }
   }
@@ -30,10 +28,8 @@ class ServicioFirestore {
         }
         return DatosUsuario.fromMap(data);
       }
-      print('⚠️ Usuario no encontrado en Firestore');
       return null;
     } catch (e) {
-      print('Error al obtener usuario: $e');
       throw Exception('Error al obtener usuario: $e');
     }
   }
@@ -44,9 +40,7 @@ class ServicioFirestore {
           .collection('usuarios')
           .doc(uid)
           .update({'estadisticas': nuevasEstadisticas});
-      print('Estadísticas actualizadas');
     } catch (e) {
-      print('Error al actualizar stats: $e');
       throw Exception('Error al actualizar stats: $e');
     }
   }
@@ -57,9 +51,7 @@ class ServicioFirestore {
           .collection('usuarios')
           .doc(uid)
           .update(nuevosDatos);
-      print('Datos del usuario actualizados');
     } catch (e) {
-      print('Error al actualizar datos del usuario: $e');
       throw Exception('Error al actualizar datos del usuario: $e');
     }
   }
@@ -70,9 +62,7 @@ class ServicioFirestore {
           .collection('progreso_lectura')
           .doc(progreso.id)
           .set(progreso.toMap());
-      print('Progreso guardado: ${progreso.tituloLibro}');
     } catch (e) {
-      print('Error al guardar progreso: $e');
       throw Exception('Error al guardar progreso: $e');
     }
   }
@@ -100,7 +90,6 @@ class ServicioFirestore {
           .map((doc) => ProgresoLectura.fromMap(doc.data()))
           .toList();
     } catch (e) {
-      print('Error al obtener libros completados: $e');
       throw Exception('Error al obtener libros completados: $e');
     }
   }
@@ -126,9 +115,7 @@ class ServicioFirestore {
           .collection('progreso_lectura')
           .doc(progresoId)
           .update(datosActualizacion);
-      print('Estado de lectura actualizado: $estado');
     } catch (e) {
-      print('Error al actualizar estado: $e');
       throw Exception('Error al actualizar estado: $e');
     }
   }
@@ -147,7 +134,6 @@ class ServicioFirestore {
       }
       return null;
     } catch (e) {
-      print('Error al verificar progreso: $e');
       return null;
     }
   }
@@ -164,7 +150,6 @@ class ServicioFirestore {
           .map((doc) => ProgresoLectura.fromMap(doc.data()))
           .toList();
     } catch (e) {
-      print('Error al obtener libros en progreso: $e');
       return [];
     }
   }
@@ -179,7 +164,6 @@ class ServicioFirestore {
       final usuarioDoc = await _firestore.collection('usuarios').doc(usuario.uid).get();
       
       if (usuarioDoc.exists) {
-        print('Datos de usuario sincronizados');
       }
 
       final progresosSnapshot = await _firestore
@@ -193,10 +177,8 @@ class ServicioFirestore {
       }
 
       await batch.commit();
-      print('Sincronización completa exitosa');
 
     } catch (e) {
-      print('Error en sincronización completa: $e');
       throw Exception('Error sincronizando datos: $e');
     }
   }
@@ -247,7 +229,6 @@ class ServicioFirestore {
         'metaDiariaAlcanzada': completadosHoy.docs.isNotEmpty,
       };
     } catch (e) {
-      print('Error obteniendo resumen diario: $e');
       return {};
     }
   }
@@ -274,7 +255,6 @@ class ServicioFirestore {
           }
         }
       } catch (e) {
-        print('Error obteniendo nombre creador: $e');
       }
 
       await _firestore.collection('clubs').doc(clubId).set({
@@ -307,9 +287,7 @@ class ServicioFirestore {
       'notificaciones': true,
       });
 
-      print('Club creado exitosamente: $clubId');
     } catch (e) {
-      print('Error creando club: $e');
       throw Exception('Error creando club: $e');
     }
   }
@@ -343,9 +321,7 @@ class ServicioFirestore {
         });
       }
 
-      print('Información del club actualizada: $clubId');
     } catch (e) {
-      print('Error actualizando club: $e');
       throw Exception('Error actualizando club: $e');
     }
   }
@@ -388,9 +364,7 @@ class ServicioFirestore {
         'notificaciones': true,
       });
 
-      print('Usuario unido al club: $clubId');
     } catch (e) {
-      print('Error uniéndose al club: $e');
       throw Exception('Error uniéndose al club: $e');
     }
   }
@@ -426,9 +400,7 @@ class ServicioFirestore {
       batch.delete(_firestore.collection('clubs').doc(clubId));
       
       await batch.commit();
-      print('Club eliminado exitosamente: $clubId');
     } catch (e) {
-      print('Error eliminando club: $e');
       throw Exception('Error eliminando club: $e');
     }
   }
@@ -477,7 +449,6 @@ class ServicioFirestore {
 
       return clubsCompletos.where((c) => c != null).cast<Map<String, dynamic>>().toList();
     } catch (e) {
-      print('Error obteniendo clubs del usuario: $e');
       return [];
     }
   }
@@ -524,7 +495,6 @@ class ServicioFirestore {
 
       return clubs;
     } catch (e) {
-      print('Error obteniendo clubs recomendados: $e');
       return [];
     }
   }
@@ -553,7 +523,6 @@ class ServicioFirestore {
       .where((data) => data['privacidad'] == 'publico')
       .toList();
     } catch (e) {
-      print('Error buscando clubs: $e');
       return [];
     }
   }
@@ -567,7 +536,6 @@ class ServicioFirestore {
         if (nombre.trim().isEmpty) nombre = 'Usuario';
         await user.updateDisplayName(nombre);
       } catch (e) {
-        print('Error corrigiendo displayName: $e');
       }
     }
   }
@@ -587,7 +555,6 @@ class ServicioFirestore {
           .map((doc) => DatosUsuario.fromMap(doc.data()))
           .toList();
     } catch (e) {
-      print('Error buscando usuarios: $e');
       return [];
     }
   }
@@ -609,7 +576,6 @@ class ServicioFirestore {
     );
 
     await batch.commit();
-    print('Usuario seguido: $uidObjetivo');
   }
 
   Future<void> dejarDeSeguirUsuario(String uidObjetivo) async {
@@ -626,7 +592,6 @@ class ServicioFirestore {
     );
 
     await batch.commit();
-    print('Dejado de seguir usuario: $uidObjetivo');
   }
 
   Future<bool> estaSiguiendo(String uidObjetivo) async {
@@ -652,7 +617,6 @@ class ServicioFirestore {
           .get();
       return snapshot.docs.length;
     } catch (e) {
-      print('Error obteniendo seguidores: $e');
       return 0;
     }
   }
@@ -666,7 +630,6 @@ class ServicioFirestore {
           .get();
       return snapshot.docs.length;
     } catch (e) {
-      print('Error obteniendo siguiendo: $e');
       return 0;
     }
   }
@@ -689,7 +652,6 @@ class ServicioFirestore {
       }
       return seguidores;
     } catch (e) {
-      print('Error obteniendo seguidores: $e');
       return [];
     }
   }
@@ -712,7 +674,6 @@ class ServicioFirestore {
       }
       return siguiendo;
     } catch (e) {
-      print('Error obteniendo siguiendo: $e');
       return [];
     }
   }

@@ -14,6 +14,7 @@ import 'chat_clubs.dart';
 import 'graficos_estadisticas.dart';
 import 'sincronizacion_offline.dart';
 import 'detalles_libro.dart';
+import 'detalles_manga.dart';
 import 'public_domain.dart';
 import 'API/modelos.dart';
 import 'historial.dart';
@@ -158,6 +159,13 @@ class AppBookWorm extends StatelessWidget {
             return DetallesLibro(libroObjeto: args);
           }
           return const Scaffold(body: Center(child: Text('Error: Libro no encontrado')));
+        },
+        '/detalles_manga': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          if (args is Manga) {
+            return DetallesManga(mangaObjeto: args);
+          }
+          return const Scaffold(body: Center(child: Text('Error: Manga no encontrado')));
         },
         '/lector': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;

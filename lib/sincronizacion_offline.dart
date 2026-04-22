@@ -24,7 +24,6 @@ class SincronizacionOffline {
       final resultado = await _connectivity.checkConnectivity();
       return resultado.any((result) => result != ConnectivityResult.none);
     } catch (e) {
-      print('Error verificando conexión: $e');
       return false;
     }
   }
@@ -33,7 +32,6 @@ class SincronizacionOffline {
     try {
       await _cajaLocal.put(clave, datos);
     } catch (e) {
-      print('Error guardando localmente: $e');
     }
   }
 
@@ -41,7 +39,6 @@ class SincronizacionOffline {
     try {
       return _cajaLocal.get(clave);
     } catch (e) {
-      print('Error obteniendo localmente: $e');
       return null;
     }
   }
@@ -55,7 +52,6 @@ class SincronizacionOffline {
             .collection('progreso_lectura')
             .doc(progreso.id)
             .set(progreso.toMap());
-        print('Progreso guardado en línea: ${progreso.tituloLibro}');
       } else {
         final progresosPendientes = await obtenerLocalmente<List<Map<String, dynamic>>>('progresos_pendientes') ?? [];
         progresosPendientes.add(progreso.toMap());
@@ -65,10 +61,8 @@ class SincronizacionOffline {
         misProgresos.add(progreso.toMap());
         await guardarLocalmente('mis_progresos', misProgresos);
         
-        print('Progreso guardado offline: ${progreso.tituloLibro}');
       }
     } catch (e) {
-      print('Error guardando progreso: $e');
       rethrow;
     }
   }
@@ -83,15 +77,12 @@ class SincronizacionOffline {
             .doc(mensaje['clubId'])
             .collection('mensajes')
             .add(mensaje);
-        print('Mensaje enviado en línea');
       } else {
         final mensajesPendientes = await obtenerLocalmente<List<Map<String, dynamic>>>('mensajes_pendientes') ?? [];
         mensajesPendientes.add(mensaje);
         await guardarLocalmente('mensajes_pendientes', mensajesPendientes);
-        print('Mensaje guardado offline');
       }
     } catch (e) {
-      print('Error guardando mensaje: $e');
       rethrow;
     }
   }
@@ -100,13 +91,11 @@ class SincronizacionOffline {
     try {
       final tieneInternet = await tieneConexion();
       if (!tieneInternet) {
-        print('Sin conexión a internet para sincronizar');
         return;
       }
 
       final progresosPendientes = await obtenerLocalmente<List<Map<String, dynamic>>>('progresos_pendientes') ?? [];
       if (progresosPendientes.isNotEmpty) {
-        print('Sincronizando ${progresosPendientes.length} progresos pendientes...');
         
         for (final progresoData in progresosPendientes) {
           try {
@@ -115,9 +104,7 @@ class SincronizacionOffline {
                 .collection('progreso_lectura')
                 .doc(progreso.id)
                 .set(progreso.toMap());
-            print('Progreso sincronizado: ${progreso.tituloLibro}');
           } catch (e) {
-            print('Error sincronizando progreso: $e');
           }
         }
         await guardarLocalmente('progresos_pendientes', []);
@@ -125,7 +112,6 @@ class SincronizacionOffline {
 
       final mensajesPendientes = await obtenerLocalmente<List<Map<String, dynamic>>>('mensajes_pendientes') ?? [];
       if (mensajesPendientes.isNotEmpty) {
-        print('Sincronizando ${mensajesPendientes.length} mensajes pendientes...');
         
         for (final mensaje in mensajesPendientes) {
           try {
@@ -134,17 +120,13 @@ class SincronizacionOffline {
                 .doc(mensaje['clubId'])
                 .collection('mensajes')
                 .add(mensaje);
-            print('Mensaje sincronizado');
           } catch (e) {
-            print('Error sincronizando mensaje: $e');
           }
         }
         await guardarLocalmente('mensajes_pendientes', []);
       }
 
-      print('Sincronización completada exitosamente');
     } catch (e) {
-      print('Error en sincronización: $e');
       rethrow;
     }
   }
@@ -182,7 +164,6 @@ class SincronizacionOffline {
         return progresosData.map((data) => ProgresoLectura.fromMap(data)).toList();
       }
     } catch (e) {
-      print('Error obteniendo progresos: $e');
       return [];
     }
   }
@@ -213,7 +194,6 @@ class SincronizacionOffline {
         return mensajes ?? [];
       }
     } catch (e) {
-      print('Error obteniendo mensajes: $e');
       return [];
     }
   }
@@ -222,21 +202,17 @@ class SincronizacionOffline {
     try {
       _connectivity.onConnectivityChanged.listen((resultado) async {
         if (resultado.any((result) => result != ConnectivityResult.none)) {
-          print('Conexión detectada, sincronizando...');
           await sincronizarDatosPendientes();
         }
       });
     } catch (e) {
-      print('Error en listener de conectividad: $e');
     }
   }
 
   Future<void> limpiarCache() async {
     try {
       await _cajaLocal.clear();
-      print('Cache limpiado exitosamente');
     } catch (e) {
-      print('Error limpiando cache: $e');
       rethrow;
     }
   }
@@ -293,7 +269,6 @@ class _PantallaSincronizacionState extends State<PantallaSincronizacion> {
         });
       }
     } catch (e) {
-      print('Error actualizando estado: $e');
     }
   }
 

@@ -50,7 +50,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
         });
       }
     } catch (e) {
-      print('Error cargando descripción cache: $e');
     }
   }
 
@@ -60,7 +59,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
       final key = 'desc_${widget.libroObjeto.id}';
       await prefs.setString(key, descripcion);
     } catch (e) {
-      print('Error guardando descripción cache: $e');
     }
   }
 
@@ -86,7 +84,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
         }
       }
     } catch (e) {
-      print('Error verificando estado del libro: $e');
     }
   }
 
@@ -107,7 +104,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
       await _buscarPorTitulo(query);
       // Ofertas encontradas
     } catch (e) {
-      print('Error buscando ofertas reales: $e');
     } finally {
       setState(() => _cargandoOfertas = false);
     }
@@ -133,7 +129,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
         }
       }
     } catch (e) {
-      print('Error Open Library API: $e');
     }
 
     return ofertas;
@@ -159,7 +154,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
         }
       }
     } catch (e) {
-      print('Error buscando en Open Library: $e');
     }
 
     return ofertas;

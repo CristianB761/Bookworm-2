@@ -71,7 +71,6 @@ class _ChatClubState extends State<ChatClub> {
         }
       }
     } catch (e) {
-      print('Error cargando info del club: $e');
     }
   }
 
@@ -207,7 +206,6 @@ class _ChatClubState extends State<ChatClub> {
       _controladorMensaje.clear();
       _scrollAlFinal();
     } catch (e) {
-      print('Error enviando mensaje: $e');
     }
   }
 

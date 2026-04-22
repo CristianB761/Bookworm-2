@@ -18,7 +18,6 @@ class ThemeProvider extends ChangeNotifier {
       _esModoOscuro = prefs.getBool(_temaKey) ?? false;
       notifyListeners();
     } catch (e) {
-      print('Error cargando tema: $e');
     }
   }
 
@@ -28,7 +27,6 @@ class ThemeProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_temaKey, _esModoOscuro);
     } catch (e) {
-      print('Error guardando tema: $e');
     }
     notifyListeners();
   }

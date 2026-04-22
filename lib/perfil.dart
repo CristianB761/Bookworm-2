@@ -128,7 +128,6 @@ class _PerfilState extends State<Perfil> {
         });
       }
     } catch (e) {
-      print('Error cargando datos del usuario: $e');
       if (mounted) setState(() => _estaCargando = false);
     }
   }
@@ -159,7 +158,6 @@ class _PerfilState extends State<Perfil> {
         });
       }
     }, onError: (error) {
-      print('Error escuchando libros guardados: $error');
       if (mounted) setState(() => _cargandoLibros = false);
     });
 
@@ -180,7 +178,6 @@ class _PerfilState extends State<Perfil> {
         });
       }
     }, onError: (error) {
-      print('Error escuchando progresos: $error');
       if (mounted) setState(() => _cargandoProgresos = false);
     });
   }

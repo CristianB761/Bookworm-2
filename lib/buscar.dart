@@ -24,18 +24,22 @@ class _BuscarState extends State<Buscar> {
   final BibliotecaServiceUnificado _servicioBiblioteca = BibliotecaServiceUnificado();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   String? _formatoSeleccionado;
   String? _generoSeleccionado;
-  
+
   List<Libro> _resultadosBusqueda = [];
+  List<Manga> _resultadosManga = [];
   bool _estaCargando = false;
   bool _haBuscado = false;
-  
+
   final Map<String, List<Libro>> _cacheBusquedas = {};
   final Map<String, DateTime> _cacheTiempos = {};
   final Duration _cacheDuracion = const Duration(minutes: 5);
-  
+
+  final Map<String, List<Manga>> _cacheManga = {};
+  final Map<String, DateTime> _cacheTiemposManga = {};
+
   Set<String> _librosGuardadosIds = {};
   Set<String> _librosFavoritosIds = {};
 
@@ -44,7 +48,9 @@ class _BuscarState extends State<Buscar> {
   bool _cargandoUsuarios = false;
   bool _haBuscadoUsuarios = false;
   final ServicioFirestore _servicioFirestore = ServicioFirestore();
-  
+
+  String _tabActiva = 'libros'; // 'libros', 'manga', 'usuarios'
+
   Timer? _debounceTimer;
 
   List<String> _obtenerItemsFormato() {
@@ -65,10 +71,10 @@ class _BuscarState extends State<Buscar> {
     _generoSeleccionado = _obtenerItemsGenero().first;
     _formatoSeleccionado = 'Todos los formatos';
     _escucharCambiosBiblioteca();
-    
+
     // Listener para búsqueda en tiempo real de usuarios
     _controladorBusqueda.addListener(() {
-      if (_busquedaUsuarios && _controladorBusqueda.text.isNotEmpty) {
+      if (_tabActiva == 'usuarios' && _controladorBusqueda.text.isNotEmpty) {
         _debounceBuscarUsuarios();
       }
     });
@@ -285,6 +291,53 @@ class _BuscarState extends State<Buscar> {
     }
   }
 
+  Future<void> _buscarManga() async {
+    if (_controladorBusqueda.text.isEmpty) {
+      _mostrarError('Ingresa un término de búsqueda');
+      return;
+    }
+
+    setState(() {
+      _estaCargando = true;
+      _haBuscado = true;
+    });
+
+    try {
+      final consultaBusqueda = _controladorBusqueda.text;
+      final cacheKey = consultaBusqueda;
+
+      if (_cacheManga.containsKey(cacheKey)) {
+        final cacheTime = _cacheTiemposManga[cacheKey];
+        if (cacheTime != null && DateTime.now().difference(cacheTime) < _cacheDuracion) {
+          setState(() {
+            _resultadosManga = _cacheManga[cacheKey]!;
+            _estaCargando = false;
+          });
+          return;
+        }
+      }
+
+      final mangas = await _servicioBiblioteca.buscarManga(consultaBusqueda, limite: 20);
+
+      _cacheManga[cacheKey] = mangas;
+      _cacheTiemposManga[cacheKey] = DateTime.now();
+
+      setState(() {
+        _resultadosManga = mangas;
+      });
+    } catch (e) {
+      _mostrarError('Error al buscar manga: $e');
+      setState(() {
+        _resultadosManga = [];
+      });
+    } finally {
+      setState(() {
+        _estaCargando = false;
+      });
+    }
+  }
+
+
   Libro _procesarLibroConPrecio(Libro libro) {
     if (libro.precio != null && libro.precio! > 0 && libro.ofertas.isNotEmpty) {
       return libro;
@@ -475,7 +528,7 @@ class _BuscarState extends State<Buscar> {
     try {
       final datosLibro = libro.toMap();
       datosLibro['fechaVisto'] = FieldValue.serverTimestamp();
-      
+
       await _firestore
           .collection('usuarios')
           .doc(usuario.uid)
@@ -483,7 +536,7 @@ class _BuscarState extends State<Buscar> {
           .doc(libro.id)
           .set(datosLibro);
     } catch (e) {
-      print('Error al guardar en historial: $e');
+      // Error al guardar en historial
     }
   }
 
@@ -754,6 +807,146 @@ class _BuscarState extends State<Buscar> {
     );
   }
 
+  Widget _seccionResultadosManga() {
+    if (_estaCargando) {
+      return const IndicadorCarga(mensaje: 'Buscando mangas...');
+    }
+
+    if (!_haBuscado) {
+      return const EstadoVacio(
+        icono: Icons.search,
+        titulo: 'Busca tu próximo manga favorito',
+        descripcion: 'Ingresa un título o autor',
+      );
+    }
+
+    if (_resultadosManga.isEmpty) {
+      return const EstadoVacio(
+        icono: Icons.search_off,
+        titulo: 'No se encontraron mangas',
+        descripcion: 'Intenta con otros términos de búsqueda',
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${_resultadosManga.length} resultados encontrados',
+          style: EstilosApp.cuerpoMedio(context),
+        ),
+        const SizedBox(height: 16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 14,
+            childAspectRatio: 0.7,
+          ),
+          itemCount: _resultadosManga.length,
+          itemBuilder: (context, index) {
+            final manga = _resultadosManga[index];
+            return _construirTarjetaManga(manga);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _construirTarjetaManga(Manga manga) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detalles_manga',
+          arguments: manga,
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[900],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Portada
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  image: manga.urlPortada != null
+                      ? DecorationImage(
+                          image: NetworkImage(manga.urlPortada!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  color: Colors.grey[800],
+                ),
+                child: manga.urlPortada == null
+                    ? const Center(
+                        child: Icon(Icons.image, size: 40, color: Colors.grey),
+                      )
+                    : null,
+              ),
+            ),
+            // Título y autor
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    manga.titulo,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (manga.calificacionAniList != null ||
+                      manga.calificacionMangaDex != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, size: 12, color: Colors.amber),
+                        const SizedBox(width: 2),
+                        Text(
+                          manga.calificacionAniList != null
+                              ? '${(manga.calificacionAniList! / 10).toStringAsFixed(1)}'
+                              : '${manga.calificacionMangaDex!.toStringAsFixed(1)}',
+                          style: const TextStyle(
+                            color: Colors.amber,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
   Widget _construirTarjetaMosaico(Libro libro) {
     bool esGratuito = libro.precio == 0.0;
     bool tienePrecio = libro.precio != null && libro.precio! > 0;
@@ -1023,34 +1216,46 @@ class _BuscarState extends State<Buscar> {
                 children: [
                   Row(
                     children: [
-                      _construirPestana('Libros', Icons.book, !_busquedaUsuarios),
+                      _construirPestana('Libros', Icons.book, _tabActiva == 'libros'),
                       const SizedBox(width: 8),
-                      _construirPestana('Usuarios', Icons.people, _busquedaUsuarios),
+                      _construirPestana('Manga', Icons.auto_stories, _tabActiva == 'manga'),
+                      const SizedBox(width: 8),
+                      _construirPestana('Usuarios', Icons.people, _tabActiva == 'usuarios'),
                     ],
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    _busquedaUsuarios
+                    _tabActiva == 'usuarios'
                         ? 'Buscar usuarios'
-                        : 'Encuentra tu próximo libro',
+                        : _tabActiva == 'manga'
+                            ? 'Encuentra tu próximo manga'
+                            : 'Encuentra tu próximo libro',
                     style: EstilosApp.tituloMedio(context).copyWith(color: textColor),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _busquedaUsuarios
+                    _tabActiva == 'usuarios'
                         ? 'Encuentra lectores en Bookworm'
-                        : 'Busca entre miles de libros y audiolibros',
+                        : _tabActiva == 'manga'
+                            ? 'Busca entre miles de mangas y light novels'
+                            : 'Busca entre miles de libros y audiolibros',
                     style: EstilosApp.cuerpoMedio(context).copyWith(color: textColor),
                   ),
                   const SizedBox(height: 20),
                   BarraBusquedaPersonalizada(
                     controlador: _controladorBusqueda,
-                    textoHint: _busquedaUsuarios
+                    textoHint: _tabActiva == 'usuarios'
                         ? 'Ej: Cristian, María...'
-                        : 'Ej: Harry Potter, Stephen King o buscar por filtros',
-                    alBuscar: _busquedaUsuarios ? _buscarUsuarios : _realizarBusqueda,
+                        : _tabActiva == 'manga'
+                            ? 'Ej: Berserk, Jujutsu Kaisen...'
+                            : 'Ej: Harry Potter, Stephen King o buscar por filtros',
+                    alBuscar: _tabActiva == 'usuarios'
+                        ? _buscarUsuarios
+                        : _tabActiva == 'manga'
+                            ? _buscarManga
+                            : _realizarBusqueda,
                   ),
-                  if (!_busquedaUsuarios) ...[
+                  if (_tabActiva == 'libros') ...[
                     const SizedBox(height: 20),
                     Row(
                       children: [
@@ -1097,11 +1302,19 @@ class _BuscarState extends State<Buscar> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _busquedaUsuarios ? 'Usuarios encontrados' : 'Resultados de búsqueda',
+                    _tabActiva == 'usuarios'
+                        ? 'Usuarios encontrados'
+                        : _tabActiva == 'manga'
+                            ? 'Resultados de manga'
+                            : 'Resultados de búsqueda',
                     style: EstilosApp.tituloMedio(context).copyWith(color: textColor),
                   ),
                   const SizedBox(height: 16),
-                  _busquedaUsuarios ? _seccionResultadosUsuarios() : _seccionResultados(),
+                  _tabActiva == 'usuarios'
+                      ? _seccionResultadosUsuarios()
+                      : _tabActiva == 'manga'
+                          ? _seccionResultadosManga()
+                          : _seccionResultados(),
                 ],
               ),
             ),
@@ -1115,10 +1328,17 @@ class _BuscarState extends State<Buscar> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          _busquedaUsuarios = texto == 'Usuarios';
+          if (texto == 'Libros') {
+            _tabActiva = 'libros';
+          } else if (texto == 'Manga') {
+            _tabActiva = 'manga';
+          } else if (texto == 'Usuarios') {
+            _tabActiva = 'usuarios';
+          }
           // Limpiar el campo de búsqueda al cambiar de pestaña
           _controladorBusqueda.clear();
           _resultadosBusqueda = [];
+          _resultadosManga = [];
           _resultadosUsuarios = [];
           _haBuscado = false;
           _haBuscadoUsuarios = false;

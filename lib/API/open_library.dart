@@ -31,7 +31,6 @@ class OpenLibraryService {
       }
       return [];
     } catch (e) {
-      print('Error en OpenLibrary: $e');
       return [];
     }
   }
@@ -54,7 +53,6 @@ class OpenLibraryService {
       }
       return [];
     } catch (e) {
-      print('Error en OpenLibrary sin filtro: $e');
       return [];
     }
   }
@@ -72,7 +70,6 @@ class OpenLibraryService {
       }
       return null;
     } catch (e) {
-      print('Error obteniendo detalles en OpenLibrary: $e');
       return null;
     }
   }

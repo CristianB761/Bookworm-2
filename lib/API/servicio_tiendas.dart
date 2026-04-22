@@ -51,7 +51,6 @@ class ServicioTiendas {
         }
       }
     } catch (e) {
-      print('Error Open Library API: $e');
     }
     
     return ofertas;

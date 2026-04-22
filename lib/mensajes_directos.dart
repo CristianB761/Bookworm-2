@@ -72,7 +72,6 @@ class _MensajesDirectosState extends State<MensajesDirectos> {
         });
       }
     }, onError: (error) {
-      print('Error escuchando chats: $error');
       if (mounted) {
         setState(() => _cargando = false);
       }

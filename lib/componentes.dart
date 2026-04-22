@@ -674,10 +674,8 @@ class TextoConLinks extends StatelessWidget {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        print('No se puede abrir la URL: $url');
       }
     } catch (e) {
-      print('Error al abrir URL: $e');
     }
   }
 

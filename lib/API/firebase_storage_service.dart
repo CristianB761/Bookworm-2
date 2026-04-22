@@ -33,8 +33,6 @@ class FirebaseStorageService {
 
       final rutaArchivo = '$carpetaUsuarios/${firebaseUser.uid}/$carpetaLibros/$nombreLibroLimpio/${timestamp}_$nombrePDFLimpio.pdf';
 
-      print('Subiendo PDF a Firebase Storage: $rutaArchivo');
-
       final ref = _storage.ref().child(rutaArchivo);
       
       final metadata = SettableMetadata(
@@ -51,10 +49,8 @@ class FirebaseStorageService {
       final taskSnapshot = await ref.putFile(archivo, metadata);
       final urlPublica = await taskSnapshot.ref.getDownloadURL();
 
-      print('PDF subido exitosamente a Firebase Storage: $urlPublica');
       return urlPublica;
     } catch (e) {
-      print('Error al subir PDF a Firebase Storage: $e');
       throw Exception('Error al subir PDF: $e');
     }
   }
@@ -84,16 +80,20 @@ class FirebaseStorageService {
       final extension = archivo.path.split('.').last.toLowerCase();
       final rutaArchivo = '$carpetaUsuarios/${firebaseUser.uid}/$carpetaAudios/$nombreLibroLimpio/${timestamp}_$nombreAudioLimpio.$extension';
 
-      print('Subiendo audio a Firebase Storage: $rutaArchivo');
-
       final ref = _storage.ref().child(rutaArchivo);
       
       String contentType = 'audio/mpeg';
-      if (extension == 'mp3') contentType = 'audio/mpeg';
-      else if (extension == 'm4a') contentType = 'audio/mp4';
-      else if (extension == 'wav') contentType = 'audio/wav';
-      else if (extension == 'ogg') contentType = 'audio/ogg';
-      else if (extension == 'aac') contentType = 'audio/aac';
+      if (extension == 'mp3') {
+        contentType = 'audio/mpeg';
+      } else if (extension == 'm4a') {
+        contentType = 'audio/mp4';
+      } else if (extension == 'wav') {
+        contentType = 'audio/wav';
+      } else if (extension == 'ogg') {
+        contentType = 'audio/ogg';
+      } else if (extension == 'aac') {
+        contentType = 'audio/aac';
+      }
 
       final metadata = SettableMetadata(
         contentType: contentType,
@@ -110,10 +110,8 @@ class FirebaseStorageService {
       final taskSnapshot = await ref.putFile(archivo, metadata);
       final urlPublica = await taskSnapshot.ref.getDownloadURL();
 
-      print('Audio subido exitosamente a Firebase Storage: $urlPublica');
       return urlPublica;
     } catch (e) {
-      print('Error al subir audio a Firebase Storage: $e');
       throw Exception('Error al subir audio: $e');
     }
   }
@@ -138,9 +136,8 @@ class FirebaseStorageService {
       
       final ref = _storage.refFromURL(urlArchivo);
       await ref.delete();
-      print('Archivo eliminado de Firebase Storage');
     } catch (e) {
-      print('Error al eliminar archivo: $e');
+      // Ignorar errores al eliminar
     }
   }
 
@@ -150,7 +147,6 @@ class FirebaseStorageService {
       final url = await ref.getDownloadURL();
       return url;
     } catch (e) {
-      print('Error obteniendo URL del archivo: $e');
       return null;
     }
   }
@@ -176,7 +172,6 @@ class FirebaseStorageService {
       
       return archivos;
     } catch (e) {
-      print('Error listando archivos: $e');
       return [];
     }
   }

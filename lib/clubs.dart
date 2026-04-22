@@ -44,7 +44,6 @@ class _ClubsState extends State<Clubs> {
         _misClubs = await _servicioFirestore.obtenerClubsUsuario();
       }
     } catch (e) {
-      print('Error cargando clubs: $e');
     } finally {
       setState(() => _cargandoClubs = false);
     }
@@ -65,7 +64,6 @@ class _ClubsState extends State<Clubs> {
         _seccionSeleccionada = 0;
       });
     } catch (e) {
-      print('Error buscando: $e');
     } finally {
       setState(() => _cargandoClubs = false);
     }

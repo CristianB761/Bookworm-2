@@ -128,7 +128,6 @@ class ServicioRecomendaciones {
         razon: _generarRazonRecomendacion(libro, generosTop, autoresTop),
       )));
     } catch (e) {
-      print('Error en recomendaciones colaborativas: $e');
     }
     
     final recomendacionesTendencias = await _obtenerRecomendacionesTendencias(
@@ -313,7 +312,6 @@ class ServicioRecomendaciones {
         }
       }
     } catch (e) {
-      print('Error obteniendo recomendaciones para ti: $e');
     }
     
     List<Libro> librosRecomendados = librosUnicos.values.toList();
@@ -368,7 +366,6 @@ class ServicioRecomendaciones {
         }
       }
     } catch (e) {
-      print('Error obteniendo recomendaciones tendencias: $e');
     }
     
     return recomendaciones;
@@ -399,7 +396,6 @@ class ServicioRecomendaciones {
         }
       }
     } catch (e) {
-      print('Error obteniendo nuevos lanzamientos: $e');
     }
     
     return recomendaciones;
@@ -420,7 +416,6 @@ class ServicioRecomendaciones {
         ));
       }
     } catch (e) {
-      print('Error obteniendo recomendaciones por defecto: $e');
     }
     
     return recomendaciones;
@@ -524,7 +519,6 @@ class ServicioRecomendaciones {
         libros.add(libro);
       }
     } catch (e) {
-      print('Error obteniendo libros guardados: $e');
     }
     
     return libros;
@@ -547,7 +541,6 @@ class ServicioRecomendaciones {
         }
       }
     } catch (e) {
-      print('Error obteniendo IDs de libros leídos: $e');
     }
     
     final librosGuardados = await _firestore

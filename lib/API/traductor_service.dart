@@ -32,7 +32,6 @@ class TraductorService {
       }
       return null;
     } catch (e) {
-      print('Error traducción Google: $e');
       return null;
     }
   }

@@ -27,7 +27,6 @@ class GutendexService {
       }
       return [];
     } catch (e) {
-      print('Error en Gutendex: $e');
       return [];
     }
   }
@@ -46,7 +45,6 @@ class GutendexService {
       }
       return [];
     } catch (e) {
-      print('Error obteniendo populares en Gutendex: $e');
       return [];
     }
   }
@@ -62,7 +60,6 @@ class GutendexService {
       }
       return null;
     } catch (e) {
-      print('Error obteniendo detalles en Gutendex: $e');
       return null;
     }
   }

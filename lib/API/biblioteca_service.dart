@@ -3,6 +3,8 @@ import 'gutendex_service.dart';
 import 'internet_archive_service.dart';
 import 'open_library.dart';
 import 'librivox_service.dart';
+import 'mangadex_service.dart';
+import 'anilist_service.dart';
 import 'modelos.dart';
 
 class BibliotecaServiceUnificado {
@@ -10,13 +12,16 @@ class BibliotecaServiceUnificado {
   final InternetArchiveService _archiveService;
   final OpenLibraryService _openLibraryService;
   final LibriVoxService _librivoxService;
+  final MangaDexService _mangaDexService;
+  final AniListService _aniListService;
 
   BibliotecaServiceUnificado()
     : _gutendexService = GutendexService(),
       _archiveService = InternetArchiveService(),
       _openLibraryService = OpenLibraryService(),
-      _librivoxService = LibriVoxService() {
-      }
+      _librivoxService = LibriVoxService(),
+      _mangaDexService = MangaDexService(),
+      _aniListService = AniListService();
 
   Future<List<Libro>> buscarLibros(String consulta, {String? genero, int limite = 20}) async {
     final List<Libro> todosLibros = [];
@@ -34,7 +39,7 @@ class BibliotecaServiceUnificado {
         todosLibros.addAll(libros);
       }
     } catch (e) {
-      print('Error en búsqueda unificada: $e');
+      // Error en búsqueda unificada
     }
 
     return todosLibros;
@@ -54,7 +59,7 @@ class BibliotecaServiceUnificado {
         libro = await _librivoxService.obtenerDetalles(id);
       }
     } catch (e) {
-      print('Error obteniendo detalles unificados: $e');
+      // Error obteniendo detalles
     }
 
     return libro;
@@ -62,14 +67,58 @@ class BibliotecaServiceUnificado {
   
   Future<List<Libro>> obtenerLibrosPopulares({int limite = 20}) async {
     final List<Libro> todosLibros = [];
-    
+
     try {
       final libros = await _gutendexService.obtenerLibrosPopulares(limite: limite);
       todosLibros.addAll(libros);
     } catch (e) {
-      print('Error obteniendo populares: $e');
+      // Error obteniendo populares
     }
-    
+
     return todosLibros.take(limite).toList();
+  }
+
+  Future<List<Manga>> buscarManga(String consulta, {int limite = 20}) async {
+    try {
+      final mangas = await _mangaDexService.buscarManga(consulta, limite: limite);
+
+      // Enriquecer con datos de AniList en paralelo
+      final mangasEnriquecidas = await Future.wait(
+        mangas.map((m) => _aniListService.enriquecerMangaConAniList(m)),
+        eagerError: false,
+      );
+
+      return mangasEnriquecidas.whereType<Manga>().toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Manga?> obtenerDetallesManga(String id) async {
+    try {
+      final manga = await _mangaDexService.obtenerDetalles(id);
+      if (manga != null) {
+        return await _aniListService.enriquecerMangaConAniList(manga);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<List<Manga>> obtenerMangasPopulares({int limite = 20}) async {
+    try {
+      final mangas = await _mangaDexService.obtenerPopulares(limite: limite);
+
+      // Enriquecer con datos de AniList
+      final mangasEnriquecidas = await Future.wait(
+        mangas.map((m) => _aniListService.enriquecerMangaConAniList(m)),
+        eagerError: false,
+      );
+
+      return mangasEnriquecidas.whereType<Manga>().toList();
+    } catch (e) {
+      return [];
+    }
   }
 }

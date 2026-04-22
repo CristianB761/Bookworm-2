@@ -49,7 +49,6 @@ class _RecomendacionesWidgetState extends State<RecomendacionesWidget> {
         });
       }
     } catch (e) {
-      print('Error cargando recomendaciones: $e');
       if (mounted) {
         setState(() {
           _error = e.toString();

@@ -60,7 +60,6 @@ class _ChatMessagesScreenState extends State<ChatMessagesScreen> {
         });
       }
     } catch (e) {
-      print('Error cargando foto: $e');
     }
   }
 

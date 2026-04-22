@@ -29,7 +29,6 @@ class ProgresoBackend {
       
       return ProgresoLectura.fromMap(datosMap);
     } catch (e) {
-      print('Error convirtiendo documento a ProgresoLectura: $e');
       rethrow;
     }
   }
@@ -142,7 +141,6 @@ class ProgresoBackend {
       
       return snapshot.docs.map(_progresoFromDoc).toList();
     } catch (e) {
-      print('Error obteniendo progresos: $e');
       throw Exception('Error obteniendo progresos: $e');
     }
   }
@@ -169,7 +167,6 @@ class ProgresoBackend {
         'tiempoLecturaTotal': await _calcularTiempoLecturaTotal(usuario.uid),
       };
     } catch (e) {
-      print('Error obteniendo estadísticas: $e');
       throw Exception('Error obteniendo estadísticas: $e');
     }
   }
@@ -186,7 +183,6 @@ class ProgresoBackend {
             'ultimaActualizacion': FieldValue.serverTimestamp(),
           });
     } catch (e) {
-      print('Error actualizando estadísticas: $e');
     }
   }
 
@@ -220,14 +216,12 @@ class ProgresoBackend {
             }
           }
         } catch (e) {
-          print('Error procesando documento para racha: $e');
           continue;
         }
       }
 
       return racha;
     } catch (e) {
-      print('Error calculando racha: $e');
       return 0;
     }
   }
@@ -256,7 +250,6 @@ class ProgresoBackend {
         'nuevosLanzamientos': [],
       };
     } catch (e) {
-      print('Error obteniendo recomendaciones: $e');
       return {};
     }
   }

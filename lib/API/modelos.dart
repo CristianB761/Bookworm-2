@@ -394,3 +394,140 @@ extension LibroRecomendacionExtension on Libro {
     _puntuaciones[id] = value;
   }
 }
+
+class Manga {
+  final String id;
+  final String titulo;
+  final List<String> autores;
+  final String? sinopsis;
+  final String? urlPortada;
+  final double? calificacionMangaDex;
+  final int? numeroVotos;
+  final double? popularidad;
+  final String? estado; // serializing, finished, hiatus
+  final List<String> generos;
+  final List<String> temas;
+  final int? ultimoCapituloLanzado;
+  final int? numeroCapitulos;
+  final String? adaptacionAnime;
+  final String? urlMangaDex;
+  final String? urlAniList;
+  final double? calificacionAniList;
+
+  Manga({
+    required this.id,
+    required this.titulo,
+    required this.autores,
+    this.sinopsis,
+    this.urlPortada,
+    this.calificacionMangaDex,
+    this.numeroVotos,
+    this.popularidad,
+    this.estado,
+    this.generos = const [],
+    this.temas = const [],
+    this.ultimoCapituloLanzado,
+    this.numeroCapitulos,
+    this.adaptacionAnime,
+    this.urlMangaDex,
+    this.urlAniList,
+    this.calificacionAniList,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'titulo': titulo,
+      'autores': autores,
+      'sinopsis': sinopsis,
+      'urlPortada': urlPortada,
+      'calificacionMangaDex': calificacionMangaDex,
+      'numeroVotos': numeroVotos,
+      'popularidad': popularidad,
+      'estado': estado,
+      'generos': generos,
+      'temas': temas,
+      'ultimoCapituloLanzado': ultimoCapituloLanzado,
+      'numeroCapitulos': numeroCapitulos,
+      'adaptacionAnime': adaptacionAnime,
+      'urlMangaDex': urlMangaDex,
+      'urlAniList': urlAniList,
+      'calificacionAniList': calificacionAniList,
+    };
+  }
+
+  factory Manga.fromMap(Map<String, dynamic> map) {
+    return Manga(
+      id: map['id'] ?? '',
+      titulo: map['titulo'] ?? '',
+      autores: List<String>.from(map['autores'] ?? []),
+      sinopsis: map['sinopsis'],
+      urlPortada: map['urlPortada'],
+      calificacionMangaDex: _toDouble(map['calificacionMangaDex']),
+      numeroVotos: map['numeroVotos'],
+      popularidad: _toDouble(map['popularidad']),
+      estado: map['estado'],
+      generos: List<String>.from(map['generos'] ?? []),
+      temas: List<String>.from(map['temas'] ?? []),
+      ultimoCapituloLanzado: map['ultimoCapituloLanzado'],
+      numeroCapitulos: map['numeroCapitulos'],
+      adaptacionAnime: map['adaptacionAnime'],
+      urlMangaDex: map['urlMangaDex'],
+      urlAniList: map['urlAniList'],
+      calificacionAniList: _toDouble(map['calificacionAniList']),
+    );
+  }
+
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  Manga copyWith({
+    String? id,
+    String? titulo,
+    List<String>? autores,
+    String? sinopsis,
+    String? urlPortada,
+    double? calificacionMangaDex,
+    int? numeroVotos,
+    double? popularidad,
+    String? estado,
+    List<String>? generos,
+    List<String>? temas,
+    int? ultimoCapituloLanzado,
+    int? numeroCapitulos,
+    String? adaptacionAnime,
+    String? urlMangaDex,
+    String? urlAniList,
+    double? calificacionAniList,
+  }) {
+    return Manga(
+      id: id ?? this.id,
+      titulo: titulo ?? this.titulo,
+      autores: autores ?? this.autores,
+      sinopsis: sinopsis ?? this.sinopsis,
+      urlPortada: urlPortada ?? this.urlPortada,
+      calificacionMangaDex: calificacionMangaDex ?? this.calificacionMangaDex,
+      numeroVotos: numeroVotos ?? this.numeroVotos,
+      popularidad: popularidad ?? this.popularidad,
+      estado: estado ?? this.estado,
+      generos: generos ?? this.generos,
+      temas: temas ?? this.temas,
+      ultimoCapituloLanzado: ultimoCapituloLanzado ?? this.ultimoCapituloLanzado,
+      numeroCapitulos: numeroCapitulos ?? this.numeroCapitulos,
+      adaptacionAnime: adaptacionAnime ?? this.adaptacionAnime,
+      urlMangaDex: urlMangaDex ?? this.urlMangaDex,
+      urlAniList: urlAniList ?? this.urlAniList,
+      calificacionAniList: calificacionAniList ?? this.calificacionAniList,
+    );
+  }
+
+  String? get calificacion =>
+    calificacionAniList != null ? '${(calificacionAniList! / 10).toStringAsFixed(1)}/10' :
+    calificacionMangaDex != null ? '${calificacionMangaDex!.toStringAsFixed(1)}/10' : null;
+}

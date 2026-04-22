@@ -58,7 +58,6 @@ class LibriVoxService {
       }
       return [];
     } catch (e) {
-      print('Error en LibriVox: $e');
       return [];
     }
   }

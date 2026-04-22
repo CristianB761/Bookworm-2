@@ -134,7 +134,6 @@ class ServicioNotificaciones extends ChangeNotifier {
       _notificaciones.removeWhere((n) => n.id == mensajeId && n.clubId == clubId);
       notifyListeners();
     } catch (e) {
-      print('Error marcando como leído: $e');
     }
   }
 
@@ -167,7 +166,6 @@ class ServicioNotificaciones extends ChangeNotifier {
       _actualizarContadorTotal();
       notifyListeners();
     } catch (e) {
-      print('Error marcando club como leído: $e');
     }
   }
 

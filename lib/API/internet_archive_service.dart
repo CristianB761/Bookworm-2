@@ -48,7 +48,6 @@ class InternetArchiveService {
             final libro = await _mapearLibro(doc);
             libros.add(libro);
           } catch (e) {
-            print('Error mapeando documento: $e');
             continue;
           }
         }
@@ -61,7 +60,6 @@ class InternetArchiveService {
       }
       return [];
     } catch (e) {
-      print('Error en Internet Archive: $e');
       return [];
     }
   }
@@ -92,7 +90,6 @@ class InternetArchiveService {
             final libro = await _mapearLibro(doc);
             libros.add(libro);
           } catch (e) {
-            print('Error mapeando documento en búsqueda sin filtro: $e');
             continue;
           }
         }
@@ -101,7 +98,6 @@ class InternetArchiveService {
       }
       return [];
     } catch (e) {
-      print('Error en búsqueda sin filtro: $e');
       return [];
     }
   }
@@ -122,7 +118,6 @@ class InternetArchiveService {
       }
       return null;
     } catch (e) {
-      print('Error obteniendo detalles en Internet Archive: $e');
       return null;
     }
   }

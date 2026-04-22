@@ -81,7 +81,6 @@ class _LectorPDFState extends State<LectorPDF> {
         }
       }
     } catch (e) {
-      print('Error descargando PDF: $e');
       if (mounted) {
         setState(() {
           _error = 'Error al cargar el PDF: $e';

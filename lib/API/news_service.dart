@@ -39,7 +39,7 @@ class NewsService {
   static const String _apiKey = '7f4e31b4931e4abba669eae6a8994a39';
   static const String _baseUrl = 'https://newsapi.org/v2';
 
-  Future<List<NoticiaLibro>> obtenerNoticiasLibros({int limite = 10}) async {
+  Future<List<NoticiaLibro>> obtenerNoticiasLibros({int limite = 10, int pagina = 1}) async {
     try {
       final List<String> queries = [
         'libros literatura',
@@ -53,7 +53,7 @@ class NewsService {
 
       for (String query in queries) {
         final Uri url = Uri.parse(
-          '$_baseUrl/everything?q=${Uri.encodeComponent(query)}&language=es&sortBy=publishedAt&pageSize=5&apiKey=$_apiKey'
+          '$_baseUrl/everything?q=${Uri.encodeComponent(query)}&language=es&sortBy=publishedAt&pageSize=5&page=$pagina&apiKey=$_apiKey'
         );
 
         final http.Response respuesta = await http.get(url);
@@ -94,14 +94,14 @@ class NewsService {
     }
   }
 
-  Future<List<NoticiaLibro>> obtenerNoticiasPorAutor(String nombreAutor, {int limite = 5}) async {
+  Future<List<NoticiaLibro>> obtenerNoticiasPorAutor(String nombreAutor, {int limite = 5, int pagina = 1}) async {
     if (nombreAutor.isEmpty) return [];
     
     try {
       final String query = '$nombreAutor escritor libros';
       
       final Uri url = Uri.parse(
-        '$_baseUrl/everything?q=${Uri.encodeComponent(query)}&language=es&sortBy=publishedAt&pageSize=$limite&apiKey=$_apiKey'
+        '$_baseUrl/everything?q=${Uri.encodeComponent(query)}&language=es&sortBy=publishedAt&pageSize=$limite&page=$pagina&apiKey=$_apiKey'
       );
 
       final http.Response respuesta = await http.get(url);
@@ -125,10 +125,10 @@ class NewsService {
     }
   }
 
-  Future<List<NoticiaLibro>> obtenerNoticiasDestacadas({int limite = 5}) async {
+  Future<List<NoticiaLibro>> obtenerNoticiasDestacadas({int limite = 5, int pagina = 1}) async {
     try {
       final Uri url = Uri.parse(
-        '$_baseUrl/top-headlines?q=books&language=es&pageSize=$limite&apiKey=$_apiKey'
+        '$_baseUrl/top-headlines?q=books&language=es&pageSize=$limite&page=$pagina&apiKey=$_apiKey'
       );
 
       final http.Response respuesta = await http.get(url);
@@ -151,7 +151,7 @@ class NewsService {
     }
   }
 
-  Future<List<NoticiaLibro>> buscarNoticiasPorCategoria(String categoria, {int limite = 5}) async {
+  Future<List<NoticiaLibro>> buscarNoticiasPorCategoria(String categoria, {int limite = 5, int pagina = 1}) async {
     if (categoria.isEmpty) return [];
     
     final Map<String, String> categoriasQuery = {
@@ -170,7 +170,7 @@ class NewsService {
     
     try {
       final Uri url = Uri.parse(
-        '$_baseUrl/everything?q=${Uri.encodeComponent(query)}&language=es&sortBy=relevancy&pageSize=$limite&apiKey=$_apiKey'
+        '$_baseUrl/everything?q=${Uri.encodeComponent(query)}&language=es&sortBy=relevancy&pageSize=$limite&page=$pagina&apiKey=$_apiKey'
       );
 
       final http.Response respuesta = await http.get(url);

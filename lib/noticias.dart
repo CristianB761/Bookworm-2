@@ -17,6 +17,7 @@ class _NoticiasWidgetState extends State<NoticiasWidget> {
   List<NoticiaLibro> _noticias = [];
   bool _cargando = true;
   String? _error;
+  int _paginaActual = 1;
 
   @override
   void initState() {
@@ -31,11 +32,15 @@ class _NoticiasWidgetState extends State<NoticiasWidget> {
     });
 
     try {
-      final noticias = await _newsService.obtenerNoticiasLibros(limite: widget.limite);
+      final noticias = await _newsService.obtenerNoticiasLibros(
+        limite: widget.limite,
+        pagina: _paginaActual,
+      );
       if (mounted) {
         setState(() {
           _noticias = noticias;
           _cargando = false;
+          _paginaActual++;
         });
       }
     } catch (e) {

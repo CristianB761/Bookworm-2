@@ -118,6 +118,20 @@ class FirebaseStorageService {
     }
   }
 
+  static Future<String> subirImagenPerfil({
+    required File imagen,
+    required String userId,
+  }) async {
+    final String nombreArchivo = 'profile_$userId.jpg';
+    final Reference ref = _storage
+        .ref()
+        .child('$carpetaUsuarios/$userId/perfil/$nombreArchivo');
+    
+    await ref.putFile(imagen);
+    final String url = await ref.getDownloadURL();
+    return url;
+  }
+
   static Future<void> eliminarArchivo(String urlArchivo) async {
     try {
       if (urlArchivo.isEmpty) return;

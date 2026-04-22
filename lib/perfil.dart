@@ -673,7 +673,7 @@ class _PerfilState extends State<Perfil> {
                 ),
                 ElevatedButton(
                   onPressed: _subiendoImagen ? null : () async {
-                    _guardarCambiosPerfil(
+                    await _guardarCambiosPerfil(
                       nombreCtrl.text.trim(),
                       biografiaCtrl.text.trim(),
                       imagenTemp,
@@ -723,15 +723,22 @@ class _PerfilState extends State<Perfil> {
     File? imagenTemp,
   ) async {
     try {
-      if (nombre.trim().isEmpty) {
-        _mostrarError('El nombre no puede estar vacío');
-        return;
+      setState(() => _subiendoImagen = true);
+
+      String? imagenUrl;
+
+      if (imagenTemp != null) {
+        imagenUrl = await FirebaseStorageService.subirImagenPerfil(
+          imagen: imagenTemp,
+          userId: _auth.currentUser!.uid,
+        );
       }
 
       final Map<String, dynamic> datosActualizados = {
         'nombre': nombre,
         'biografia': biografia,
         'ultimaActualizacion': FieldValue.serverTimestamp(),
+        if (imagenUrl != null) 'urlImagenPerfil': imagenUrl,
       };
 
       await _servicioFirestore.actualizarDatosUsuario(
@@ -748,6 +755,8 @@ class _PerfilState extends State<Perfil> {
       }
     } catch (e) {
       _mostrarError('Error al actualizar perfil: $e');
+    } finally {
+      if (mounted) setState(() => _subiendoImagen = false);
     }
   }
 

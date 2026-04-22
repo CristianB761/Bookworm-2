@@ -24,6 +24,7 @@ import 'servicio/servicio_notificaciones.dart';
 import 'mensajes_directos.dart';
 import 'pantalla_recomendaciones.dart';
 import 'recomendaciones_widget.dart';
+import 'noticias.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -405,7 +406,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
               ),
             ),
             const SizedBox(height: 24),
-
+            const NoticiasWidget(),
+             const SizedBox(height: 24),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[

@@ -48,14 +48,14 @@ class BotonesBarraApp extends StatelessWidget {
         },
         style: ButtonStyle(
           foregroundColor: MaterialStateProperty.resolveWith((states) {
-            if (estaActivo) return const Color(0xFFdcdcdc);
-            if (states.contains(MaterialState.hovered) && !estaActivo) return const Color(0xFFdcdcdc);
-            return const Color(0xFFfffafa);
+            if (estaActivo) return const Color(0xFFDCDCDC);
+            if (states.contains(MaterialState.hovered) && !estaActivo) return const Color(0xFFDCDCDC);
+            return const Color(0xFFFAFAFA);
           }),
           backgroundColor: MaterialStateProperty.resolveWith((states) {
             if (estaActivo) return const Color(0xFF008080);
             if (states.contains(MaterialState.hovered) && !estaActivo) return const Color(0xFF008080);
-            return const Color(0xFF20b2aa);
+            return const Color(0xFF20B2AA);
           }),
           shape: MaterialStateProperty.all(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -103,7 +103,7 @@ class BotonSeccion extends StatelessWidget {
       onPressed: alPresionar,
       style: ElevatedButton.styleFrom(
         backgroundColor: estaSeleccionado ? AppColores.primario : Colors.transparent,
-        foregroundColor: estaSeleccionado ? Color(0xFFfffafa) : AppColores.primario,
+        foregroundColor: estaSeleccionado ? Color(0xFFFAFAFA) : AppColores.primario,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
@@ -141,7 +141,7 @@ class EstadoVacio extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hintColor = isDark ? const Color(0xFF888888) : const Color(0xFF696969);
-    final textColor = isDark ? const Color(0xFFfffafa) : const Color(0xFF121212);
+    final textColor = isDark ? const Color(0xFFFAFAFA) : const Color(0xFF121212);
 
     return Container(
       padding: const EdgeInsets.all(40),
@@ -188,10 +188,10 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorFondo = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFf5f5f5);
-    final colorBorde = isDark ? const Color(0xFF444444) : const Color(0xFFdcdcdc);
-    final colorLupa = isDark ? AppColores.primario : const Color(0xFF20b2aa);
-    final colorTexto = isDark ? const Color(0xFFfffafa) : const Color(0xFF121212);
+    final colorFondo = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
+    final colorBorde = isDark ? const Color(0xFF444444) : const Color(0xFFDCDCDC);
+    final colorLupa = isDark ? AppColores.primario : const Color(0xFF20B2AA);
+    final colorTexto = isDark ? const Color(0xFFFAFAFA) : const Color(0xFF121212);
     final colorHint = isDark ? const Color(0xFF888888) : const Color(0xFF696969);
 
     return Row(
@@ -231,8 +231,8 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
           child: ElevatedButton(
             onPressed: alBuscar,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF20b2aa),
-              foregroundColor: const Color(0xFFfffafa),
+              backgroundColor: const Color(0xFF20B2AA),
+              foregroundColor: const Color(0xFFFAFAFA),
               elevation: 0,
               shadowColor: Colors.transparent,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -242,13 +242,13 @@ class BarraBusquedaPersonalizada extends StatelessWidget {
                 if (states.contains(MaterialState.hovered)) {
                   return const Color(0xFF008080);
                 }
-                return const Color(0xFF20b2aa);
+                return const Color(0xFF20B2AA);
               }),
               foregroundColor: MaterialStateProperty.resolveWith((states) {
                 if (states.contains(MaterialState.hovered)) {
-                  return const Color(0xFFdcdcdc);
+                  return const Color(0xFFDCDCDC);
                 }
-                return const Color(0xFFfffafa);
+                return const Color(0xFFFAFAFA);
               }),
             ),
             child: const Text('Buscar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -276,11 +276,11 @@ class FiltroDesplegable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorFondo = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFf5f5f5);
-    final colorTexto = isDark ? const Color(0xFFfffafa) : const Color(0xFF121212);
+    final colorFondo = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5);
+    final colorTexto = isDark ? const Color(0xFFFAFAFA) : const Color(0xFF121212);
     final colorHint = isDark ? const Color(0xFF888888) : const Color(0xFF696969);
-    final colorBorde = isDark ? const Color(0xFF444444) : const Color(0xFFdcdcdc);
-    final colorFlecha = isDark ? AppColores.primario : const Color(0xFF20b2aa);
+    final colorBorde = isDark ? const Color(0xFF444444) : const Color(0xFFDCDCDC);
+    final colorFlecha = isDark ? AppColores.primario : const Color(0xFF20B2AA);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -413,7 +413,7 @@ class TarjetaLibro extends StatelessWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.star, size: 16, color: Color(0xFFff8c00)),
+              const Icon(Icons.star, size: 16, color: Color(0xFFFF8C00)),
               const SizedBox(width: 4),
               Text(
                 '${libro.calificacionPromedio!.toStringAsFixed(1)} (${libro.numeroCalificaciones ?? 0})',
@@ -544,11 +544,11 @@ class BotonAccionRapida extends StatelessWidget {
       onPressed: alPresionar,
       style: ButtonStyle(
         foregroundColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.hovered)) return const Color(0xFFfffafa);
-          return const Color(0xFFdcdcdc);
+          if (states.contains(MaterialState.hovered)) return const Color(0xFFFAFAFA);
+          return const Color(0xFFDCDCDC);
         }),
         backgroundColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.hovered)) return const Color(0xFF20b2aa);
+          if (states.contains(MaterialState.hovered)) return const Color(0xFF20B2AA);
           return const Color(0xFF008080);
         }),
         shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
@@ -815,61 +815,77 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
         return Positioned(
           right: MediaQuery.of(context).size.width - (offset.dx + size.width),
           top: offset.dy + size.height + 8,
-          width: 320,
-          child: CompositedTransformFollower(
-            link: LayerLink(),
-            showWhenUnlinked: true,
-            offset: const Offset(0, 8),
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF1E1E1E)
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor,
-                  ),
+          width: 380,
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF1E1E1E)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor,
                 ),
-                child: servicio.notificaciones.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Center(
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Notificaciones',
+                          style: EstilosApp.tituloPequeno(context),
+                        ),
+                        const Spacer(),
+                        if (servicio.contadorNoLeidosTotal > 0)
+                          TextButton(
+                            onPressed: () => servicio.marcarTodasComoLeidas(),
+                            child: const Text('Marcar todas como leídas'),
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_sweep, size: 20),
+                          onPressed: () => servicio.eliminarTodasNotificaciones(),
+                          tooltip: 'Eliminar todas',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  // Lista de notificaciones
+                  servicio.notificaciones.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(40),
                           child: Column(
                             children: [
-                              Icon(
-                                Icons.notifications_none,
-                                size: 32,
-                                color: Theme.of(context).hintColor,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'No hay notificaciones',
-                                style: TextStyle(
-                                  color: Theme.of(context).hintColor,
-                                ),
-                              ),
+                              Icon(Icons.notifications_none, size: 48),
+                              SizedBox(height: 12),
+                              Text('No hay notificaciones'),
                             ],
                           ),
+                        )
+                      : ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 500),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: servicio.notificaciones.length,
+                            itemBuilder: (context, index) {
+                              final notificacion = servicio.notificaciones[index];
+                              return _construirItemNotificacion(
+                                context,
+                                notificacion,
+                                servicio,
+                              );
+                            },
+                          ),
                         ),
-                      )
-                    : ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 400),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: servicio.notificaciones.length,
-                          itemBuilder: (context, index) {
-                            final notificacion = servicio.notificaciones[index];
-                            return _construirItemNotificacion(
-                              context,
-                              notificacion,
-                              servicio,
-                            );
-                          },
-                        ),
-                      ),
+                ],
               ),
             ),
           ),
@@ -893,6 +909,45 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    Color backgroundColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5);
+    if (!notificacion.leido) {
+      backgroundColor = isDark 
+          ? const Color(0xFF1E3A5F).withOpacity(0.3)
+          : AppColores.primario.withOpacity(0.05);
+    }
+
+    IconData icono;
+    Color colorIcono;
+    switch (notificacion.tipo) {
+      case TipoNotificacion.nuevoSeguidor:
+        icono = Icons.person_add;
+        colorIcono = Colors.green;
+        break;
+      case TipoNotificacion.nuevaPublicacion:
+        icono = Icons.post_add;
+        colorIcono = AppColores.primario;
+        break;
+      case TipoNotificacion.comentarioPublicacion:
+        icono = Icons.comment;
+        colorIcono = Colors.orange;
+        break;
+      case TipoNotificacion.meGustaPublicacion:
+        icono = Icons.favorite;
+        colorIcono = Colors.red;
+        break;
+      case TipoNotificacion.mencion:
+        icono = Icons.alternate_email;
+        colorIcono = Colors.purple;
+        break;
+      case TipoNotificacion.recordatorioLectura:
+        icono = Icons.book;
+        colorIcono = Colors.blue;
+        break;
+      default:
+        icono = Icons.chat;
+        colorIcono = AppColores.primario;
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -902,70 +957,118 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
             _mostrarDropdown = false;
           });
           
-          Navigator.pushNamed(
-            context,
-            '/chat_club',
-            arguments: {
-              'clubId': notificacion.clubId,
-              'clubNombre': notificacion.clubNombre,
-            },
-          );
-          
-          servicio.marcarComoLeido(notificacion.clubId, notificacion.id);
+          if (!notificacion.leido) {
+            servicio.marcarComoLeido(notificacion.id);
+          }
+
+          // Navegar según tipo de notificación
+          if (notificacion.tipo == TipoNotificacion.mensajeClub && notificacion.clubId != null) {
+            Navigator.pushNamed(
+              context,
+              '/chat_club',
+              arguments: {
+                'clubId': notificacion.clubId,
+                'clubNombre': notificacion.clubNombre,
+              },
+            );
+          } else if (notificacion.publicacionId != null) {
+            // Navegar a la publicación
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Publicación - Próximamente'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          } else if (notificacion.usuarioOrigenId != null) {
+            Navigator.pushNamed(
+              context,
+              '/perfil',
+              arguments: {'userId': notificacion.usuarioOrigenId},
+            );
+          }
         },
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5),
+            color: backgroundColor,
             border: Border(
               bottom: BorderSide(
                 color: Theme.of(context).dividerColor,
               ),
             ),
           ),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      notificacion.clubNombre,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: isDark ? Colors.white : Colors.black87,
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: colorIcono.withOpacity(0.1),
+                child: Icon(icono, size: 20, color: colorIcono),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (notificacion.usuarioOrigenNombre.isNotEmpty) ...[
+                      Text(
+                        notificacion.usuarioOrigenNombre,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
-                      maxLines: 1,
+                      const SizedBox(height: 2),
+                    ],
+                    Text(
+                      notificacion.mensaje,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      ),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.circle,
-                    size: 8,
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatearTiempoTranscurrido(notificacion.timestamp),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+                      ),
+                    ),
+                    if (notificacion.publicacionTexto != null && notificacion.publicacionTexto!.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(top: 6),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFEEEEEE),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '"${notificacion.publicacionTexto}"',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (!notificacion.leido)
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
                     color: AppColores.primario,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${notificacion.usuarioNombre}: ${notificacion.mensaje}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _formatearTiempoTranscurrido(notificacion.timestamp),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
-                ),
-              ),
             ],
           ),
         ),

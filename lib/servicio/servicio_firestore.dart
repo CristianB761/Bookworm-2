@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../modelos/datos_usuario.dart';
 import '../modelos/progreso_lectura.dart';
+import 'notificacion_service.dart';
 
 class ServicioFirestore {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final NotificacionService _notificacionService = NotificacionService();
 
   Future<void> crearUsuario(DatosUsuario datosUsuario) async {
     try {
@@ -576,6 +578,9 @@ class ServicioFirestore {
     );
 
     await batch.commit();
+
+    // Enviar notificación de nuevo seguidor
+    await _notificacionService.enviarNotificacionNuevoSeguidor(uidObjetivo, uidActual);
   }
 
   Future<void> dejarDeSeguirUsuario(String uidObjetivo) async {

@@ -59,13 +59,13 @@ class AppBookWorm extends StatelessWidget {
           seedColor: AppColores.primario,
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFfffafa),
-        cardColor: const Color(0xFFf5f5f5),
+        scaffoldBackgroundColor: const Color(0xFFFAFAFA),
+        cardColor: const Color(0xFFF5F5F5),
         dividerColor: const Color(0xFFDDDDDD),
         hintColor: const Color(0xFF666666),
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColores.primario,
-          foregroundColor: Color(0xFFfffafa),
+          foregroundColor: Color(0xFFFAFAFA),
           elevation: 0,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -85,12 +85,12 @@ class AppBookWorm extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         scaffoldBackgroundColor: const Color(0xFF121212),
-        cardColor: const Color(0xFF1e1e1e),
+        cardColor: const Color(0xFF1E1E1E),
         dividerColor: const Color(0xFF444444),
         hintColor: const Color(0xFFAAAAAA),
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColores.primario,
-          foregroundColor: Color(0xFFfffafa),
+          foregroundColor: Color(0xFFFAFAFA),
           elevation: 0,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -200,8 +200,18 @@ class _PaginaInicioState extends State<PaginaInicio> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
+      if (_auth.currentUser != null) {
+        Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
+      }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_auth.currentUser != null) {
+      Provider.of<ServicioNotificaciones>(context, listen: false).inicializarEscuchadores();
+    }
   }
 
   @override
@@ -214,7 +224,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
       appBar: AppBar(
         title: GestureDetector(
           onTap: () => Navigator.pushReplacementNamed(context, '/home'),
-          child: const Text('BookWorm', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFfffafa))),
+          child: const Text('BookWorm', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFFAFAFA))),
         ),
         automaticallyImplyLeading: false,
         actions: [
@@ -228,12 +238,12 @@ class _PaginaInicioState extends State<PaginaInicio> {
             onPressed: () => themeProvider.alternarTema(),
             style: ButtonStyle(
               foregroundColor: MaterialStateProperty.resolveWith((states) {
-                if (states.contains(MaterialState.hovered)) return const Color(0xFFdcdcdc);
-                return const Color(0xFFfffafa);
+                if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                return const Color(0xFFFAFAFA);
               }),
               backgroundColor: MaterialStateProperty.resolveWith((states) {
                 if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
-                return const Color(0xFF20b2aa);
+                return const Color(0xFF20B2AA);
               }),
               shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
               padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
@@ -266,9 +276,9 @@ class _PaginaInicioState extends State<PaginaInicio> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('Bienvenido de vuelta', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFf8f8ff))),
+                        const Text('Bienvenido de vuelta', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFF8F8FF))),
                         const SizedBox(height: 8),
-                        const Text('Continúa tu aventura literaria', style: TextStyle(fontSize: 14, color: Color(0xFFf8f8ff))),
+                        const Text('Continúa tu aventura literaria', style: TextStyle(fontSize: 14, color: Color(0xFFF8F8FF))),
                         const SizedBox(height: 16),
                         Row(
                           children: [
@@ -288,7 +298,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                       ],
                     ),
                   ),
-                  const Icon(Icons.menu_book_rounded, size: 80, color: Color(0xFFf8f8ff)),
+                  const Icon(Icons.menu_book_rounded, size: 80, color: Color(0xFFF8F8FF)),
                 ],
               ),
             ),
@@ -297,7 +307,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5),
+                color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -308,7 +318,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFFfffafa) : const Color(0xFF121212),
+                      color: isDark ? const Color(0xFFFAFAFA) : const Color(0xFF121212),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -348,7 +358,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF121212) : const Color(0xFFfffafa),
+                            color: isDark ? const Color(0xFF121212) : const Color(0xFFFAFAFA),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -385,11 +395,11 @@ class _PaginaInicioState extends State<PaginaInicio> {
                             if (states.contains(MaterialState.hovered)) {
                               return const Color(0xFF008080);
                             }
-                            return const Color(0xFF20b2aa);
+                            return const Color(0xFF20B2AA);
                           }),
                           backgroundColor: MaterialStateProperty.resolveWith((states) {
                             if (states.contains(MaterialState.hovered)) {
-                              return isDark ? const Color(0xFF121212) : const Color(0xFFfffafa);
+                              return isDark ? const Color(0xFF121212) : const Color(0xFFFAFAFA);
                             }
                             return Colors.transparent;
                           }),
@@ -407,7 +417,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
             ),
             const SizedBox(height: 24),
             const NoticiasWidget(),
-             const SizedBox(height: 24),
+            const SizedBox(height: 24),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -417,7 +427,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     height: 280,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5),
+                      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -428,7 +438,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFFfffafa) : const Color(0xFF121212),
+                            color: isDark ? const Color(0xFFFAFAFA) : const Color(0xFF121212),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -458,7 +468,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                           padding: const EdgeInsets.all(8.0),
                                           child: SelectableText(
                                             'Error: ${snapshot.error}',
-                                            style: const TextStyle(color: Color(0xFFb22222), fontSize: 12),
+                                            style: const TextStyle(color: Color(0xFFB22222), fontSize: 12),
                                             textAlign: TextAlign.center,
                                           ),
                                         ),
@@ -523,7 +533,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                     height: 280,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5),
+                      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -537,7 +547,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? const Color(0xFFfffafa) : const Color(0xFF121212),
+                                color: isDark ? const Color(0xFFFAFAFA) : const Color(0xFF121212),
                               ),
                             ),
                             TextButton(
@@ -547,11 +557,11 @@ class _PaginaInicioState extends State<PaginaInicio> {
                                   if (states.contains(MaterialState.hovered)) {
                                     return const Color(0xFF008080);
                                   }
-                                  return const Color(0xFF20b2aa);
+                                  return const Color(0xFF20B2AA);
                                 }),
                                 backgroundColor: MaterialStateProperty.resolveWith((states) {
                                   if (states.contains(MaterialState.hovered)) {
-                                    return isDark ? const Color(0xFF121212) : const Color(0xFFfffafa);
+                                    return isDark ? const Color(0xFF121212) : const Color(0xFFFAFAFA);
                                   }
                                   return Colors.transparent;
                                 }),

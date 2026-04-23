@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
-import '../diseno.dart';
+import 'diseno.dart';
 import 'API/firebase_storage_service.dart';
 
 class SubirAudioDialog extends StatefulWidget {
@@ -50,10 +50,26 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
       );
 
       if (resultado != null && resultado.files.single.path != null) {
+        final archivo = File(resultado.files.single.path!);
+        final nombreCompleto = resultado.files.single.name;
+        // Limpiar nombre del archivo: quitar extensión
+        String nombreSinExtension = nombreCompleto;
+        final extensiones = ['.mp3', '.m4a', '.wav', '.ogg', '.aac'];
+        for (final ext in extensiones) {
+          if (nombreSinExtension.toLowerCase().endsWith(ext)) {
+            nombreSinExtension = nombreSinExtension.substring(0, nombreSinExtension.length - ext.length);
+            break;
+          }
+        }
+        
         setState(() {
-          _archivoSeleccionado = File(resultado.files.single.path!);
-          _nombreArchivo = resultado.files.single.name;
+          _archivoSeleccionado = archivo;
+          _nombreArchivo = nombreCompleto;
           _mensajeError = null;
+          // Auto-completar el nombre del libro si está vacío
+          if (_nombreLibroController.text.trim().isEmpty) {
+            _nombreLibroController.text = nombreSinExtension;
+          }
         });
       }
     } catch (e) {
@@ -189,11 +205,12 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
             if (widget.tituloLibro == null) ...[
               TextField(
                 controller: _nombreLibroController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nombre del libro',
                   hintText: 'Ej: El Hobbit, La Odisea',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.book),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.book),
+                  errorText: _mensajeError != null && _nombreLibroController.text.trim().isEmpty ? 'Campo requerido' : null,
                 ),
               ),
               const SizedBox(height: 12),

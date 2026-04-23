@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
-import '../diseno.dart';
+import 'diseno.dart';
 import 'API/firebase_storage_service.dart';
 
 class SubirPDFDialog extends StatefulWidget {
@@ -51,10 +51,22 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
       );
 
       if (resultado != null && resultado.files.single.path != null) {
+        final archivo = File(resultado.files.single.path!);
+        final nombreCompleto = resultado.files.single.name;
+        // Limpiar nombre del archivo: quitar extensión .pdf
+        String nombreSinExtension = nombreCompleto;
+        if (nombreSinExtension.toLowerCase().endsWith('.pdf')) {
+          nombreSinExtension = nombreSinExtension.substring(0, nombreSinExtension.length - 4);
+        }
+        
         setState(() {
-          _archivoSeleccionado = File(resultado.files.single.path!);
-          _nombreArchivo = resultado.files.single.name;
+          _archivoSeleccionado = archivo;
+          _nombreArchivo = nombreCompleto;
           _mensajeError = null;
+          // Auto-completar el nombre del libro si está vacío
+          if (_nombreLibroController.text.trim().isEmpty) {
+            _nombreLibroController.text = nombreSinExtension;
+          }
         });
       }
     } catch (e) {
@@ -180,11 +192,12 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
             if (widget.tituloLibro == null) ...[
               TextField(
                 controller: _nombreLibroController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nombre del libro',
                   hintText: 'Ej: El Hobbit, La Odisea',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.book),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.book),
+                  errorText: _mensajeError != null && _nombreLibroController.text.trim().isEmpty ? 'Campo requerido' : null,
                 ),
               ),
               const SizedBox(height: 12),
@@ -302,20 +315,19 @@ class _SubirPDFDialogState extends State<SubirPDFDialog> {
           onPressed: _subiendo ? null : () => Navigator.pop(context),
           child: const Text('Cancelar'),
         ),
-        if (_archivoSeleccionado != null || widget.tituloLibro != null)
-          ElevatedButton(
-            onPressed: _subiendo ? null : _subirPDF,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColores.primario,
-            ),
-            child: _subiendo
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Subir a Firebase Storage'),
+        ElevatedButton(
+          onPressed: _subiendo ? null : _subirPDF,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColores.primario,
           ),
+          child: _subiendo
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Subir a Firebase Storage'),
+        ),
       ],
     );
   }

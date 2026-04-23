@@ -57,7 +57,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/
+    - assets/googleLogo.png
 
 dependency_overrides:
   sign_in_with_apple: ^7.0.1

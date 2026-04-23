@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'diseno.dart';
 import 'servicio/servicio_firestore.dart';
 import 'modelos/datos_usuario.dart';
@@ -25,6 +27,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
   bool _estaCargando = false;
 
   final _auth = FirebaseAuth.instance;
+  GoogleSignIn? _googleSignIn;
 
   final Map<String, bool> _hoverInputs = {
     'email': false,
@@ -33,10 +36,31 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     'nombre': false,
   };
 
-  bool _hoverBoton = false;
+  bool _hoverBotonLogin = false;
+  bool _hoverBotonGoogle = false;
   bool _hoverRegistro = false;
   bool _hoverIconoPass = false;
   bool _hoverIconoConfirm = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _inicializarGoogleSignIn();
+  }
+
+  void _inicializarGoogleSignIn() {
+    try {
+      // Web Client ID 
+      const webClientId = '993471989568-t5gumicvfvdt3fagka0f2lg7uf6v23br.apps.googleusercontent.com';
+      
+      _googleSignIn = GoogleSignIn(
+        clientId: webClientId,
+        scopes: ['email', 'profile'],
+      );
+    } catch (e) {
+      _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+    }
+  }
 
   @override
   void dispose() {
@@ -61,47 +85,129 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     setState(() => _estaCargando = true);
 
     try {
-      _esLogin ? await _iniciarSesionUsuario() : await _registrarUsuario();
+      _esLogin ? await _iniciarSesionEmail() : await _registrarEmail();
     } on FirebaseAuthException catch (e) {
       if (mounted) _manejarErrorFirebase(e);
     } catch (e) {
-      if (mounted) _mostrarSnackBar('Error inesperado: $e', Color(0xFFb22222));
+      if (mounted) _mostrarSnackBar('Error inesperado: $e', const Color(0xFFb22222));
     } finally {
       if (mounted) setState(() => _estaCargando = false);
+    }
+  }
+
+  Future<void> _iniciarSesionConGoogle() async {
+    if (_googleSignIn == null) {
+      _mostrarSnackBar('Google Sign-In no está disponible', const Color(0xFFb22222));
+      return;
+    }
+
+    setState(() => _estaCargando = true);
+
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn!.signIn();
+      
+      if (googleUser == null) {
+        if (mounted) setState(() => _estaCargando = false);
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      final usuario = userCredential.user;
+
+      if (usuario != null) {
+        await _crearUsuarioSiNoExiste(usuario, googleUser.displayName, googleUser.email);
+        
+        if (mounted) {
+          _mostrarSnackBar('¡Bienvenido ${usuario.displayName ?? googleUser.displayName}!', const Color(0xFF32cd32));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _mostrarSnackBar('Error con Google: $e', const Color(0xFFb22222));
+      }
+    } finally {
+      if (mounted) setState(() => _estaCargando = false);
+    }
+  }
+
+  Future<void> _crearUsuarioSiNoExiste(User usuario, String? displayName, String? email) async {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(usuario.uid)
+        .get();
+
+    if (!userDoc.exists) {
+      final datosUsuario = DatosUsuario(
+        uid: usuario.uid,
+        nombre: usuario.displayName ?? displayName ?? 'Usuario',
+        correo: usuario.email ?? email ?? '',
+        fechaCreacion: DateTime.now(),
+        urlImagenPerfil: usuario.photoURL,
+        biografia: '',
+        preferencias: {
+          'generos': [],
+          'formatos': ['fisico', 'audio'],
+          'notificaciones': true,
+          'recordatorios': false,
+          'libros_por_mes': 1,
+          'hora_inicio': {'hora': 9, 'minuto': 0},
+          'hora_fin': {'hora': 22, 'minuto': 0},
+          'minutos_lectura_diaria': 30,
+          'perfil_publico': true,
+          'actividad_publica': true,
+        },
+        estadisticas: {
+          'librosLeidos': 0,
+          'tiempoLectura': 0,
+          'rachaActual': 0,
+          'paginasTotales': 0,
+        },
+        generosFavoritos: [],
+      );
+
+      final servicioFirestore = ServicioFirestore();
+      await servicioFirestore.crearUsuario(datosUsuario);
     }
   }
 
   bool _validarFormulario() {
     final email = _controladorEmail.text.trim();
     if (email.isEmpty) {
-      _mostrarSnackBar('Ingresa tu correo electrónico', Color(0xFFb22222));
+      _mostrarSnackBar('Ingresa tu correo electrónico', const Color(0xFFb22222));
       return false;
     }
 
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     if (!emailRegex.hasMatch(email)) {
-      _mostrarSnackBar('Ingresa un correo electrónico válido', Color(0xFFb22222));
+      _mostrarSnackBar('Ingresa un correo electrónico válido', const Color(0xFFb22222));
       return false;
     }
 
     if (_controladorPassword.text.isEmpty) {
-      _mostrarSnackBar('Ingresa tu contraseña', Color(0xFFb22222));
+      _mostrarSnackBar('Ingresa tu contraseña', const Color(0xFFb22222));
       return false;
     }
 
     if (_controladorPassword.text.length < 6) {
-      _mostrarSnackBar('La contraseña debe tener al menos 6 caracteres', Color(0xFFb22222));
+      _mostrarSnackBar('La contraseña debe tener al menos 6 caracteres', const Color(0xFFb22222));
       return false;
     }
 
     if (!_esLogin) {
       if (_controladorNombre.text.trim().isEmpty) {
-        _mostrarSnackBar('Ingresa tu nombre', Color(0xFFb22222));
+        _mostrarSnackBar('Ingresa tu nombre', const Color(0xFFb22222));
         return false;
       }
 
       if (_controladorPassword.text != _controladorConfirmarPassword.text) {
-        _mostrarSnackBar('Las contraseñas no coinciden', Color(0xFFb22222));
+        _mostrarSnackBar('Las contraseñas no coinciden', const Color(0xFFb22222));
         return false;
       }
     }
@@ -109,17 +215,17 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     return true;
   }
 
-  Future<void> _iniciarSesionUsuario() async {
+  Future<void> _iniciarSesionEmail() async {
     final credencialUsuario = await _auth.signInWithEmailAndPassword(
       email: _controladorEmail.text.trim(),
       password: _controladorPassword.text,
     );
     if (credencialUsuario.user != null && mounted) {
-      _mostrarSnackBar('¡Bienvenido de vuelta!', Color(0xFF32cd32));
+      _mostrarSnackBar('¡Bienvenido de vuelta!', const Color(0xFF32cd32));
     }
   }
 
-  Future<void> _registrarUsuario() async {
+  Future<void> _registrarEmail() async {
     final credencialUsuario = await _auth.createUserWithEmailAndPassword(
       email: _controladorEmail.text.trim(),
       password: _controladorPassword.text,
@@ -143,6 +249,9 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
           'libros_por_mes': 1,
           'hora_inicio': {'hora': 9, 'minuto': 0},
           'hora_fin': {'hora': 22, 'minuto': 0},
+          'minutos_lectura_diaria': 30,
+          'perfil_publico': true,
+          'actividad_publica': true,
         },
         estadisticas: {
           'librosLeidos': 0,
@@ -159,13 +268,13 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
       } catch (e) {
         await credencialUsuario.user!.delete();
         if (mounted) {
-          _mostrarSnackBar('Error al guardar datos: $e', Color(0xFFb22222));
+          _mostrarSnackBar('Error al guardar datos: $e', const Color(0xFFb22222));
         }
         rethrow;
       }
 
       if (mounted) {
-        _mostrarSnackBar('¡Cuenta creada exitosamente!', Color(0xFF32cd32));
+        _mostrarSnackBar('¡Cuenta creada exitosamente!', const Color(0xFF32cd32));
       }
     }
   }
@@ -177,13 +286,13 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
       'email-already-in-use': 'Ya existe una cuenta con este email',
       'weak-password': 'La contraseña es demasiado débil',
       'invalid-email': 'El formato del email no es válido',
-      'network-request-failed': 'Error de conexión a internet. Verifica tu conexión',
-      'too-many-requests': 'Demasiados intentos fallidos. Intenta más tarde',
+      'network-request-failed': 'Error de conexión a internet',
+      'too-many-requests': 'Demasiados intentos fallidos',
       'user-disabled': 'Esta cuenta ha sido deshabilitada',
-      'operation-not-allowed': 'Este método de inicio de sesión no está habilitado',
+      'operation-not-allowed': 'Método de inicio no habilitado',
     };
 
-    _mostrarSnackBar(mensajesError[e.code] ?? 'Error: ${e.message}', Color(0xFFb22222));
+    _mostrarSnackBar(mensajesError[e.code] ?? 'Error: ${e.message}', const Color(0xFFb22222));
   }
 
   void _mostrarSnackBar(String mensaje, Color color) {
@@ -193,7 +302,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
         content: Text(mensaje, style: const TextStyle(color: Color(0xFFfffafa))),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: color == Color(0xFF32cd32) ? 3 : 5),
+        duration: Duration(seconds: color == const Color(0xFF32cd32) ? 3 : 5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -203,7 +312,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     TextEditingController controlador,
     String etiqueta,
     IconData icono, {
-    bool textoOculto = false,
+    bool textoOculta = false,
     VoidCallback? alAlternarVisibilidad,
     TextInputType? tipoTeclado,
     required String hoverKey,
@@ -242,7 +351,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                   }),
                   child: IconButton(
                     icon: Icon(
-                      textoOculto ? Icons.visibility_off : Icons.visibility,
+                      textoOculta ? Icons.visibility_off : Icons.visibility,
                       color: (hoverKey == 'password' && _hoverIconoPass) || (hoverKey == 'confirmar' && _hoverIconoConfirm)
                           ? const Color(0xFF008080)
                           : AppColores.primario,
@@ -268,7 +377,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
           fillColor: isHovered ? fillColorHover : fillColorNormal,
           contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         ),
-        obscureText: textoOculto,
+        obscureText: textoOculta,
         enabled: !_estaCargando,
         keyboardType: tipoTeclado,
         style: TextStyle(fontSize: 16, color: inputTextColor),
@@ -281,7 +390,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final esModoOscuro = themeProvider.esModoOscuro;
 
-    // Colores para modo claro y oscuro
     final Color inputFillNormal = esModoOscuro ? const Color(0xFF1e1e1e) : const Color(0xFFf5f5f5);
     final Color inputFillHover = esModoOscuro ? const Color(0xFF2c2c2c) : const Color(0xFFdcdcdc);
     final Color inputBorderColor = esModoOscuro ? const Color(0xFF2c2c2c) : const Color(0xFFdcdcdc);
@@ -296,7 +404,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
             colors: [AppColores.primario, AppColores.secundario],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            stops: [0.0, 1.0],
           ),
         ),
         child: Center(
@@ -315,6 +422,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                   ),
                   child: Column(
                     children: [
+                      // Logo
                       Container(
                         width: 100,
                         height: 100,
@@ -330,6 +438,8 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         ),
                       ),
                       const SizedBox(height: 25),
+                      
+                      // Título
                       Text(
                         _esLogin ? 'Iniciar Sesión' : 'Crear Cuenta',
                         style: TextStyle(
@@ -351,6 +461,8 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 30),
+                      
+                      // Campo Nombre (solo registro)
                       if (!_esLogin) ...[
                         _construirCampoTexto(
                           _controladorNombre,
@@ -367,6 +479,8 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         ),
                         const SizedBox(height: 20),
                       ],
+                      
+                      // Campo Email
                       _construirCampoTexto(
                         _controladorEmail,
                         'Correo electrónico',
@@ -381,11 +495,13 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         inputTextColor: inputTextColor,
                       ),
                       const SizedBox(height: 20),
+                      
+                      // Campo Contraseña
                       _construirCampoTexto(
                         _controladorPassword,
                         'Contraseña',
                         Icons.lock_outline,
-                        textoOculto: _passwordOculta,
+                        textoOculta: _passwordOculta,
                         alAlternarVisibilidad: _estaCargando
                             ? null
                             : () => setState(() => _passwordOculta = !_passwordOculta),
@@ -398,12 +514,14 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         inputTextColor: inputTextColor,
                       ),
                       const SizedBox(height: 20),
+                      
+                      // Campo Confirmar Contraseña (solo registro)
                       if (!_esLogin) ...[
                         _construirCampoTexto(
                           _controladorConfirmarPassword,
                           'Confirmar contraseña',
                           Icons.lock_reset,
-                          textoOculto: _confirmarPasswordOculta,
+                          textoOculta: _confirmarPasswordOculta,
                           alAlternarVisibilidad: _estaCargando
                               ? null
                               : () => setState(() => _confirmarPasswordOculta = !_confirmarPasswordOculta),
@@ -417,6 +535,8 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         ),
                         const SizedBox(height: 20),
                       ],
+                      
+                      // Botón Email/Password
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -428,17 +548,17 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                                 ),
                               )
                             : MouseRegion(
-                                onEnter: (_) => setState(() => _hoverBoton = true),
-                                onExit: (_) => setState(() => _hoverBoton = false),
+                                onEnter: (_) => setState(() => _hoverBotonLogin = true),
+                                onExit: (_) => setState(() => _hoverBotonLogin = false),
                                 child: ElevatedButton(
                                   onPressed: _enviarFormulario,
                                   style: ButtonStyle(
                                     backgroundColor: MaterialStateProperty.resolveWith((states) {
-                                      if (_hoverBoton) return const Color(0xFF20b2aa);
+                                      if (_hoverBotonLogin) return const Color(0xFF20b2aa);
                                       return const Color(0xFF008080);
                                     }),
                                     foregroundColor: MaterialStateProperty.resolveWith((states) {
-                                      if (_hoverBoton) return const Color(0xFFfffafa);
+                                      if (_hoverBotonLogin) return const Color(0xFFfffafa);
                                       return const Color(0xFFdcdcdc);
                                     }),
                                     elevation: MaterialStateProperty.all(0),
@@ -454,6 +574,89 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                                 ),
                               ),
                       ),
+                      
+                      // Separador
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: formularioTextoColor.withOpacity(0.3),
+                              thickness: 1,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'O continúa con',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: formularioTextoColor.withOpacity(0.6),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: formularioTextoColor.withOpacity(0.3),
+                              thickness: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Botón Google
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: MouseRegion(
+                          onEnter: (_) => setState(() => _hoverBotonGoogle = true),
+                          onExit: (_) => setState(() => _hoverBotonGoogle = false),
+                          child: OutlinedButton(
+                            onPressed: _estaCargando ? null : _iniciarSesionConGoogle,
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: _hoverBotonGoogle ? AppColores.primario : Colors.grey,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              backgroundColor: _hoverBotonGoogle 
+                                  ? AppColores.primario.withOpacity(0.05)
+                                  : Colors.transparent,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: const BoxDecoration(
+                                    image: DecorationImage(
+                                      image: NetworkImage(
+                                        'https://developers.google.com/identity/images/g-logo.png',
+                                      ),
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _esLogin ? 'Iniciar con Google' : 'Registrarse con Google',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: _hoverBotonGoogle ? AppColores.primario : formularioTextoColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Enlace para cambiar entre login/registro
                       const SizedBox(height: 25),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

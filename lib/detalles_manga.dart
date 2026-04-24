@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'diseno.dart';
 import 'API/modelos.dart';
+import 'API/ollama_service.dart';
 
 class DetallesManga extends StatefulWidget {
   final Manga mangaObjeto;
@@ -17,13 +18,72 @@ class DetallesManga extends StatefulWidget {
 class _DetallesMangaState extends State<DetallesManga> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final OllamaService _ollamaService = OllamaService();
   bool _esFavorito = false;
   bool _estaGuardado = false;
+  bool _mostrarSinopsis = false;
+  bool _cargandoSinopsis = false;
+  String? _sinopsisGenerada;
+  bool _cargandoLectura = false;
 
   @override
   void initState() {
     super.initState();
     _verificarEstadoManga();
+    _cargarSinopsisCache();
+  }
+
+  Future<void> _cargarSinopsisCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'sinopsis_manga_${widget.mangaObjeto.id}';
+      final cached = prefs.getString(key);
+      if (cached != null && cached.isNotEmpty) {
+        setState(() {
+          _sinopsisGenerada = cached;
+        });
+      }
+    } catch (e) {}
+  }
+
+  Future<void> _guardarSinopsisCache(String sinopsis) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'sinopsis_manga_${widget.mangaObjeto.id}';
+      await prefs.setString(key, sinopsis);
+    } catch (e) {}
+  }
+
+  Future<void> _generarSinopsisOllama() async {
+    if (_sinopsisGenerada != null) return;
+    setState(() => _cargandoSinopsis = true);
+    try {
+      final sinopsis = await _ollamaService.generarDescripcionManga(
+        titulo: widget.mangaObjeto.titulo,
+        autores: widget.mangaObjeto.autores,
+        sinopsisOriginal: widget.mangaObjeto.sinopsis,
+        generos: widget.mangaObjeto.generos,
+        temas: widget.mangaObjeto.temas,
+        estado: widget.mangaObjeto.estado,
+      );
+      if (mounted) {
+        final sinopsisFinal = sinopsis ?? 'No se pudo generar la sinopsis.';
+        setState(() {
+          _sinopsisGenerada = sinopsisFinal;
+          _cargandoSinopsis = false;
+        });
+        if (sinopsisFinal != 'No se pudo generar la sinopsis.') {
+          await _guardarSinopsisCache(sinopsisFinal);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _sinopsisGenerada = 'Error al generar sinopsis: $e';
+          _cargandoSinopsis = false;
+        });
+      }
+    }
   }
 
   Future<void> _verificarEstadoManga() async {
@@ -43,12 +103,11 @@ class _DetallesMangaState extends State<DetallesManga> {
         if (data != null) {
           setState(() {
             _esFavorito = data['favorito'] == true;
-            _estaGuardado = true;
+            _estaGuardado = data['guardado'] == true;
           });
         }
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   Future<void> _toggleFavorito() async {
@@ -73,6 +132,7 @@ class _DetallesMangaState extends State<DetallesManga> {
             'urlPortada': widget.mangaObjeto.urlPortada,
             'autores': widget.mangaObjeto.autores,
             'favorito': nuevoEstado,
+            'guardado': _estaGuardado,
             'fechaGuardado': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
 
@@ -83,9 +143,7 @@ class _DetallesMangaState extends State<DetallesManga> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            nuevoEstado ? '¡Añadido a favoritos!' : 'Removido de favoritos',
-          ),
+          content: Text(nuevoEstado ? 'Añadido a favoritos' : 'Removido de favoritos'),
         ),
       );
     } catch (e) {
@@ -93,6 +151,294 @@ class _DetallesMangaState extends State<DetallesManga> {
         SnackBar(content: Text('Error: $e')),
       );
     }
+  }
+
+  Future<void> _guardarManga() async {
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Debes iniciar sesión primero')),
+        );
+        return;
+      }
+
+      final nuevoEstado = !_estaGuardado;
+      await _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('mangas_guardados')
+          .doc(widget.mangaObjeto.id)
+          .set({
+            'id': widget.mangaObjeto.id,
+            'titulo': widget.mangaObjeto.titulo,
+            'urlPortada': widget.mangaObjeto.urlPortada,
+            'autores': widget.mangaObjeto.autores,
+            'guardado': nuevoEstado,
+            'favorito': _esFavorito,
+            'fechaGuardado': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+
+      setState(() {
+        _estaGuardado = nuevoEstado;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(nuevoEstado ? 'Manga guardado en tu biblioteca' : 'Manga eliminado de tu biblioteca'),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  Future<void> _iniciarLectura() async {
+    final usuario = _auth.currentUser;
+    if (usuario == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debes iniciar sesión para empezar a leer')),
+      );
+      return;
+    }
+
+    setState(() => _cargandoLectura = true);
+
+    try {
+      final mangaGuardadoRef = _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('mangas_guardados')
+          .doc(widget.mangaObjeto.id);
+
+      final mangaGuardadoSnap = await mangaGuardadoRef.get();
+      if (mangaGuardadoSnap.exists) {
+        await mangaGuardadoRef.update({'estado': 'leyendo'});
+      } else {
+        await mangaGuardadoRef.set({
+          'id': widget.mangaObjeto.id,
+          'titulo': widget.mangaObjeto.titulo,
+          'urlPortada': widget.mangaObjeto.urlPortada,
+          'autores': widget.mangaObjeto.autores,
+          'favorito': _esFavorito,
+          'guardado': true,
+          'estado': 'leyendo',
+          'fechaGuardado': FieldValue.serverTimestamp(),
+        });
+      }
+
+      final progresoExistenteQuery = await _firestore
+          .collection('progreso_lectura')
+          .where('usuarioId', isEqualTo: usuario.uid)
+          .where('libroId', isEqualTo: widget.mangaObjeto.id)
+          .limit(1)
+          .get();
+
+      if (progresoExistenteQuery.docs.isEmpty) {
+        final nuevoProgresoId = _firestore.collection('progreso_lectura').doc().id;
+        final nuevoProgresoData = {
+          'id': nuevoProgresoId,
+          'usuarioId': usuario.uid,
+          'libroId': widget.mangaObjeto.id,
+          'tituloLibro': widget.mangaObjeto.titulo,
+          'autoresLibro': widget.mangaObjeto.autores,
+          'miniaturaLibro': widget.mangaObjeto.urlPortada,
+          'estado': 'leyendo',
+          'paginaActual': 0,
+          'paginasTotales': 0,
+          'fechaInicio': FieldValue.serverTimestamp(),
+          'calificacion': 0.0,
+        };
+        await _firestore.collection('progreso_lectura').doc(nuevoProgresoId).set(nuevoProgresoData);
+        _mostrarExito('Comenzaste a leer "${widget.mangaObjeto.titulo}"');
+      } else {
+        _mostrarExito('Continuando la lectura de "${widget.mangaObjeto.titulo}"');
+      }
+
+      if (mounted) {
+        Navigator.pushNamed(context, '/perfil', arguments: {'seccionIndex': 1});
+      }
+    } catch (e) {
+      _mostrarError('Error al iniciar lectura: $e');
+    } finally {
+      if (mounted) setState(() => _cargandoLectura = false);
+    }
+  }
+
+  void _mostrarExito(String mensaje) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje),
+        backgroundColor: AppColores.secundario,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _mostrarError(String mensaje) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _abrirBusquedaTiendas() {
+    final query = widget.mangaObjeto.titulo;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1e1e1e),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Buscar en tiendas',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '"${widget.mangaObjeto.titulo}"',
+              style: const TextStyle(fontSize: 14, color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFFF9900),
+                child: Icon(Icons.shopping_bag, color: Colors.white),
+              ),
+              title: const Text('Amazon', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Buscar en Amazon', style: TextStyle(color: Colors.white70)),
+              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              onTap: () {
+                Navigator.pop(context);
+                final url = 'https://www.amazon.es/s?k=${Uri.encodeComponent(query)}&i=stripbooks';
+                _abrirURL(url);
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFE2001A),
+                child: Icon(Icons.store, color: Colors.white),
+              ),
+              title: const Text('Casa del Libro', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Librería española', style: TextStyle(color: Colors.white70)),
+              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              onTap: () {
+                Navigator.pop(context);
+                final url = 'https://www.casadellibro.com/busqueda-libros?q=${Uri.encodeComponent(query)}';
+                _abrirURL(url);
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF0D5FA6),
+                child: Icon(Icons.shopping_cart, color: Colors.white),
+              ),
+              title: const Text('Fnac', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Tienda de cultura', style: TextStyle(color: Colors.white70)),
+              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              onTap: () {
+                Navigator.pop(context);
+                final url = 'https://www.fnac.es/ia?Search=${Uri.encodeComponent(query)}';
+                _abrirURL(url);
+              },
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _abrirPlataformasAnime() {
+    final query = Uri.encodeComponent(widget.mangaObjeto.titulo);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1e1e1e),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Ver adaptación anime',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '"${widget.mangaObjeto.titulo}"',
+              style: const TextStyle(fontSize: 14, color: Colors.white70),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xFFF47521),
+                child: const Icon(Icons.tv, color: Colors.white),
+              ),
+              title: const Text('Crunchyroll', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Anime y manga en streaming', style: TextStyle(color: Colors.white70)),
+              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              onTap: () {
+                Navigator.pop(context);
+                final url = 'https://www.crunchyroll.com/es/search?q=$query';
+                _abrirURL(url);
+              },
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xFFE50914),
+                child: const Icon(Icons.tv, color: Colors.white),
+              ),
+              title: const Text('Netflix', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Plataforma de streaming', style: TextStyle(color: Colors.white70)),
+              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              onTap: () {
+                Navigator.pop(context);
+                final url = 'https://www.netflix.com/es/search?q=$query';
+                _abrirURL(url);
+              },
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xFF00A8E1),
+                child: const Icon(Icons.tv, color: Colors.white),
+              ),
+              title: const Text('Amazon Prime Video', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Series y películas', style: TextStyle(color: Colors.white70)),
+              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              onTap: () {
+                Navigator.pop(context);
+                final url = 'https://www.primevideo.com/search/ref=atv_nb_sr?phrase=$query';
+                _abrirURL(url);
+              },
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _abrirURL(String url) async {
@@ -109,326 +455,498 @@ class _DetallesMangaState extends State<DetallesManga> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = true;
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
-      body: CustomScrollView(
-        slivers: [
-          // AppBar con portada
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            backgroundColor: const Color(0xFF121212),
-            flexibleSpace: FlexibleSpaceBar(
-              background: widget.mangaObjeto.urlPortada != null
-                  ? Image.network(
-                      widget.mangaObjeto.urlPortada!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFF1e1e1e),
-                        child: const Icon(Icons.broken_image, size: 100),
-                      ),
-                    )
-                  : Container(
-                      color: const Color(0xFF1e1e1e),
-                      child: const Icon(Icons.image, size: 100),
-                    ),
-            ),
-          ),
-
-          // Contenido
-          SliverList(
-            delegate: SliverChildListDelegate([
-              Container(
-                padding: const EdgeInsets.all(20),
-                color: const Color(0xFF121212),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Título
-                    Text(
-                      widget.mangaObjeto.titulo,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Autores
-                    Text(
-                      widget.mangaObjeto.autores.join(', '),
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: const Color(0xFFAAAAAA),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Calificaciones
-                    Row(
-                      children: [
-                        if (widget.mangaObjeto.calificacionAniList != null) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1e1e1e),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'AniList',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: const Color(0xFFAAAAAA),
-                                  ),
-                                ),
-                                Text(
-                                  '${(widget.mangaObjeto.calificacionAniList! / 10).toStringAsFixed(1)}/10',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColores.acento,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                        ],
-                        if (widget.mangaObjeto.calificacionMangaDex != null) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1e1e1e),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'MangaDex',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: const Color(0xFFAAAAAA),
-                                  ),
-                                ),
-                                Text(
-                                  '${widget.mangaObjeto.calificacionMangaDex!.toStringAsFixed(1)}/10',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColores.acento,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+      appBar: AppBar(
+        title: const Text(
+          'Detalles del Manga',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: AppColores.primario,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1e1e1e),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 120,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xFF2C2C2C),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 20),
-
-                    // Estado
-                    if (widget.mangaObjeto.estado != null) ...[
-                      Chip(
-                        label: Text(widget.mangaObjeto.estado!),
-                        backgroundColor: const Color(0xFF1e1e1e),
-                        labelStyle: TextStyle(color: Colors.white),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Sinopsis
-                    if (widget.mangaObjeto.sinopsis != null &&
-                        widget.mangaObjeto.sinopsis!.isNotEmpty) ...[
-                      Text(
-                        'Sinopsis',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.mangaObjeto.sinopsis!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: const Color(0xFFAAAAAA),
-                          height: 1.6,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Géneros
-                    if (widget.mangaObjeto.generos.isNotEmpty) ...[
-                      Text(
-                        'Géneros',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: widget.mangaObjeto.generos.map((genero) {
-                          return Chip(
-                            label: Text(genero),
-                            backgroundColor: const Color(0xFF1e1e1e),
-                            labelStyle: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                    child: widget.mangaObjeto.urlPortada != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              widget.mangaObjeto.urlPortada!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(
+                                  child: Icon(
+                                    Icons.auto_stories,
+                                    size: 50,
+                                    color: AppColores.primario,
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Temas
-                    if (widget.mangaObjeto.temas.isNotEmpty) ...[
-                      Text(
-                        'Temas',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: widget.mangaObjeto.temas.map((tema) {
-                          return Chip(
-                            label: Text(tema),
-                            backgroundColor: AppColores.acento.withAlpha(50),
-                            labelStyle: TextStyle(
-                              color: AppColores.acento,
-                              fontSize: 12,
+                          )
+                        : Center(
+                            child: Icon(
+                              Icons.auto_stories,
+                              size: 50,
+                              color: AppColores.primario,
                             ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Adaptación anime
-                    if (widget.mangaObjeto.adaptacionAnime != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1e1e1e),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColores.acento),
+                          ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.mangaObjeto.titulo,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        child: Row(
+                        const SizedBox(height: 8),
+                        if (widget.mangaObjeto.autores.isNotEmpty)
+                          Text(
+                            'Por ${widget.mangaObjeto.autores.join(', ')}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFFAAAAAA),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        if (widget.mangaObjeto.fechaPublicacion != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Publicado: ${widget.mangaObjeto.fechaPublicacion}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF888888),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
                           children: [
-                            const Icon(Icons.tv, size: 24),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            if (widget.mangaObjeto.calificacionAniList != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColores.primario.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.star, size: 12, color: AppColores.acento),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${(widget.mangaObjeto.calificacionAniList! / 10).toStringAsFixed(1)}/10',
+                                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (widget.mangaObjeto.estado != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  widget.mangaObjeto.estado!,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.green),
+                                ),
+                              ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColores.primario.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    'Adaptación anime',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFFAAAAAA),
-                                    ),
-                                  ),
-                                  Text(
-                                    widget.mangaObjeto.adaptacionAnime!,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                  const Icon(Icons.auto_stories, size: 12, color: AppColores.acento),
+                                  const SizedBox(width: 4),
+                                  const Text('Manga', style: TextStyle(fontSize: 12, color: Colors.white)),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Botones de acción
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _toggleFavorito,
-                            icon: Icon(
-                              _esFavorito ? Icons.favorite : Icons.favorite_border,
-                            ),
-                            label: Text(
-                              _esFavorito ? 'En favoritos' : 'Añadir a favoritos',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _esFavorito
-                                  ? AppColores.acento
-                                  : const Color(0xFF1e1e1e),
-                              foregroundColor: _esFavorito
-                                  ? Colors.white
-                                  : const Color(0xFFAAAAAA),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        if (widget.mangaObjeto.urlMangaDex != null)
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () =>
-                                  _abrirURL(widget.mangaObjeto.urlMangaDex!),
-                              icon: const Icon(Icons.open_in_new),
-                              label: const Text('MangaDex'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1e1e1e),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-
-                    if (widget.mangaObjeto.urlAniList != null)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () =>
-                              _abrirURL(widget.mangaObjeto.urlAniList!),
-                          icon: const Icon(Icons.open_in_new),
-                          label: const Text('Ver en AniList'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1e1e1e),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1e1e1e),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Sinopsis',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_mostrarSinopsis) {
+                        setState(() => _mostrarSinopsis = false);
+                      } else {
+                        setState(() => _mostrarSinopsis = true);
+                        if (_sinopsisGenerada == null) {
+                          _generarSinopsisOllama();
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColores.primario,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: Text(_mostrarSinopsis ? 'Ocultar' : 'Mostrar'),
+                  ),
+                  if (_mostrarSinopsis) ...[
+                    const SizedBox(height: 16),
+                    _cargandoSinopsis
+                        ? const Center(child: CircularProgressIndicator())
+                        : _sinopsisGenerada != null
+                            ? Text(
+                                _sinopsisGenerada!,
+                                style: const TextStyle(fontSize: 15, color: Color(0xFFAAAAAA), height: 1.5),
+                              )
+                            : const SizedBox.shrink(),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (widget.mangaObjeto.generos.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1e1e1e),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Géneros',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: widget.mangaObjeto.generos.map((genero) {
+                        return Chip(
+                          label: Text(genero),
+                          backgroundColor: const Color(0xFF2C2C2C),
+                          labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                        );
+                      }).toList(),
+                    ),
                   ],
                 ),
               ),
-            ]),
-          ),
-        ],
+            const SizedBox(height: 24),
+            if (widget.mangaObjeto.temas.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1e1e1e),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Temas',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: widget.mangaObjeto.temas.map((tema) {
+                        return Chip(
+                          label: Text(tema),
+                          backgroundColor: AppColores.acento.withAlpha(50),
+                          labelStyle: TextStyle(color: AppColores.acento, fontSize: 12),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
+            if (widget.mangaObjeto.adaptacionAnime != null)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1e1e1e),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Adaptación anime',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 12),
+                    Card(
+                      elevation: 2,
+                      color: const Color(0xFF2C2C2C),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.tv, color: AppColores.acento, size: 32),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Ver adaptación anime', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColores.acento)),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Encuentra este anime en Crunchyroll, Netflix, y más.',
+                                        style: TextStyle(fontSize: 14, color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: _abrirPlataformasAnime,
+                              icon: const Icon(Icons.play_circle_filled),
+                              label: const Text('Ver Anime'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColores.acento,
+                                foregroundColor: Colors.black,
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1e1e1e),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Acceso Gratuito',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    elevation: 2,
+                    color: const Color(0xFF2C2C2C),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.lock_open, color: Colors.green, size: 32),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Manga Gratuito', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Este Manga está disponible para leer gratis',
+                                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          if (widget.mangaObjeto.urlMangaDex != null)
+                            ElevatedButton.icon(
+                              onPressed: () => _abrirURL(widget.mangaObjeto.urlMangaDex!),
+                              icon: const Icon(Icons.open_in_new),
+                              label: const Text('Leer Gratis'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1e1e1e),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Disponibilidad en Tiendas',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    elevation: 2,
+                    color: const Color(0xFF2C2C2C),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.store, color: AppColores.primario, size: 32),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Buscar en tiendas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColores.primario)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Encuentra este manga en Amazon, Fnac, y más.',
+                                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _abrirBusquedaTiendas,
+                            icon: const Icon(Icons.search),
+                            label: const Text('Buscar en Tiendas'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColores.primario,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _cargandoLectura ? null : _iniciarLectura,
+                icon: Icon(Icons.menu_book),
+                label: const Text('Empezar a Leer'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColores.primario,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _toggleFavorito,
+                    icon: Icon(_esFavorito ? Icons.favorite : Icons.favorite_border),
+                    label: Text(_esFavorito ? 'En favoritos' : 'Favorito'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2C2C2C),
+                      foregroundColor: _esFavorito ? Colors.red : const Color(0xFFAAAAAA),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _guardarManga,
+                    icon: Icon(_estaGuardado ? Icons.bookmark : Icons.bookmark_border),
+                    label: Text(_estaGuardado ? 'Guardado' : 'Guardar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2C2C2C),
+                      foregroundColor: _estaGuardado ? AppColores.acento : const Color(0xFFAAAAAA),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }

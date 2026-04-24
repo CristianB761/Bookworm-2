@@ -404,7 +404,7 @@ class Manga {
   final double? calificacionMangaDex;
   final int? numeroVotos;
   final double? popularidad;
-  final String? estado; // serializing, finished, hiatus
+  final String? estado;
   final List<String> generos;
   final List<String> temas;
   final int? ultimoCapituloLanzado;
@@ -413,6 +413,7 @@ class Manga {
   final String? urlMangaDex;
   final String? urlAniList;
   final double? calificacionAniList;
+  final String? fechaPublicacion;
 
   Manga({
     required this.id,
@@ -432,6 +433,7 @@ class Manga {
     this.urlMangaDex,
     this.urlAniList,
     this.calificacionAniList,
+    this.fechaPublicacion,
   });
 
   Map<String, dynamic> toMap() {
@@ -453,6 +455,7 @@ class Manga {
       'urlMangaDex': urlMangaDex,
       'urlAniList': urlAniList,
       'calificacionAniList': calificacionAniList,
+      'fechaPublicacion': fechaPublicacion,
     };
   }
 
@@ -475,6 +478,7 @@ class Manga {
       urlMangaDex: map['urlMangaDex'],
       urlAniList: map['urlAniList'],
       calificacionAniList: _toDouble(map['calificacionAniList']),
+      fechaPublicacion: map['fechaPublicacion'],
     );
   }
 
@@ -505,6 +509,7 @@ class Manga {
     String? urlMangaDex,
     String? urlAniList,
     double? calificacionAniList,
+    String? fechaPublicacion,
   }) {
     return Manga(
       id: id ?? this.id,
@@ -524,6 +529,7 @@ class Manga {
       urlMangaDex: urlMangaDex ?? this.urlMangaDex,
       urlAniList: urlAniList ?? this.urlAniList,
       calificacionAniList: calificacionAniList ?? this.calificacionAniList,
+      fechaPublicacion: fechaPublicacion ?? this.fechaPublicacion,
     );
   }
 

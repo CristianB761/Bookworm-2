@@ -21,6 +21,7 @@ class AniListService {
             manga.generos,
         adaptacionAnime: _obtenerAdaptacionAnime(datosAniList),
         urlAniList: 'https://anilist.co/manga/${datosAniList['id']}',
+        fechaPublicacion: _obtenerFechaPublicacion(datosAniList),
       );
     } catch (e) {
       return manga;
@@ -42,6 +43,11 @@ class AniListService {
             popularity
             genres
             status
+            startDate {
+              year
+              month
+              day
+            }
             relations {
               edges {
                 relationType
@@ -98,6 +104,17 @@ class AniListService {
       }
     }
 
+    return null;
+  }
+
+  String? _obtenerFechaPublicacion(Map<String, dynamic> anilistData) {
+    final startDate = anilistData['startDate'] as Map<String, dynamic>?;
+    if (startDate != null) {
+      final year = startDate['year'];
+      if (year != null) {
+        return year.toString();
+      }
+    }
     return null;
   }
 

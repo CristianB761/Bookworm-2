@@ -879,29 +879,47 @@ class _BuscarState extends State<Buscar> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Portada
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                      image: manga.urlPortada != null
+                          ? DecorationImage(
+                              image: NetworkImage(manga.urlPortada!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                      color: Colors.grey[800],
+                    ),
+                    child: manga.urlPortada == null
+                        ? const Center(
+                            child: Icon(Icons.image, size: 40, color: Colors.grey),
+                          )
+                        : null,
                   ),
-                  image: manga.urlPortada != null
-                      ? DecorationImage(
-                          image: NetworkImage(manga.urlPortada!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                  color: Colors.grey[800],
-                ),
-                child: manga.urlPortada == null
-                    ? const Center(
-                        child: Icon(Icons.image, size: 40, color: Colors.grey),
-                      )
-                    : null,
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColores.primario,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.auto_stories,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Título y autor
             Padding(
               padding: const EdgeInsets.all(8),
               child: Column(

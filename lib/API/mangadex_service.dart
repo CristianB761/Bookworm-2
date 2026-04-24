@@ -8,86 +8,106 @@ class MangaDexService {
   Future<List<Manga>> buscarManga(String consulta, {int limite = 20}) async {
     try {
       if (consulta.isEmpty) return [];
-      
-      // 🔥 CORRECCIÓN: Usar el endpoint correcto de búsqueda
+
       final encodedQuery = Uri.encodeComponent(consulta);
-      
-      // Método 1: Búsqueda por título usando el endpoint de búsqueda
+
       String url = '$_urlBase/manga?limit=$limite&includes[]=cover_art&includes[]=author&includes[]=artist&order[followedCount]=desc';
-      
-      // Añadir filtro de título si hay consulta
+
       if (consulta.isNotEmpty) {
         url += '&title=$encodedQuery';
       }
-      
-      print('🔍 Buscando: $consulta');
-      print('📡 URL: $url');
-      
+
+      print('Buscando: $consulta');
+      print('URL: $url');
+
       final respuesta = await http.get(Uri.parse(url));
-      print('📊 Status code: ${respuesta.statusCode}');
+      print('Status code: ${respuesta.statusCode}');
 
       if (respuesta.statusCode == 200) {
         final datos = json.decode(respuesta.body);
         final mangasJson = (datos['data'] as List?) ?? [];
-        
-        print('📚 Mangas encontrados (raw): ${mangasJson.length}');
+
+        print('Mangas encontrados (raw): ${mangasJson.length}');
 
         final mangas = <Manga>[];
         for (final mangaJson in mangasJson) {
+          final attributes = mangaJson['attributes'] as Map<String, dynamic>?;
+          final titleMap = attributes?['title'] as Map<String, dynamic>?;
+          final tituloEn = titleMap?['en']?.toString().toLowerCase() ?? '';
+          final tituloJa = titleMap?['ja']?.toString().toLowerCase() ?? '';
+          if (tituloEn.contains('doujinshi') || tituloJa.contains('doujinshi')) {
+            continue;
+          }
+
+          final tags = attributes?['tags'] as List? ?? [];
+          bool esDoujinshi = false;
+          for (final tag in tags) {
+            final tagAttr = tag['attributes'] as Map<String, dynamic>?;
+            final nameMap = tagAttr?['name'] as Map<String, dynamic>?;
+            final nombreTag = nameMap?['en']?.toString().toLowerCase() ?? '';
+            if (nombreTag.contains('doujinshi')) {
+              esDoujinshi = true;
+              break;
+            }
+          }
+          if (esDoujinshi) continue;
+
           final manga = _mapearManga(mangaJson);
-          // Verificar que el título coincida (filtro adicional)
-          if (consulta.isEmpty || 
-              manga.titulo.toLowerCase().contains(consulta.toLowerCase())) {
+          if (consulta.isEmpty || manga.titulo.toLowerCase().contains(consulta.toLowerCase())) {
             mangas.add(manga);
           }
         }
-        
-        print('📚 Mangas después de filtrar: ${mangas.length}');
+
+        print('Mangas después de filtrar: ${mangas.length}');
         return mangas.take(limite).toList();
       } else if (respuesta.statusCode == 404) {
-        // Si el endpoint de título falla, usar búsqueda general
-        print('⚠️ 404, intentando búsqueda general...');
+        print('404, intentando búsqueda general...');
         return await _buscarGeneral(consulta, limite);
       } else {
-        print('❌ Error HTTP: ${respuesta.statusCode}');
-        print('📝 Respuesta: ${respuesta.body}');
+        print('Error HTTP: ${respuesta.statusCode}');
+        print('Respuesta: ${respuesta.body}');
         return [];
       }
     } catch (e) {
-      print('❌ Excepción: $e');
+      print('Excepción: $e');
       return [];
     }
   }
 
-  // Método alternativo de búsqueda
   Future<List<Manga>> _buscarGeneral(String consulta, int limite) async {
     try {
-      // Usar búsqueda por texto completo
       final url = Uri.parse('$_urlBase/manga?limit=$limite&includes[]=cover_art&includes[]=author&includes[]=artist&order[followedCount]=desc');
-      
+
       final respuesta = await http.get(url);
-      
+
       if (respuesta.statusCode == 200) {
         final datos = json.decode(respuesta.body);
         final mangasJson = (datos['data'] as List?) ?? [];
-        
-        // Filtrar manualmente por coincidencia en título
+
         final mangasFiltrados = mangasJson.where((manga) {
           final attrs = manga['attributes'] as Map<String, dynamic>?;
           final title = attrs?['title'] as Map<String, dynamic>?;
           final titleEn = title?['en']?.toString().toLowerCase() ?? '';
           final titleJa = title?['ja']?.toString().toLowerCase() ?? '';
           final queryLower = consulta.toLowerCase();
+          if (titleEn.contains('doujinshi') || titleJa.contains('doujinshi')) return false;
+          final tags = attrs?['tags'] as List? ?? [];
+          for (final tag in tags) {
+            final tagAttr = tag['attributes'] as Map<String, dynamic>?;
+            final nameMap = tagAttr?['name'] as Map<String, dynamic>?;
+            final nombreTag = nameMap?['en']?.toString().toLowerCase() ?? '';
+            if (nombreTag.contains('doujinshi')) return false;
+          }
           return titleEn.contains(queryLower) || titleJa.contains(queryLower);
         }).toList();
-        
-        print('📚 Búsqueda general encontró: ${mangasFiltrados.length} mangas');
-        
+
+        print('Búsqueda general encontró: ${mangasFiltrados.length} mangas');
+
         return mangasFiltrados.take(limite).map((m) => _mapearManga(m)).toList();
       }
       return [];
     } catch (e) {
-      print('❌ Error en búsqueda general: $e');
+      print('Error en búsqueda general: $e');
       return [];
     }
   }
@@ -123,7 +143,15 @@ class MangaDexService {
         final datos = json.decode(respuesta.body);
         final mangasJson = (datos['data'] as List?) ?? [];
 
-        return mangasJson.map((m) => _mapearManga(m)).toList();
+        final mangas = <Manga>[];
+        for (final m in mangasJson) {
+          final attrs = m['attributes'] as Map<String, dynamic>?;
+          final titleMap = attrs?['title'] as Map<String, dynamic>?;
+          final tituloEn = titleMap?['en']?.toString().toLowerCase() ?? '';
+          if (tituloEn.contains('doujinshi')) continue;
+          mangas.add(_mapearManga(m));
+        }
+        return mangas;
       }
       return [];
     } catch (e) {
@@ -136,23 +164,19 @@ class MangaDexService {
     final attributes = json['attributes'] as Map<String, dynamic>? ?? {};
     final relationships = json['relationships'] as List? ?? [];
 
-    // Obtener título en varios idiomas
     final title = attributes['title'] as Map<String, dynamic>?;
-    String tituloTexto = title?['es'] ?? 
-                         title?['en'] ?? 
-                         title?['ja'] ?? 
+    String tituloTexto = title?['es'] ??
+                         title?['en'] ??
+                         title?['ja'] ??
                          'Título no disponible';
-    
-    // Si el título es demasiado largo, usar versión más corta
+
     if (tituloTexto.length > 100 && title?['en'] != null) {
       tituloTexto = title!['en'];
     }
 
-    // Descripción
     final description = attributes['description'] as Map<String, dynamic>?;
     String sinopsis = description?['es'] ?? description?['en'] ?? '';
 
-    // Estado
     final status = attributes['status'] as String? ?? '';
     String estadoMapeado = '';
     switch (status) {
@@ -169,11 +193,9 @@ class MangaDexService {
         estadoMapeado = status;
     }
 
-    // Calificaciones
     final rating = attributes['rating'] as Map<String, dynamic>?;
     final calificacion = rating?['average'] as num?;
 
-    // Autores
     final autores = <String>[];
     for (final rel in relationships) {
       final relType = rel['type'] as String?;
@@ -186,7 +208,6 @@ class MangaDexService {
       }
     }
 
-    // Portada
     String? urlPortada;
     for (final rel in relationships) {
       if (rel['type'] == 'cover_art') {
@@ -199,16 +220,72 @@ class MangaDexService {
       }
     }
 
-    // Géneros
     final tags = attributes['tags'] as List? ?? [];
     final generos = <String>[];
+
+    final Map<String, String> traduccionGeneros = {
+      'Action': 'Acción',
+      'Adventure': 'Aventura',
+      'Comedy': 'Comedia',
+      'Drama': 'Drama',
+      'Ecchi': 'Ecchi',
+      'Fantasy': 'Fantasía',
+      'Horror': 'Terror',
+      'Mystery': 'Misterio',
+      'Psychological': 'Psicológico',
+      'Romance': 'Romance',
+      'Sci-Fi': 'Ciencia Ficción',
+      'Seinen': 'Seinen',
+      'Shoujo': 'Shoujo',
+      'Shoujo Ai': 'Shoujo Ai',
+      'Shounen': 'Shōnen',
+      'Shounen Ai': 'Shōnen Ai',
+      'Slice of Life': 'Recuentos de la vida',
+      'Sports': 'Deportes',
+      'Supernatural': 'Sobrenatural',
+      'Thriller': 'Suspense',
+      'Tragedy': 'Tragedia',
+      'Military': 'Militar',
+      'Harem': 'Harem',
+      'School': 'Escolar',
+      'Martial Arts': 'Artes Marciales',
+      'Mecha': 'Mecha',
+      'Isekai': 'Isekai',
+      'Demons': 'Demonios',
+      'Historical': 'Histórico',
+      'Samurai': 'Samurái',
+      'Vampire': 'Vampiro',
+      'Game': 'Juego',
+      'Music': 'Música',
+      'Parody': 'Parodia',
+      'Political': 'Político',
+      'Medical': 'Médico',
+      'Super Power': 'Superpoderes',
+      'Philosophical': 'Filosófico',
+      'Magic': 'Magia',
+      'Gender Bender': 'Cambio de género',
+      'Gore': 'Gore',
+      'Adult': 'Adulto',
+    };
 
     for (final tag in tags) {
       final tagAttributes = tag['attributes'] as Map<String, dynamic>?;
       final name = tagAttributes?['name'] as Map<String, dynamic>?;
-      final nombre = name?['es'] ?? name?['en'];
-      if (nombre != null) {
-        generos.add(nombre);
+      final nombreIngles = name?['en'] as String?;
+      if (nombreIngles != null) {
+        final nombreTraducido = traduccionGeneros[nombreIngles] ?? nombreIngles;
+        generos.add(nombreTraducido);
+      }
+    }
+
+    final startDate = attributes['startDate'] as String?;
+    String? fechaPublicacion;
+    if (startDate != null && startDate.isNotEmpty) {
+      final anioMatch = RegExp(r'^\d{4}').firstMatch(startDate);
+      if (anioMatch != null) {
+        fechaPublicacion = anioMatch.group(0);
+      } else {
+        fechaPublicacion = startDate.split('-')[0];
       }
     }
 
@@ -230,6 +307,7 @@ class MangaDexService {
       urlMangaDex: 'https://mangadex.org/title/$id',
       urlAniList: null,
       calificacionAniList: null,
+      fechaPublicacion: fechaPublicacion,
     );
   }
 }

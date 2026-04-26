@@ -165,11 +165,22 @@ class MangaDexService {
     final relationships = json['relationships'] as List? ?? [];
 
     final title = attributes['title'] as Map<String, dynamic>?;
-    String tituloTexto = title?['es'] ??
-                         title?['en'] ??
-                         title?['ja'] ??
-                         'Título no disponible';
-
+    String tituloTexto = 'Título no disponible';
+    if (title != null && title.isNotEmpty) {
+      final List<String> posiblesIdiomas = ['es', 'en', 'ja', 'fr', 'de', 'it', 'pt', 'ru', 'ko', 'zh', 'ar'];
+      for (final idioma in posiblesIdiomas) {
+        if (title[idioma] != null && title[idioma].toString().isNotEmpty) {
+          tituloTexto = title[idioma].toString();
+          break;
+        }
+      }
+      if (tituloTexto == 'Título no disponible') {
+        final valores = title.values.where((v) => v != null && v.toString().isNotEmpty);
+        if (valores.isNotEmpty) {
+          tituloTexto = valores.first.toString();
+        }
+      }
+    }
     if (tituloTexto.length > 100 && title?['en'] != null) {
       tituloTexto = title!['en'];
     }

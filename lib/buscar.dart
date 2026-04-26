@@ -27,6 +27,7 @@ class _BuscarState extends State<Buscar> {
 
   String? _formatoSeleccionado;
   String? _generoSeleccionado;
+  String? _generoMangaSeleccionado;
 
   List<Libro> _resultadosBusqueda = [];
   List<Manga> _resultadosManga = [];
@@ -49,7 +50,7 @@ class _BuscarState extends State<Buscar> {
   bool _haBuscadoUsuarios = false;
   final ServicioFirestore _servicioFirestore = ServicioFirestore();
 
-  String _tabActiva = 'libros'; // 'libros', 'manga', 'usuarios'
+  String _tabActiva = 'libros';
 
   Timer? _debounceTimer;
 
@@ -65,14 +66,20 @@ class _BuscarState extends State<Buscar> {
     return ['Todos los géneros', ...otros];
   }
 
+  List<String> _obtenerItemsGeneroManga() {
+    final otros = DatosApp.generosManga.where((g) => g != 'Todos los géneros').toList();
+    otros.sort((a, b) => a.compareTo(b));
+    return ['Todos los géneros', ...otros];
+  }
+
   @override
   void initState() {
     super.initState();
     _generoSeleccionado = _obtenerItemsGenero().first;
     _formatoSeleccionado = 'Todos los formatos';
+    _generoMangaSeleccionado = _obtenerItemsGeneroManga().first;
     _escucharCambiosBiblioteca();
 
-    // Listener para búsqueda en tiempo real de usuarios
     _controladorBusqueda.addListener(() {
       if (_tabActiva == 'usuarios' && _controladorBusqueda.text.isNotEmpty) {
         _debounceBuscarUsuarios();
@@ -183,6 +190,64 @@ class _BuscarState extends State<Buscar> {
     bool tieneFiltros = (_generoSeleccionado != null && _generoSeleccionado != 'Todos los géneros') || 
                        (_formatoSeleccionado != null && _formatoSeleccionado != 'Todos los formatos');
     
+    final busquedaVacia = _controladorBusqueda.text.trim().isEmpty;
+    final sinFiltros = !tieneFiltros;
+
+    if (busquedaVacia && sinFiltros) {
+      setState(() {
+        _estaCargando = true;
+        _haBuscado = true;
+      });
+
+      try {
+        final Future<List<Libro>> librosPopularesFuture = _servicioBiblioteca.obtenerLibrosPopulares(limite: 20);
+        final Future<List<Libro>> audiolibrosPopularesFuture = _servicioBiblioteca.buscarLibros(
+          '',
+          genero: null,
+          limite: 20,
+        );
+
+        List<Libro> librosPopulares = await librosPopularesFuture;
+        List<Libro> audiolibrosPopulares = await audiolibrosPopularesFuture;
+
+        if (librosPopulares.isEmpty) {
+          librosPopulares = await _servicioBiblioteca.buscarLibros('novela', limite: 10);
+        }
+        if (audiolibrosPopulares.isEmpty) {
+          audiolibrosPopulares = await _servicioBiblioteca.buscarLibros('audio libro', limite: 10);
+        }
+
+        List<Libro> todos = [];
+        todos.addAll(librosPopulares);
+        todos.addAll(audiolibrosPopulares);
+
+        final mapPorTitulo = <String, Libro>{};
+        for (var libro in todos) {
+          final clave = libro.titulo.toLowerCase().trim();
+          if (!mapPorTitulo.containsKey(clave)) {
+            mapPorTitulo[clave] = libro;
+          }
+        }
+        List<Libro> unicos = mapPorTitulo.values.toList();
+
+        unicos.sort((a, b) {
+          if ((a.precio ?? 1.0) == 0.0 && (b.precio ?? 1.0) > 0) return -1;
+          if ((b.precio ?? 1.0) == 0.0 && (a.precio ?? 1.0) > 0) return 1;
+          return 0;
+        });
+
+        setState(() {
+          _resultadosBusqueda = unicos;
+          _estaCargando = false;
+        });
+        return;
+      } catch (e) {
+        _mostrarError('Error al cargar populares: $e');
+        setState(() => _estaCargando = false);
+        return;
+      }
+    }
+    
     if (_controladorBusqueda.text.isEmpty && !tieneFiltros) {
       _mostrarError('Ingresa un término de búsqueda o selecciona un filtro');
       return;
@@ -269,6 +334,7 @@ class _BuscarState extends State<Buscar> {
         _resultadosUsuarios = [];
         _haBuscadoUsuarios = false;
       });
+      _mostrarError('Por favor, escribe un nombre para buscar usuarios');
       return;
     }
 
@@ -292,10 +358,9 @@ class _BuscarState extends State<Buscar> {
   }
 
   Future<void> _buscarManga() async {
-    if (_controladorBusqueda.text.isEmpty) {
-      _mostrarError('Ingresa un término de búsqueda');
-      return;
-    }
+    final consultaVacia = _controladorBusqueda.text.trim().isEmpty;
+    final generoSeleccionado = _generoMangaSeleccionado;
+    final esTodosGeneros = generoSeleccionado == null || generoSeleccionado == 'Todos los géneros';
 
     setState(() {
       _estaCargando = true;
@@ -303,35 +368,40 @@ class _BuscarState extends State<Buscar> {
     });
 
     try {
-      final consultaBusqueda = _controladorBusqueda.text;
-      final cacheKey = consultaBusqueda;
+      List<Manga> mangas = [];
 
-      if (_cacheManga.containsKey(cacheKey)) {
-        final cacheTime = _cacheTiemposManga[cacheKey];
-        if (cacheTime != null && DateTime.now().difference(cacheTime) < _cacheDuracion) {
-          setState(() {
-            _resultadosManga = _cacheManga[cacheKey]!;
-            _estaCargando = false;
-          });
-          return;
+      if (consultaVacia) {
+        mangas = await _servicioBiblioteca.obtenerMangasPopulares(limite: 40);
+      } else {
+        final cacheKey = _controladorBusqueda.text;
+        if (_cacheManga.containsKey(cacheKey)) {
+          final cacheTime = _cacheTiemposManga[cacheKey];
+          if (cacheTime != null && DateTime.now().difference(cacheTime) < _cacheDuracion) {
+            mangas = _cacheManga[cacheKey]!;
+          } else {
+            mangas = await _servicioBiblioteca.buscarManga(_controladorBusqueda.text, limite: 40);
+            _cacheManga[cacheKey] = mangas;
+            _cacheTiemposManga[cacheKey] = DateTime.now();
+          }
+        } else {
+          mangas = await _servicioBiblioteca.buscarManga(_controladorBusqueda.text, limite: 40);
+          _cacheManga[cacheKey] = mangas;
+          _cacheTiemposManga[cacheKey] = DateTime.now();
         }
       }
 
-      final mangas = await _servicioBiblioteca.buscarManga(consultaBusqueda, limite: 20);
-
-      _cacheManga[cacheKey] = mangas;
-      _cacheTiemposManga[cacheKey] = DateTime.now();
+      if (!esTodosGeneros) {
+        mangas = mangas.where((manga) => manga.generos.contains(generoSeleccionado)).toList();
+      }
 
       setState(() {
-        _resultadosManga = mangas;
+        _resultadosManga = mangas.take(20).toList();
+        _estaCargando = false;
       });
     } catch (e) {
-      _mostrarError('Error al buscar manga: $e');
+      _mostrarError('Error al cargar mangas: $e');
       setState(() {
         _resultadosManga = [];
-      });
-    } finally {
-      setState(() {
         _estaCargando = false;
       });
     }
@@ -536,7 +606,6 @@ class _BuscarState extends State<Buscar> {
           .doc(libro.id)
           .set(datosLibro);
     } catch (e) {
-      // Error al guardar en historial
     }
   }
 
@@ -1255,7 +1324,7 @@ class _BuscarState extends State<Buscar> {
                     _tabActiva == 'usuarios'
                         ? 'Encuentra lectores en Bookworm'
                         : _tabActiva == 'manga'
-                            ? 'Busca entre miles de mangas y light novels'
+                            ? 'Busca entre miles de mangas y títulos noveles'
                             : 'Busca entre miles de libros y audiolibros',
                     style: EstilosApp.cuerpoMedio(context).copyWith(color: textColor),
                   ),
@@ -1309,6 +1378,21 @@ class _BuscarState extends State<Buscar> {
                       ],
                     ),
                   ],
+                  if (_tabActiva == 'manga') ...[
+                    const SizedBox(height: 20),
+                    FiltroDesplegable(
+                      valor: _generoMangaSeleccionado,
+                      items: _obtenerItemsGeneroManga(),
+                      hint: 'Género',
+                      alCambiar: (valor) {
+                        if (valor != null) {
+                          setState(() {
+                            _generoMangaSeleccionado = valor;
+                          });
+                        }
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1353,7 +1437,6 @@ class _BuscarState extends State<Buscar> {
           } else if (texto == 'Usuarios') {
             _tabActiva = 'usuarios';
           }
-          // Limpiar el campo de búsqueda al cambiar de pestaña
           _controladorBusqueda.clear();
           _resultadosBusqueda = [];
           _resultadosManga = [];

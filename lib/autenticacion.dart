@@ -295,6 +295,94 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     _mostrarSnackBar(mensajesError[e.code] ?? 'Error: ${e.message}', const Color(0xFFb22222));
   }
 
+  // ==================== RECUPERACIÓN DE CONTRASEÑA ====================
+  
+  void _mostrarDialogoRecuperarContrasena() {
+    final emailController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Recuperar contraseña'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Te enviaremos un enlace a tu correo para restablecer tu contraseña.',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Correo electrónico',
+                hintText: 'tu@email.com',
+                prefixIcon: Icon(Icons.email_outlined),
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) {
+                _mostrarSnackBar('Ingresa tu correo electrónico', const Color(0xFFb22222));
+                return;
+              }
+              
+              Navigator.pop(context);
+              await _enviarRecuperacionContrasena(email);
+            },
+            style: EstilosApp.botonPrimario(context),
+            child: const Text('Enviar enlace'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _enviarRecuperacionContrasena(String email) async {
+    setState(() => _estaCargando = true);
+    
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        _mostrarSnackBar(
+          'Se ha enviado un enlace de recuperación a $email. Revisa tu bandeja de entrada.',
+          const Color(0xFF32cd32),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String mensaje;
+      switch (e.code) {
+        case 'user-not-found':
+          mensaje = 'No existe una cuenta con este correo electrónico';
+          break;
+        case 'invalid-email':
+          mensaje = 'El formato del correo electrónico no es válido';
+          break;
+        default:
+          mensaje = 'Error al enviar el correo de recuperación: ${e.message}';
+      }
+      if (mounted) {
+        _mostrarSnackBar(mensaje, const Color(0xFFb22222));
+      }
+    } catch (e) {
+      if (mounted) {
+        _mostrarSnackBar('Error inesperado: $e', const Color(0xFFb22222));
+      }
+    } finally {
+      if (mounted) setState(() => _estaCargando = false);
+    }
+  }
+
   void _mostrarSnackBar(String mensaje, Color color) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -514,6 +602,32 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         inputTextColor: inputTextColor,
                       ),
                       const SizedBox(height: 20),
+                      
+                      // Enlace "¿Olvidaste tu contraseña?" (solo login)
+                      if (_esLogin) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: _mostrarDialogoRecuperarContrasena,
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(50, 30),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                '¿Olvidaste tu contraseña?',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColores.primario,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       
                       // Campo Confirmar Contraseña (solo registro)
                       if (!_esLogin) ...[

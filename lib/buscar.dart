@@ -1334,7 +1334,7 @@ class _BuscarState extends State<Buscar> {
                     textoHint: _tabActiva == 'usuarios'
                         ? 'Ej: Cristian, María...'
                         : _tabActiva == 'manga'
-                            ? 'Ej: Berserk, Jujutsu Kaisen...'
+                            ? 'Ej: Dragon Ball, Naruto o buscar por filtros'
                             : 'Ej: Harry Potter, Stephen King o buscar por filtros',
                     alBuscar: _tabActiva == 'usuarios'
                         ? _buscarUsuarios

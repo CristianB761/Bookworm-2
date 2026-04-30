@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'diseno.dart';
 import 'API/modelos.dart';
 import 'API/ollama_service.dart';
+import 'API/biblioteca_service.dart';
 
 class DetallesManga extends StatefulWidget {
   final Manga mangaObjeto;
@@ -16,6 +17,7 @@ class DetallesManga extends StatefulWidget {
 }
 
 class _DetallesMangaState extends State<DetallesManga> {
+  late Manga _manga;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final OllamaService _ollamaService = OllamaService();
@@ -25,18 +27,51 @@ class _DetallesMangaState extends State<DetallesManga> {
   bool _cargandoSinopsis = false;
   String? _sinopsisGenerada;
   bool _cargandoLectura = false;
+  bool _cargandoDatosCompletos = false;
 
   @override
   void initState() {
     super.initState();
+    _manga = widget.mangaObjeto;
     _verificarEstadoManga();
     _cargarSinopsisCache();
+    if (_faltanDatosCompletos()) {
+      _cargarDatosCompletosDesdeApi();
+    }
+  }
+
+  bool _faltanDatosCompletos() {
+    return _manga.generos.isEmpty &&
+           _manga.adaptacionAnime == null &&
+           _manga.urlMangaDex == null;
+  }
+
+  Future<void> _cargarDatosCompletosDesdeApi() async {
+    if (_cargandoDatosCompletos) return;
+    setState(() => _cargandoDatosCompletos = true);
+    try {
+      final servicio = BibliotecaServiceUnificado();
+      final mangaCompleto = await servicio.obtenerDetallesManga(_manga.id);
+      if (mangaCompleto != null && mounted) {
+        setState(() {
+          _manga = mangaCompleto;
+          _cargandoDatosCompletos = false;
+        });
+        if (_sinopsisGenerada == null && _manga.sinopsis != null) {
+          setState(() => _sinopsisGenerada = _manga.sinopsis);
+        }
+      } else {
+        setState(() => _cargandoDatosCompletos = false);
+      }
+    } catch (e) {
+      setState(() => _cargandoDatosCompletos = false);
+    }
   }
 
   Future<void> _cargarSinopsisCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = 'sinopsis_manga_${widget.mangaObjeto.id}';
+      final key = 'sinopsis_manga_${_manga.id}';
       final cached = prefs.getString(key);
       if (cached != null && cached.isNotEmpty) {
         setState(() {
@@ -49,7 +84,7 @@ class _DetallesMangaState extends State<DetallesManga> {
   Future<void> _guardarSinopsisCache(String sinopsis) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = 'sinopsis_manga_${widget.mangaObjeto.id}';
+      final key = 'sinopsis_manga_${_manga.id}';
       await prefs.setString(key, sinopsis);
     } catch (e) {}
   }
@@ -59,12 +94,12 @@ class _DetallesMangaState extends State<DetallesManga> {
     setState(() => _cargandoSinopsis = true);
     try {
       final sinopsis = await _ollamaService.generarDescripcionManga(
-        titulo: widget.mangaObjeto.titulo,
-        autores: widget.mangaObjeto.autores,
-        sinopsisOriginal: widget.mangaObjeto.sinopsis,
-        generos: widget.mangaObjeto.generos,
-        temas: widget.mangaObjeto.temas,
-        estado: widget.mangaObjeto.estado,
+        titulo: _manga.titulo,
+        autores: _manga.autores,
+        sinopsisOriginal: _manga.sinopsis,
+        generos: _manga.generos,
+        temas: _manga.temas,
+        estado: _manga.estado,
       );
       if (mounted) {
         final sinopsisFinal = sinopsis ?? 'No se pudo generar la sinopsis.';
@@ -95,7 +130,7 @@ class _DetallesMangaState extends State<DetallesManga> {
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('mangas_guardados')
-          .doc(widget.mangaObjeto.id)
+          .doc(_manga.id)
           .get();
 
       if (mangaDoc.exists) {
@@ -125,15 +160,28 @@ class _DetallesMangaState extends State<DetallesManga> {
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('mangas_guardados')
-          .doc(widget.mangaObjeto.id)
+          .doc(_manga.id)
           .set({
-            'id': widget.mangaObjeto.id,
-            'titulo': widget.mangaObjeto.titulo,
-            'urlPortada': widget.mangaObjeto.urlPortada,
-            'autores': widget.mangaObjeto.autores,
+            'id': _manga.id,
+            'titulo': _manga.titulo,
+            'urlPortada': _manga.urlPortada,
+            'autores': _manga.autores,
             'favorito': nuevoEstado,
             'guardado': _estaGuardado,
             'fechaGuardado': FieldValue.serverTimestamp(),
+            'generos': _manga.generos,
+            'temas': _manga.temas,
+            'adaptacionAnime': _manga.adaptacionAnime,
+            'urlMangaDex': _manga.urlMangaDex,
+            'urlAniList': _manga.urlAniList,
+            'calificacionAniList': _manga.calificacionAniList,
+            'calificacionMangaDex': _manga.calificacionMangaDex,
+            'popularidad': _manga.popularidad,
+            'numeroCapitulos': _manga.numeroCapitulos,
+            'ultimoCapituloLanzado': _manga.ultimoCapituloLanzado,
+            'estado': _manga.estado,
+            'sinopsis': _manga.sinopsis,
+            'fechaPublicacion': _manga.fechaPublicacion,
           }, SetOptions(merge: true));
 
       setState(() {
@@ -168,15 +216,28 @@ class _DetallesMangaState extends State<DetallesManga> {
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('mangas_guardados')
-          .doc(widget.mangaObjeto.id)
+          .doc(_manga.id)
           .set({
-            'id': widget.mangaObjeto.id,
-            'titulo': widget.mangaObjeto.titulo,
-            'urlPortada': widget.mangaObjeto.urlPortada,
-            'autores': widget.mangaObjeto.autores,
+            'id': _manga.id,
+            'titulo': _manga.titulo,
+            'urlPortada': _manga.urlPortada,
+            'autores': _manga.autores,
             'guardado': nuevoEstado,
             'favorito': _esFavorito,
             'fechaGuardado': FieldValue.serverTimestamp(),
+            'generos': _manga.generos,
+            'temas': _manga.temas,
+            'adaptacionAnime': _manga.adaptacionAnime,
+            'urlMangaDex': _manga.urlMangaDex,
+            'urlAniList': _manga.urlAniList,
+            'calificacionAniList': _manga.calificacionAniList,
+            'calificacionMangaDex': _manga.calificacionMangaDex,
+            'popularidad': _manga.popularidad,
+            'numeroCapitulos': _manga.numeroCapitulos,
+            'ultimoCapituloLanzado': _manga.ultimoCapituloLanzado,
+            'estado': _manga.estado,
+            'sinopsis': _manga.sinopsis,
+            'fechaPublicacion': _manga.fechaPublicacion,
           }, SetOptions(merge: true));
 
       setState(() {
@@ -211,28 +272,40 @@ class _DetallesMangaState extends State<DetallesManga> {
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('mangas_guardados')
-          .doc(widget.mangaObjeto.id);
+          .doc(_manga.id);
 
       final mangaGuardadoSnap = await mangaGuardadoRef.get();
       if (mangaGuardadoSnap.exists) {
         await mangaGuardadoRef.update({'estado': 'leyendo'});
       } else {
         await mangaGuardadoRef.set({
-          'id': widget.mangaObjeto.id,
-          'titulo': widget.mangaObjeto.titulo,
-          'urlPortada': widget.mangaObjeto.urlPortada,
-          'autores': widget.mangaObjeto.autores,
+          'id': _manga.id,
+          'titulo': _manga.titulo,
+          'urlPortada': _manga.urlPortada,
+          'autores': _manga.autores,
           'favorito': _esFavorito,
           'guardado': true,
           'estado': 'leyendo',
           'fechaGuardado': FieldValue.serverTimestamp(),
+          'generos': _manga.generos,
+          'temas': _manga.temas,
+          'adaptacionAnime': _manga.adaptacionAnime,
+          'urlMangaDex': _manga.urlMangaDex,
+          'urlAniList': _manga.urlAniList,
+          'calificacionAniList': _manga.calificacionAniList,
+          'calificacionMangaDex': _manga.calificacionMangaDex,
+          'popularidad': _manga.popularidad,
+          'numeroCapitulos': _manga.numeroCapitulos,
+          'ultimoCapituloLanzado': _manga.ultimoCapituloLanzado,
+          'sinopsis': _manga.sinopsis,
+          'fechaPublicacion': _manga.fechaPublicacion,
         });
       }
 
       final progresoExistenteQuery = await _firestore
           .collection('progreso_lectura')
           .where('usuarioId', isEqualTo: usuario.uid)
-          .where('libroId', isEqualTo: widget.mangaObjeto.id)
+          .where('libroId', isEqualTo: _manga.id)
           .limit(1)
           .get();
 
@@ -241,10 +314,10 @@ class _DetallesMangaState extends State<DetallesManga> {
         final nuevoProgresoData = {
           'id': nuevoProgresoId,
           'usuarioId': usuario.uid,
-          'libroId': widget.mangaObjeto.id,
-          'tituloLibro': widget.mangaObjeto.titulo,
-          'autoresLibro': widget.mangaObjeto.autores,
-          'miniaturaLibro': widget.mangaObjeto.urlPortada,
+          'libroId': _manga.id,
+          'tituloLibro': _manga.titulo,
+          'autoresLibro': _manga.autores,
+          'miniaturaLibro': _manga.urlPortada,
           'estado': 'leyendo',
           'paginaActual': 0,
           'paginasTotales': 0,
@@ -252,9 +325,9 @@ class _DetallesMangaState extends State<DetallesManga> {
           'calificacion': 0.0,
         };
         await _firestore.collection('progreso_lectura').doc(nuevoProgresoId).set(nuevoProgresoData);
-        _mostrarExito('Comenzaste a leer "${widget.mangaObjeto.titulo}"');
+        _mostrarExito('Comenzaste a leer "${_manga.titulo}"');
       } else {
-        _mostrarExito('Continuando la lectura de "${widget.mangaObjeto.titulo}"');
+        _mostrarExito('Continuando la lectura de "${_manga.titulo}"');
       }
 
       if (mounted) {
@@ -288,7 +361,7 @@ class _DetallesMangaState extends State<DetallesManga> {
   }
 
   void _abrirBusquedaTiendas() {
-    final query = widget.mangaObjeto.titulo;
+    final query = _manga.titulo;
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1e1e1e),
@@ -306,7 +379,7 @@ class _DetallesMangaState extends State<DetallesManga> {
             ),
             const SizedBox(height: 10),
             Text(
-              '"${widget.mangaObjeto.titulo}"',
+              '"${_manga.titulo}"',
               style: const TextStyle(fontSize: 14, color: Colors.white70),
               textAlign: TextAlign.center,
             ),
@@ -365,7 +438,7 @@ class _DetallesMangaState extends State<DetallesManga> {
   }
 
   void _abrirPlataformasAnime() {
-    final query = Uri.encodeComponent(widget.mangaObjeto.titulo);
+    final query = Uri.encodeComponent(_manga.titulo);
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1e1e1e),
@@ -383,7 +456,7 @@ class _DetallesMangaState extends State<DetallesManga> {
             ),
             const SizedBox(height: 10),
             Text(
-              '"${widget.mangaObjeto.titulo}"',
+              '"${_manga.titulo}"',
               style: const TextStyle(fontSize: 14, color: Colors.white70),
               textAlign: TextAlign.center,
             ),
@@ -455,7 +528,6 @@ class _DetallesMangaState extends State<DetallesManga> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = true;
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -493,11 +565,11 @@ class _DetallesMangaState extends State<DetallesManga> {
                         ),
                       ],
                     ),
-                    child: widget.mangaObjeto.urlPortada != null
+                    child: _manga.urlPortada != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              widget.mangaObjeto.urlPortada!,
+                              _manga.urlPortada!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Center(
@@ -524,7 +596,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.mangaObjeto.titulo,
+                          _manga.titulo,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -534,9 +606,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
-                        if (widget.mangaObjeto.autores.isNotEmpty)
+                        if (_manga.autores.isNotEmpty)
                           Text(
-                            'Por ${widget.mangaObjeto.autores.join(', ')}',
+                            'Por ${_manga.autores.join(', ')}',
                             style: const TextStyle(
                               fontSize: 16,
                               color: Color(0xFFAAAAAA),
@@ -544,10 +616,10 @@ class _DetallesMangaState extends State<DetallesManga> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        if (widget.mangaObjeto.fechaPublicacion != null) ...[
+                        if (_manga.fechaPublicacion != null) ...[
                           const SizedBox(height: 8),
                           Text(
-                            'Publicado: ${widget.mangaObjeto.fechaPublicacion}',
+                            'Publicado: ${_manga.fechaPublicacion}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Color(0xFF888888),
@@ -559,7 +631,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                           spacing: 8,
                           runSpacing: 4,
                           children: [
-                            if (widget.mangaObjeto.calificacionAniList != null)
+                            if (_manga.calificacionAniList != null)
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
@@ -572,13 +644,13 @@ class _DetallesMangaState extends State<DetallesManga> {
                                     const Icon(Icons.star, size: 12, color: AppColores.acento),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '${(widget.mangaObjeto.calificacionAniList! / 10).toStringAsFixed(1)}/10',
+                                      '${(_manga.calificacionAniList! / 10).toStringAsFixed(1)}/10',
                                       style: const TextStyle(fontSize: 12, color: Colors.white),
                                     ),
                                   ],
                                 ),
                               ),
-                            if (widget.mangaObjeto.estado != null)
+                            if (_manga.estado != null)
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
@@ -586,7 +658,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  widget.mangaObjeto.estado!,
+                                  _manga.estado!,
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.green),
                                 ),
                               ),
@@ -661,7 +733,7 @@ class _DetallesMangaState extends State<DetallesManga> {
               ),
             ),
             const SizedBox(height: 24),
-            if (widget.mangaObjeto.generos.isNotEmpty)
+            if (_manga.generos.isNotEmpty)
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -679,7 +751,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: widget.mangaObjeto.generos.map((genero) {
+                      children: _manga.generos.map((genero) {
                         return Chip(
                           label: Text(genero),
                           backgroundColor: const Color(0xFF2C2C2C),
@@ -691,37 +763,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                 ),
               ),
             const SizedBox(height: 24),
-            if (widget.mangaObjeto.temas.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1e1e1e),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Temas',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: widget.mangaObjeto.temas.map((tema) {
-                        return Chip(
-                          label: Text(tema),
-                          backgroundColor: AppColores.acento.withAlpha(50),
-                          labelStyle: TextStyle(color: AppColores.acento, fontSize: 12),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 24),
-            if (widget.mangaObjeto.adaptacionAnime != null)
+            if (_manga.adaptacionAnime != null)
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -822,9 +864,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          if (widget.mangaObjeto.urlMangaDex != null)
+                          if (_manga.urlMangaDex != null)
                             ElevatedButton.icon(
-                              onPressed: () => _abrirURL(widget.mangaObjeto.urlMangaDex!),
+                              onPressed: () => _abrirURL(_manga.urlMangaDex!),
                               icon: const Icon(Icons.open_in_new),
                               label: const Text('Leer Gratis'),
                               style: ElevatedButton.styleFrom(

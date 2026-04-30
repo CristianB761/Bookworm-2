@@ -41,10 +41,12 @@ class _PerfilState extends State<Perfil> {
   File? _imagenSeleccionada;
   bool _subiendoImagen = false;
   
-  List<Map<String, dynamic>> _librosGuardados = [];
-  List<Map<String, dynamic>> _librosFavoritos = [];
+  List<Map<String, dynamic>> _favoritos = [];
+  List<Map<String, dynamic>> _guardados = [];
   List<Map<String, dynamic>> _todosLosLibrosUsuario = [];
-  bool _cargandoLibros = false;
+  List<Map<String, dynamic>> _todosLosMangasUsuario = [];
+  bool _cargandoFavoritos = false;
+  bool _cargandoGuardados = false;
   
   List<ProgresoLectura> _progresosLectura = [];
   bool _cargandoProgresos = false;
@@ -62,7 +64,8 @@ class _PerfilState extends State<Perfil> {
   @override
   void initState() {
     super.initState();
-    _cargandoLibros = true;
+    _cargandoFavoritos = true;
+    _cargandoGuardados = true;
     _cargandoProgresos = true;
     _cargarDatosUsuario();
     _escucharCambiosBiblioteca();
@@ -144,21 +147,42 @@ class _PerfilState extends State<Perfil> {
         .snapshots()
         .listen((snapshot) {
       if (mounted) {
-        final todosLosLibros = snapshot.docs.map((doc) {
+        final libros = snapshot.docs.map((doc) {
           final data = doc.data();
           data['id'] = doc.id;
+          data['tipo'] = 'libro';
           return data;
         }).toList();
-
         setState(() {
-          _todosLosLibrosUsuario = todosLosLibros;
-          _librosFavoritos = todosLosLibros.where((l) => l['favorito'] == true).toList();
-          _librosGuardados = todosLosLibros.where((l) => l['favorito'] != true && (l['estado'] == 'guardado' || l['estado'] == 'leyendo' || l['estado'] == null)).toList();
-          _cargandoLibros = false;
+          _todosLosLibrosUsuario = libros;
+          _actualizarListasUnificadas();
         });
       }
     }, onError: (error) {
-      if (mounted) setState(() => _cargandoLibros = false);
+      if (mounted) setState(() => _cargandoFavoritos = false);
+    });
+
+    _firestore
+        .collection('usuarios')
+        .doc(uid)
+        .collection('mangas_guardados')
+        .orderBy('fechaGuardado', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        final mangas = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          data['tipo'] = 'manga';
+          return data;
+        }).toList();
+        setState(() {
+          _todosLosMangasUsuario = mangas;
+          _actualizarListasUnificadas();
+        });
+      }
+    }, onError: (error) {
+      if (mounted) setState(() => _cargandoFavoritos = false);
     });
 
     _firestore
@@ -180,6 +204,17 @@ class _PerfilState extends State<Perfil> {
     }, onError: (error) {
       if (mounted) setState(() => _cargandoProgresos = false);
     });
+  }
+
+  void _actualizarListasUnificadas() {
+    final todos = [..._todosLosLibrosUsuario, ..._todosLosMangasUsuario];
+    _favoritos = todos.where((item) => item['favorito'] == true).toList();
+    _guardados = todos.where((item) {
+      final estado = item['estado'];
+      return item['guardado'] == true || estado == 'guardado' || estado == 'leyendo' || (estado == null && item['favorito'] != true);
+    }).toList();
+    _cargandoFavoritos = false;
+    _cargandoGuardados = false;
   }
 
   void _iniciarConversacion() async {
@@ -1058,6 +1093,16 @@ class _PerfilState extends State<Perfil> {
         await doc.reference.delete();
       }
 
+      final mangasSnapshot = await _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('mangas_guardados')
+          .get();
+      
+      for (final doc in mangasSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
       final progresosSnapshot = await _firestore
           .collection('progreso_lectura')
           .where('usuarioId', isEqualTo: usuario.uid)
@@ -1571,22 +1616,433 @@ class _PerfilState extends State<Perfil> {
           const Divider(),
           const SizedBox(height: 16),
           Text(
-            'Mis Libros Favoritos',
+            'Mis Favoritos',
             style: EstilosApp.tituloMedio(context),
           ),
           const SizedBox(height: 16),
-          _construirListaLibros(libros: _librosFavoritos, esFavoritos: true),
+          _construirListaFavoritos(),
           const SizedBox(height: 24),
           const Divider(),
           const SizedBox(height: 16),
           Text(
-            'Mis Libros Guardados',
+            'Mis Guardados',
             style: EstilosApp.tituloMedio(context),
           ),
           const SizedBox(height: 16),
-          _construirListaLibros(libros: _librosGuardados, esFavoritos: false),
+          _construirListaGuardados(),
         ],
       ),
+    );
+  }
+
+  Widget _construirListaFavoritos() {
+    if (_cargandoFavoritos) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_favoritos.isEmpty) {
+      return EstadoVacio(
+        icono: Icons.favorite_border,
+        titulo: 'No tienes favoritos',
+        descripcion: 'Añade libros o mangas a tus favoritos para verlos aquí',
+      );
+    }
+
+    return Column(
+      children: _favoritos.map((item) => _construirTarjetaItem(item, esFavoritos: true)).toList(),
+    );
+  }
+
+  Widget _construirListaGuardados() {
+    if (_cargandoGuardados) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_guardados.isEmpty) {
+      return EstadoVacio(
+        icono: Icons.bookmark_border,
+        titulo: 'No tienes guardados',
+        descripcion: 'Guarda libros o mangas que te interesen para leer después',
+      );
+    }
+
+    return Column(
+      children: _guardados.map((item) => _construirTarjetaItem(item, esFavoritos: false)).toList(),
+    );
+  }
+
+  Widget _construirTarjetaItem(Map<String, dynamic> item, {required bool esFavoritos}) {
+    final tipo = item['tipo'];
+    final bool esLibro = tipo == 'libro';
+
+    if (esLibro) {
+      final libro = Libro(
+        id: item['id'] ?? '',
+        titulo: item['titulo'] ?? 'Sin título',
+        autores: List<String>.from(item['autores'] ?? []),
+        descripcion: item['descripcion'],
+        urlMiniatura: item['urlMiniatura'],
+        fechaPublicacion: item['fechaPublicacion'],
+        numeroPaginas: item['numeroPaginas'],
+        categorias: List<String>.from(item['categorias'] ?? []),
+        urlLectura: item['urlLectura'],
+        esAudiolibro: item['esAudiolibro'] ?? false,
+        urlPDFSubido: item['urlPDFSubido'],
+        urlAudioSubido: item['urlAudioSubido'],
+        tipoAudio: item['tipoAudio'],
+      );
+      
+      final bool tienePDFSubido = libro.tienePDFSubido;
+      final bool tieneAudioSubido = libro.tieneAudioSubido;
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: EstilosApp.tarjetaPlana(context),
+        child: InkWell(
+          onTap: () => _mostrarDetallesLibro(libro),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (libro.urlMiniatura != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    libro.urlMiniatura!,
+                    width: 60,
+                    height: 90,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 60,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEEEEE),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.book, size: 30, color: Color(0xFF9E9E9E)),
+                      );
+                    },
+                  ),
+                )
+              else
+                Container(
+                  width: 60,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEEEEE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.book, size: 30, color: Color(0xFF9E9E9E)),
+                ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      libro.titulo,
+                      style: EstilosApp.tituloPequeno(context),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    if (libro.autores.isNotEmpty)
+                      Text(
+                        libro.autores.join(', '),
+                        style: EstilosApp.cuerpoPequeno(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        if (!esFavoritos)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _obtenerColorEstado(item['estado']),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _obtenerTextoEstado(item['estado']),
+                              style: const TextStyle(fontSize: 10, color: Colors.white),
+                            ),
+                          ),
+                        if (esFavoritos)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.favorite, size: 12, color: Colors.red),
+                                SizedBox(width: 4),
+                                Text('Favorito', style: TextStyle(fontSize: 10, color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        if (tienePDFSubido)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.picture_as_pdf, size: 12, color: Colors.red),
+                                SizedBox(width: 4),
+                                Text('PDF', style: TextStyle(fontSize: 10, color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        if (tieneAudioSubido)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColores.primario.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.audiotrack, size: 12, color: AppColores.primario),
+                                SizedBox(width: 4),
+                                Text('Audio', style: TextStyle(fontSize: 10, color: AppColores.primario)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  if (libro.urlLectura != null && !tieneAudioSubido && !libro.esAudiolibro)
+                    IconButton(
+                      icon: const Icon(Icons.open_in_browser, size: 20, color: AppColores.secundario),
+                      onPressed: () => _abrirUrlLectura(libro.urlLectura),
+                      tooltip: 'Leer Online',
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
+                    ),
+                  if (tienePDFSubido)
+                    IconButton(
+                      icon: const Icon(Icons.picture_as_pdf, size: 20, color: Colors.red),
+                      onPressed: () => _abrirPDF(libro.urlPDFSubido!, libro.titulo),
+                      tooltip: 'Leer PDF',
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
+                    ),
+                  if (tieneAudioSubido)
+                    IconButton(
+                      icon: const Icon(Icons.play_arrow, size: 20, color: AppColores.primario),
+                      onPressed: () => _reproducirAudio(libro.urlAudioSubido!, libro.titulo, libro.autores),
+                      tooltip: 'Escuchar',
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
+                    ),
+                  if (!tienePDFSubido && !tieneAudioSubido && _esMiPerfil && item['estado'] != 'completado' && !libro.esAudiolibro)
+                    IconButton(
+                      icon: const Icon(Icons.upload_file, size: 20, color: AppColores.primario),
+                      onPressed: () => _subirPDF(item['libroId'] ?? item['id'], libro.titulo),
+                      tooltip: 'Subir PDF',
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
+                    ),
+                  if (!tieneAudioSubido && _esMiPerfil && item['estado'] != 'completado' && libro.esAudiolibro)
+                    IconButton(
+                      icon: const Icon(Icons.upload_file, size: 20, color: AppColores.primario),
+                      onPressed: () => _subirAudio(item['libroId'] ?? item['id'], libro.titulo),
+                      tooltip: 'Subir Audio',
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                    onPressed: () => _eliminarItemGuardado(item['id'], tipo),
+                    tooltip: 'Eliminar',
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(4),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      final manga = Manga(
+        id: item['id'] ?? '',
+        titulo: item['titulo'] ?? 'Sin título',
+        autores: List<String>.from(item['autores'] ?? []),
+        sinopsis: item['sinopsis'],
+        urlPortada: item['urlPortada'],
+        calificacionMangaDex: (item['calificacionMangaDex'] as num?)?.toDouble(),
+        popularidad: (item['popularidad'] as num?)?.toDouble(),
+        estado: item['estado'],
+        generos: List<String>.from(item['generos'] ?? []),
+        temas: List<String>.from(item['temas'] ?? []),
+        ultimoCapituloLanzado: item['ultimoCapituloLanzado'],
+        numeroCapitulos: item['numeroCapitulos'],
+        adaptacionAnime: item['adaptacionAnime'],
+        urlMangaDex: item['urlMangaDex'],
+        urlAniList: item['urlAniList'],
+        calificacionAniList: (item['calificacionAniList'] as num?)?.toDouble(),
+        fechaPublicacion: item['fechaPublicacion'],
+      );
+      
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: EstilosApp.tarjetaPlana(context),
+        child: InkWell(
+          onTap: () => _mostrarDetallesManga(manga),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (manga.urlPortada != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    manga.urlPortada!,
+                    width: 60,
+                    height: 90,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 60,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEEEEE),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.auto_stories, size: 30, color: Color(0xFF9E9E9E)),
+                      );
+                    },
+                  ),
+                )
+              else
+                Container(
+                  width: 60,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEEEEE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.auto_stories, size: 30, color: Color(0xFF9E9E9E)),
+                ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      manga.titulo,
+                      style: EstilosApp.tituloPequeno(context),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    if (manga.autores.isNotEmpty)
+                      Text(
+                        manga.autores.join(', '),
+                        style: EstilosApp.cuerpoPequeno(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        if (esFavoritos)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.favorite, size: 12, color: Colors.red),
+                                SizedBox(width: 4),
+                                Text('Favorito', style: TextStyle(fontSize: 10, color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        if (!esFavoritos)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColores.primario.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle, size: 12, color: AppColores.primario),
+                                SizedBox(width: 4),
+                                Text('Guardado', style: TextStyle(fontSize: 10, color: AppColores.primario)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                    onPressed: () => _eliminarItemGuardado(item['id'], tipo),
+                    tooltip: 'Eliminar',
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(4),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _eliminarItemGuardado(String id, String tipo) async {
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) return;
+
+      final collection = tipo == 'libro' ? 'libros_guardados' : 'mangas_guardados';
+      await _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection(collection)
+          .doc(id)
+          .delete();
+
+      _mostrarExito('Elemento eliminado de tu biblioteca');
+    } catch (e) {
+      _mostrarError('Error eliminando elemento: $e');
+    }
+  }
+
+  void _mostrarDetallesManga(Manga manga) {
+    Navigator.pushNamed(
+      context,
+      '/detalles_manga',
+      arguments: manga,
     );
   }
 
@@ -1825,229 +2281,6 @@ class _PerfilState extends State<Perfil> {
                 ],
               ),
             ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _construirListaLibros({required List<Map<String, dynamic>> libros, required bool esFavoritos}) {
-    if (_cargandoLibros) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (libros.isEmpty) {
-      return EstadoVacio(
-        icono: esFavoritos ? Icons.favorite_border : Icons.bookmark_border,
-        titulo: esFavoritos ? 'No tienes favoritos' : 'No tienes libros guardados',
-        descripcion: esFavoritos 
-            ? 'Añade libros a tus favoritos para verlos aquí' 
-            : 'Guarda libros que te interesen para leer después',
-      );
-    }
-
-    return Column(
-      children: libros.map((libroMap) {
-        final libro = Libro(
-          id: libroMap['id'] ?? '',
-          titulo: libroMap['titulo'] ?? 'Sin título',
-          autores: List<String>.from(libroMap['autores'] ?? []),
-          descripcion: libroMap['descripcion'],
-          urlMiniatura: libroMap['urlMiniatura'],
-          fechaPublicacion: libroMap['fechaPublicacion'],
-          numeroPaginas: libroMap['numeroPaginas'],
-          categorias: List<String>.from(libroMap['categorias'] ?? []),
-          urlLectura: libroMap['urlLectura'],
-          esAudiolibro: libroMap['esAudiolibro'] ?? false,
-          urlPDFSubido: libroMap['urlPDFSubido'],
-          urlAudioSubido: libroMap['urlAudioSubido'],
-          tipoAudio: libroMap['tipoAudio'],
-        );
-        
-        final bool tienePDFSubido = libro.tienePDFSubido;
-        final bool tieneAudioSubido = libro.tieneAudioSubido;
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: EstilosApp.tarjetaPlana(context),
-          child: InkWell(
-            onTap: () => _mostrarDetallesLibro(libro),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (libro.urlMiniatura != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      libro.urlMiniatura!,
-                      width: 60,
-                      height: 90,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 60,
-                          height: 90,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEEEEEE),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.book, size: 30, color: const Color(0xFF9E9E9E)),
-                        );
-                      },
-                    ),
-                  )
-                else
-                  Container(
-                    width: 60,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEEEEEE),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.book, size: 30, color: const Color(0xFF9E9E9E)),
-                  ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        libro.titulo,
-                        style: EstilosApp.tituloPequeno(context),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      if (libro.autores.isNotEmpty)
-                        Text(
-                          libro.autores.join(', '),
-                          style: EstilosApp.cuerpoPequeno(context),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _obtenerColorEstado(libroMap['estado']),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _obtenerTextoEstado(libroMap['estado']),
-                              style: const TextStyle(fontSize: 10, color: Colors.white),
-                            ),
-                          ),
-                          if (esFavoritos)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.favorite, size: 12, color: Colors.red),
-                                  SizedBox(width: 4),
-                                  Text('Favorito', style: TextStyle(fontSize: 10, color: Colors.red)),
-                                ],
-                              ),
-                            ),
-                          if (tienePDFSubido)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.picture_as_pdf, size: 12, color: Colors.red),
-                                  SizedBox(width: 4),
-                                  Text('PDF', style: TextStyle(fontSize: 10, color: Colors.red)),
-                                ],
-                              ),
-                            ),
-                          if (tieneAudioSubido)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColores.primario.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.audiotrack, size: 12, color: AppColores.primario),
-                                  SizedBox(width: 4),
-                                  Text('Audio', style: TextStyle(fontSize: 10, color: AppColores.primario)),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  children: [
-                    if (libro.urlLectura != null && !tieneAudioSubido && !libro.esAudiolibro)
-                      IconButton(
-                        icon: const Icon(Icons.open_in_browser, size: 20, color: AppColores.secundario),
-                        onPressed: () => _abrirUrlLectura(libro.urlLectura),
-                        tooltip: 'Leer Online',
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(4),
-                      ),
-                    if (tienePDFSubido)
-                      IconButton(
-                        icon: const Icon(Icons.picture_as_pdf, size: 20, color: Colors.red),
-                        onPressed: () => _abrirPDF(libro.urlPDFSubido!, libro.titulo),
-                        tooltip: 'Leer PDF',
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(4),
-                      ),
-                    if (tieneAudioSubido)
-                      IconButton(
-                        icon: const Icon(Icons.play_arrow, size: 20, color: AppColores.primario),
-                        onPressed: () => _reproducirAudio(libro.urlAudioSubido!, libro.titulo, libro.autores),
-                        tooltip: 'Escuchar',
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(4),
-                      ),
-                    if (!tienePDFSubido && !tieneAudioSubido && _esMiPerfil && libroMap['estado'] != 'completado' && !libro.esAudiolibro)
-                      IconButton(
-                        icon: const Icon(Icons.upload_file, size: 20, color: AppColores.primario),
-                        onPressed: () => _subirPDF(libroMap['libroId'] ?? libroMap['id'], libro.titulo),
-                        tooltip: 'Subir PDF',
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(4),
-                      ),
-                    if (!tieneAudioSubido && _esMiPerfil && libroMap['estado'] != 'completado' && libro.esAudiolibro)
-                      IconButton(
-                        icon: const Icon(Icons.upload_file, size: 20, color: AppColores.primario),
-                        onPressed: () => _subirAudio(libroMap['libroId'] ?? libroMap['id'], libro.titulo),
-                        tooltip: 'Subir Audio',
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(4),
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                      onPressed: () => _eliminarLibroGuardado(libroMap['id']),
-                      tooltip: 'Eliminar',
-                      constraints: const BoxConstraints(),
-                      padding: const EdgeInsets.all(4),
-                    ),
-                  ],
-                ),
-              ],
-            ),
           ),
         );
       }).toList(),
@@ -2415,7 +2648,7 @@ class _PerfilState extends State<Perfil> {
               estadisticasActualizadas['progreso'] = {
                 'Leyendo': _progresosLectura.where((p) => p.estado == 'leyendo').length,
                 'Completado': _progresosLectura.where((p) => p.estado == 'completado').length,
-                'Por Leer': _librosGuardados.where((l) => l['estado'] == 'guardado').length,
+                'Por Leer': _guardados.where((l) => l['estado'] == 'guardado').length,
               };
 
               Navigator.pushNamed(

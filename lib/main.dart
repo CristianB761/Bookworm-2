@@ -206,7 +206,6 @@ class PaginaInicio extends StatefulWidget {
 class _PaginaInicioState extends State<PaginaInicio> {
   bool _mostrarTodosAccesosRapidos = false;
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {

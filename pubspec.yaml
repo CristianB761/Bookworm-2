@@ -1,5 +1,5 @@
 name: bookworm
-description: Aplicación de libros BookWorm
+description: Aplicación de libros BookWorm.
 publish_to: 'none'
 version: 1.0.0+1
 

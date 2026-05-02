@@ -28,15 +28,37 @@ class _DetallesLibroState extends State<DetallesLibro> {
   bool _mostrarDescripcion = false;
   String? _descripcionOllama;
   bool _cargandoDescripcion = false;
+  late SharedPreferences _prefs;
+  Set<String> _favoritosLocales = {};
 
   @override
   void initState() {
     super.initState();
+    _cargarSharedPreferences();
     _verificarEstadoLibro();
     if (widget.libroObjeto.precio != null && widget.libroObjeto.precio! > 0) {
       _buscarOfertasReales();
     }
     _cargarDescripcionCache();
+  }
+
+  Future<void> _cargarSharedPreferences() async {
+    _prefs = await SharedPreferences.getInstance();
+    final lista = _prefs.getStringList('favoritos_locales') ?? [];
+    _favoritosLocales = lista.toSet();
+    setState(() {});
+  }
+
+  Future<void> _guardarFavoritoLocal(String libroId, bool esFavorito) async {
+    if (esFavorito) {
+      _favoritosLocales.add(libroId);
+    } else {
+      _favoritosLocales.remove(libroId);
+    }
+    await _prefs.setStringList('favoritos_locales', _favoritosLocales.toList());
+    setState(() {
+      _esFavorito = esFavorito;
+    });
   }
 
   Future<void> _cargarDescripcionCache() async {
@@ -67,21 +89,24 @@ class _DetallesLibroState extends State<DetallesLibro> {
       final usuario = _auth.currentUser;
       if (usuario == null) return;
 
-      final favoritoDoc = await _firestore
+      final doc = await _firestore
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('libros_guardados')
           .doc(widget.libroObjeto.id)
           .get();
 
-      if (favoritoDoc.exists) {
-        final data = favoritoDoc.data();
-        if (data != null) {
-          setState(() {
-            _esFavorito = data['favorito'] == true;
-            _estaGuardado = true;
-          });
-        }
+      if (doc.exists) {
+        final data = doc.data()!;
+        setState(() {
+          _estaGuardado = true;
+          _esFavorito = data['favorito'] == true;
+        });
+      } else {
+        setState(() {
+          _estaGuardado = false;
+          _esFavorito = _favoritosLocales.contains(widget.libroObjeto.id);
+        });
       }
     } catch (e) {
     }
@@ -102,7 +127,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
       
       final query = '${widget.libroObjeto.titulo} ${widget.libroObjeto.autores.isNotEmpty ? widget.libroObjeto.autores.first : ''}';
       await _buscarPorTitulo(query);
-      // Ofertas encontradas
     } catch (e) {
     } finally {
       setState(() => _cargandoOfertas = false);
@@ -192,7 +216,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
+      backgroundColor: const Color(0xFF1e1e1e),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -203,18 +227,18 @@ class _DetallesLibroState extends State<DetallesLibro> {
           children: [
             Text(
               widget.libroObjeto.esAudiolibro ? 'Buscar audiolibro' : 'Buscar en tiendas',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColores.texto,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 10),
             Text(
               '"${widget.libroObjeto.titulo}"',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
-                color: AppColores.textoClaro,
+                color: Colors.white70,
               ),
               textAlign: TextAlign.center,
             ),
@@ -226,9 +250,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFFFF9900),
                   child: Icon(Icons.shopping_bag, color: Colors.white),
                 ),
-                title: const Text('Amazon'),
-                subtitle: const Text('Buscar en Amazon'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+                title: const Text('Amazon', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Buscar en Amazon', style: TextStyle(color: Colors.white70)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.amazon.es/s?k=${Uri.encodeComponent(busqueda)}&i=stripbooks';
@@ -241,9 +265,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFFE2001A),
                   child: Icon(Icons.store, color: Colors.white),
                 ),
-                title: const Text('Casa del Libro'),
-                subtitle: const Text('Librería española'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+                title: const Text('Casa del Libro', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Librería española', style: TextStyle(color: Colors.white70)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.casadellibro.com/busqueda-libros?q=${Uri.encodeComponent(busqueda)}';
@@ -256,9 +280,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFF0D5FA6),
                   child: Icon(Icons.shopping_cart, color: Colors.white),
                 ),
-                title: const Text('Fnac'),
-                subtitle: const Text('Tienda de cultura'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+                title: const Text('Fnac', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Tienda de cultura', style: TextStyle(color: Colors.white70)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.fnac.es/ia?Search=${Uri.encodeComponent(busqueda)}';
@@ -273,9 +297,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFFF7991C),
                   child: Icon(Icons.headset, color: Colors.white),
                 ),
-                title: const Text('Audible'),
-                subtitle: const Text('Audiolibros con suscripción'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+                title: const Text('Audible', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Audiolibros con suscripción', style: TextStyle(color: Colors.white70)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.audible.es/search?keywords=${Uri.encodeComponent(busqueda)}';
@@ -288,9 +312,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFF00A8FF),
                   child: Icon(Icons.volume_up, color: Colors.white),
                 ),
-                title: const Text('Storytel'),
-                subtitle: const Text('Streaming de audiolibros'),
-                trailing: const Icon(Icons.arrow_forward_ios),
+                title: const Text('Storytel', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Streaming de audiolibros', style: TextStyle(color: Colors.white70)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.storytel.com/es/es/search?q=${Uri.encodeComponent(busqueda)}';
@@ -302,7 +326,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
             ),
           ],
         ),
@@ -325,44 +349,59 @@ class _DetallesLibroState extends State<DetallesLibro> {
           .doc(widget.libroObjeto.id);
 
       final docSnapshot = await docRef.get();
-      bool nuevoEstadoFavorito = favorito ?? false;
 
-      if (docSnapshot.exists) {
-        if (favorito != null) {
+      if (favorito != null) {
+        if (docSnapshot.exists) {
           await docRef.update({'favorito': favorito});
-          nuevoEstadoFavorito = favorito;
           setState(() {
             _esFavorito = favorito;
-            _estaGuardado = true;
           });
+          _mostrarExito(favorito 
+              ? '"${widget.libroObjeto.titulo}" añadido a favoritos' 
+              : '"${widget.libroObjeto.titulo}" quitado de favoritos');
+        } else {
+          await _guardarFavoritoLocal(widget.libroObjeto.id, favorito);
+          _mostrarExito(favorito 
+              ? '"${widget.libroObjeto.titulo}" añadido a favoritos (localmente)'
+              : '"${widget.libroObjeto.titulo}" quitado de favoritos locales');
         }
-      } else if (favorito == null) {
+        return;
+      }
+
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data()!;
+        final favoritoEnFirestore = data['favorito'] ?? false;
+        
         await docRef.delete();
+        
+        if (favoritoEnFirestore) {
+          await _guardarFavoritoLocal(widget.libroObjeto.id, true);
+        }
+        
         setState(() {
           _estaGuardado = false;
-          _esFavorito = false;
+          if (!favoritoEnFirestore) {
+            _esFavorito = _favoritosLocales.contains(widget.libroObjeto.id);
+          }
         });
         _mostrarExito('"${widget.libroObjeto.titulo}" eliminado de la biblioteca');
-        return;
       } else {
         final datosLibro = widget.libroObjeto.toMap();
         datosLibro['fechaGuardado'] = FieldValue.serverTimestamp();
         datosLibro['estado'] = 'guardado';
         datosLibro['libroId'] = widget.libroObjeto.id;
-        datosLibro['favorito'] = nuevoEstadoFavorito;
+        bool teniaFavoritoLocal = _favoritosLocales.contains(widget.libroObjeto.id);
+        datosLibro['favorito'] = teniaFavoritoLocal;
         await docRef.set(datosLibro);
-        
+        if (teniaFavoritoLocal) {
+          await _guardarFavoritoLocal(widget.libroObjeto.id, false);
+          setState(() {
+            _esFavorito = true;
+          });
+        }
         setState(() {
           _estaGuardado = true;
-          _esFavorito = favorito;
         });
-      }
-
-      if (favorito != null) {
-        _mostrarExito(favorito 
-            ? '"${widget.libroObjeto.titulo}" añadido a favoritos' 
-            : '"${widget.libroObjeto.titulo}" quitado de favoritos');
-      } else {
         _mostrarExito('"${widget.libroObjeto.titulo}" guardado en la biblioteca');
       }
     } catch (e) {
@@ -394,8 +433,11 @@ class _DetallesLibroState extends State<DetallesLibro> {
         datosLibro['fechaGuardado'] = FieldValue.serverTimestamp();
         datosLibro['estado'] = 'leyendo';
         datosLibro['libroId'] = widget.libroObjeto.id;
-        datosLibro['favorito'] = false;
+        datosLibro['favorito'] = _esFavorito;
         await libroGuardadoRef.set(datosLibro);
+        if (_esFavorito) {
+          await _guardarFavoritoLocal(widget.libroObjeto.id, false);
+        }
       }
 
       final progresoExistenteQuery = await _firestore
@@ -469,354 +511,6 @@ class _DetallesLibroState extends State<DetallesLibro> {
     );
   }
 
-  Widget _construirEncabezado() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 120,
-            height: 180,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFEEEEEE),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: widget.libroObjeto.urlMiniatura != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      widget.libroObjeto.urlMiniatura!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Icon(
-                            widget.libroObjeto.esAudiolibro ? Icons.headset : Icons.book,
-                            size: 50,
-                            color: AppColores.primario,
-                          ),
-                        );
-                      },
-                    ),
-                  )
-                : Center(
-                    child: Icon(
-                      widget.libroObjeto.esAudiolibro ? Icons.headset : Icons.book,
-                      size: 50,
-                      color: AppColores.primario,
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.libroObjeto.titulo,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                if (widget.libroObjeto.autores.isNotEmpty)
-                  Text(
-                    'Por ${widget.libroObjeto.autores.join(', ')}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? Colors.white70 : Colors.black54,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                const SizedBox(height: 12),
-                if (widget.libroObjeto.fechaPublicacion != null)
-                  Text(
-                    'Publicado: ${widget.libroObjeto.fechaPublicacion}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.white60 : Colors.black45,
-                    ),
-                  ),
-                if (widget.libroObjeto.numeroPaginas != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '${widget.libroObjeto.numeroPaginas} páginas',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.white60 : Colors.black45,
-                    ),
-                  ),
-                ],
-                if (widget.libroObjeto.calificacionPromedio != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${widget.libroObjeto.calificacionPromedio!.toStringAsFixed(1)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '(${widget.libroObjeto.numeroCalificaciones ?? 0} reseñas)',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    if (widget.libroObjeto.esAudiolibro)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColores.secundario.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.headset, size: 14, color: AppColores.secundario),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Audiolibro',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColores.secundario,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (!widget.libroObjeto.esAudiolibro)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColores.primario.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.menu_book, size: 14, color: AppColores.primario),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Libro',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColores.primario,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (widget.libroObjeto.isbn10 != null || widget.libroObjeto.isbn13 != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.qr_code, size: 14, color: Colors.blue),
-                            const SizedBox(width: 4),
-                            Text(
-                              'ISBN: ${widget.libroObjeto.isbn13 ?? widget.libroObjeto.isbn10}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.blue,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _construirSeccionCompra() {
-    final bool tieneUrl = widget.libroObjeto.urlLectura != null;
-    final bool esAudiolibro = widget.libroObjeto.esAudiolibro;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (tieneUrl) ...[
-          const SizedBox(height: 24),
-          Text(
-            'Acceso Gratuito',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF424242),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            elevation: 2,
-            color: Theme.of(context).cardColor,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.lock_open, color: Colors.green, size: 32),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              esAudiolibro ? 'Audiolibro Gratuito' : 'Libro Gratuito',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              esAudiolibro 
-                                ? 'Este audiolibro está disponible para escuchar gratis'
-                                : 'Este libro está disponible para leer gratis',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark ? Colors.white70 : const Color(0xFF757575),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _estaCargando ? null : () {
-                      _abrirURLEnApp(widget.libroObjeto.urlLectura!);
-                      _iniciarLectura();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    icon: Icon(esAudiolibro ? Icons.headset : Icons.public),
-                    label: Text(esAudiolibro ? 'Escuchar Gratis' : 'Leer Gratis'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-        
-        const SizedBox(height: 24),
-        Text(
-          esAudiolibro ? 'Plataformas de Audiolibros' : 'Disponibilidad en Tiendas',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF424242),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Card(
-          elevation: 2,
-          color: Theme.of(context).cardColor,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                 Row(
-                  children: [
-                    Icon(esAudiolibro ? Icons.headset : Icons.store, color: AppColores.primario, size: 32),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            esAudiolibro ? 'Buscar en plataformas' : 'Buscar en tiendas',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColores.primario,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            esAudiolibro 
-                              ? 'Encuentra este audiolibro en Audible, Storytel, y más.'
-                              : 'Encuentra este libro en Amazon, Fnac, y más.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDark ? Colors.white70 : const Color(0xFF757575),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: _abrirBusquedaTiendas,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColores.primario,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  icon: const Icon(Icons.search),
-                  label: Text(esAudiolibro ? 'Buscar Audiolibro' : 'Buscar en Tiendas'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Future<void> _generarDescripcionOllama() async {
     if (_descripcionOllama != null) return;
     setState(() => _cargandoDescripcion = true);
@@ -851,176 +545,554 @@ class _DetallesLibroState extends State<DetallesLibro> {
     }
   }
 
-  Widget _construirDescripcion() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 24),
-        Text(
-          'Descripción',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF424242),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ElevatedButton(
-          onPressed: () {
-            if (_mostrarDescripcion) {
-              setState(() => _mostrarDescripcion = false);
-            } else {
-              setState(() => _mostrarDescripcion = true);
-              if (_descripcionOllama == null) {
-                _generarDescripcionOllama();
-              }
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColores.primario,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          child: Text(_mostrarDescripcion ? 'Ocultar' : 'Mostrar'),
-        ),
-        if (_mostrarDescripcion) ...[
-          const SizedBox(height: 16),
-          _cargandoDescripcion
-              ? const Center(child: CircularProgressIndicator())
-              : _descripcionOllama != null
-                  ? Text(
-                      _descripcionOllama!,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isDark ? Colors.white70 : const Color(0xFF616161),
-                        height: 1.5,
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-        ],
-      ],
-    );
+  String _traducirGenero(String generoIngles) {
+    final Map<String, String> traduccionGeneros = {
+      'Fiction': 'Ficción',
+      'Science fiction': 'Ciencia ficción',
+      'Science Fiction': 'Ciencia ficción',
+      'Fantasy': 'Fantasía',
+      'Mystery': 'Misterio',
+      'Thriller': 'Suspense',
+      'Horror': 'Terror',
+      'Romance': 'Romance',
+      'Historical fiction': 'Ficción histórica',
+      'Historical': 'Histórica',
+      'Biography': 'Biografía',
+      'Autobiography': 'Autobiografía',
+      'Memoir': 'Memorias',
+      'History': 'Historia',
+      'Philosophy': 'Filosofía',
+      'Psychology': 'Psicología',
+      'Self-help': 'Autoayuda',
+      'Health': 'Salud',
+      'Travel': 'Viajes',
+      'Adventure': 'Aventura',
+      'Children': 'Infantil',
+      'Young adult': 'Juvenil',
+      'YA': 'Juvenil',
+      'Picture book': 'Álbum ilustrado',
+      'Poetry': 'Poesía',
+      'Drama': 'Drama',
+      'Comedy': 'Comedia',
+      'Satire': 'Sátira',
+      'Classic': 'Clásico',
+      'Short stories': 'Relatos',
+      'Anthology': 'Antología',
+      'Essay': 'Ensayo',
+      'Non-fiction': 'No ficción',
+      'Nonfiction': 'No ficción',
+      'Reference': 'Referencia',
+      'Encyclopedia': 'Enciclopedia',
+      'Dictionary': 'Diccionario',
+      'Art': 'Arte',
+      'Music': 'Música',
+      'Film': 'Cine',
+      'Photography': 'Fotografía',
+      'Architecture': 'Arquitectura',
+      'Design': 'Diseño',
+      'Cooking': 'Cocina',
+      'Food': 'Gastronomía',
+      'Gardening': 'Jardinería',
+      'Crafts': 'Artesanía',
+      'Sports': 'Deportes',
+      'Game': 'Juegos',
+      'True crime': 'Crimen real',
+      'Western': 'Oeste',
+      'Christian': 'Cristiano',
+      'Religion': 'Religión',
+      'Spirituality': 'Espiritualidad',
+      'Science': 'Ciencia',
+      'Mathematics': 'Matemáticas',
+      'Technology': 'Tecnología',
+      'Engineering': 'Ingeniería',
+      'Computers': 'Informática',
+      'Business': 'Negocios',
+      'Economics': 'Economía',
+      'Finance': 'Finanzas',
+      'Marketing': 'Marketing',
+      'Management': 'Gestión',
+      'Law': 'Derecho',
+      'Politics': 'Política',
+      'Sociology': 'Sociología',
+      'Anthropology': 'Antropología',
+      'Education': 'Educación',
+      'Language': 'Idiomas',
+      'Linguistics': 'Lingüística',
+      'Nature': 'Naturaleza',
+      'Environment': 'Medio ambiente',
+      'Animals': 'Animales',
+      'Pets': 'Mascotas',
+    };
+    return traduccionGeneros[generoIngles] ?? generoIngles;
   }
 
-  Widget _construirCategorias() {
-    if (widget.libroObjeto.categorias.isEmpty) {
-      return Container();
-    }
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 24),
-        Text(
-          'Categorías',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF424242),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: widget.libroObjeto.categorias.map((categoria) {
-            return Chip(
-              label: Text(categoria),
-              backgroundColor: AppColores.primario.withOpacity(0.1),
-              labelStyle: TextStyle(color: AppColores.primario),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _construirBotonesAccion() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 24.0),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _estaCargando ? null : _iniciarLectura,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColores.primario,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 4,
-              ),
-              icon: Icon(widget.libroObjeto.esAudiolibro ? Icons.play_circle_filled : Icons.menu_book, size: 24),
-              label: Text(
-                widget.libroObjeto.esAudiolibro ? 'Empezar a Escuchar' : 'Empezar a Leer',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Añadir a tu biblioteca:',
-                style: EstilosApp.cuerpoMedio(context),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => _guardarLibro(favorito: !_esFavorito),
-                icon: Icon(
-                  _esFavorito ? Icons.favorite : Icons.favorite_border,
-                  color: _esFavorito ? Colors.red : AppColores.primario,
-                  size: 32,
-                ),
-                tooltip: _esFavorito ? 'Quitar de favoritos' : 'Añadir a favoritos',
-              ),
-              const SizedBox(width: 16),
-              IconButton(
-                onPressed: () => _guardarLibro(),
-                icon: Icon(
-                  _estaGuardado ? Icons.bookmark : Icons.bookmark_border,
-                  color: _estaGuardado ? AppColores.secundario : AppColores.primario,
-                  size: 32,
-                ),
-                tooltip: _estaGuardado ? 'Quitar de la biblioteca' : 'Guardar en la biblioteca',
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+  List<String> _traducirCategorias(List<String> categorias) {
+    return categorias.map((cat) => _traducirGenero(cat)).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final categoriasTraducidas = _traducirCategorias(widget.libroObjeto.categorias);
+    
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: Text('Detalles del Libro', style: EstilosApp.tituloGrande(context)),
+        title: const Text(
+          'Detalles del Libro',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColores.primario,
-        automaticallyImplyLeading: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _construirEncabezado(),
-            _construirDescripcion(),
-            _construirCategorias(),
-            _construirSeccionCompra(),
-            _construirBotonesAccion(),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1e1e1e),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 120,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xFF2C2C2C),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: widget.libroObjeto.urlMiniatura != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              widget.libroObjeto.urlMiniatura!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(
+                                  child: Icon(
+                                    widget.libroObjeto.esAudiolibro ? Icons.headset : Icons.book,
+                                    size: 50,
+                                    color: AppColores.primario,
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        : Center(
+                            child: Icon(
+                              widget.libroObjeto.esAudiolibro ? Icons.headset : Icons.book,
+                              size: 50,
+                              color: AppColores.primario,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.libroObjeto.titulo,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        if (widget.libroObjeto.autores.isNotEmpty)
+                          Text(
+                            'Por ${widget.libroObjeto.autores.join(', ')}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFFAAAAAA),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        const SizedBox(height: 12),
+                        if (widget.libroObjeto.fechaPublicacion != null)
+                          Text(
+                            'Publicado: ${widget.libroObjeto.fechaPublicacion}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF888888),
+                            ),
+                          ),
+                        if (widget.libroObjeto.numeroPaginas != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '${widget.libroObjeto.numeroPaginas} páginas',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF888888),
+                            ),
+                          ),
+                        ],
+                        if (widget.libroObjeto.calificacionPromedio != null) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.star, color: Colors.amber, size: 20),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${widget.libroObjeto.calificacionPromedio!.toStringAsFixed(1)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '(${widget.libroObjeto.numeroCalificaciones ?? 0} reseñas)',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFFAAAAAA),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            if (widget.libroObjeto.esAudiolibro)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColores.secundario.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.headset, size: 14, color: AppColores.secundario),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'Audiolibro',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColores.secundario),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (!widget.libroObjeto.esAudiolibro)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColores.primario.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.menu_book, size: 14, color: AppColores.primario),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'Libro',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColores.primario),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (widget.libroObjeto.isbn10 != null || widget.libroObjeto.isbn13 != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.qr_code, size: 14, color: Colors.blue),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'ISBN: ${widget.libroObjeto.isbn13 ?? widget.libroObjeto.isbn10}',
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.blue),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1e1e1e),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Descripción',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_mostrarDescripcion) {
+                        setState(() => _mostrarDescripcion = false);
+                      } else {
+                        setState(() => _mostrarDescripcion = true);
+                        if (_descripcionOllama == null) {
+                          _generarDescripcionOllama();
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColores.primario,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: Text(_mostrarDescripcion ? 'Ocultar' : 'Mostrar'),
+                  ),
+                  if (_mostrarDescripcion) ...[
+                    const SizedBox(height: 16),
+                    _cargandoDescripcion
+                        ? const Center(child: CircularProgressIndicator())
+                        : _descripcionOllama != null
+                            ? Text(
+                                _descripcionOllama!,
+                                style: const TextStyle(fontSize: 15, color: Color(0xFFAAAAAA), height: 1.5),
+                              )
+                            : const SizedBox.shrink(),
+                  ],
+                ],
+              ),
+            ),
+            if (categoriasTraducidas.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1e1e1e),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Categorías',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: categoriasTraducidas.map((categoria) {
+                        return Chip(
+                          label: Text(categoria),
+                          backgroundColor: const Color(0xFF2C2C2C),
+                          labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+            if (widget.libroObjeto.urlLectura != null)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1e1e1e),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Acceso Gratuito',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 12),
+                    Card(
+                      elevation: 2,
+                      color: const Color(0xFF2C2C2C),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.lock_open, color: Colors.green, size: 32),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.libroObjeto.esAudiolibro ? 'Audiolibro Gratuito' : 'Libro Gratuito',
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        widget.libroObjeto.esAudiolibro 
+                                          ? 'Este audiolibro está disponible para escuchar gratis'
+                                          : 'Este libro está disponible para leer gratis',
+                                        style: const TextStyle(fontSize: 14, color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: _estaCargando ? null : () {
+                                _abrirURLEnApp(widget.libroObjeto.urlLectura!);
+                                _iniciarLectura();
+                              },
+                              icon: Icon(widget.libroObjeto.esAudiolibro ? Icons.headset : Icons.public),
+                              label: Text(widget.libroObjeto.esAudiolibro ? 'Escuchar Gratis' : 'Leer Gratis'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1e1e1e),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.libroObjeto.esAudiolibro ? 'Plataformas de Audiolibros' : 'Disponibilidad en Tiendas',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    elevation: 2,
+                    color: const Color(0xFF2C2C2C),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(widget.libroObjeto.esAudiolibro ? Icons.headset : Icons.store, color: AppColores.primario, size: 32),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.libroObjeto.esAudiolibro ? 'Buscar en plataformas' : 'Buscar en tiendas',
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColores.primario),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      widget.libroObjeto.esAudiolibro 
+                                        ? 'Encuentra este audiolibro en Audible, Storytel, y más.'
+                                        : 'Encuentra este libro en Amazon, Fnac, y más.',
+                                      style: const TextStyle(fontSize: 14, color: Colors.white70),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _abrirBusquedaTiendas,
+                            icon: const Icon(Icons.search),
+                            label: Text(widget.libroObjeto.esAudiolibro ? 'Buscar Audiolibro' : 'Buscar en Tiendas'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColores.primario,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _estaCargando ? null : _iniciarLectura,
+                icon: Icon(widget.libroObjeto.esAudiolibro ? Icons.play_circle_filled : Icons.menu_book),
+                label: Text(
+                  widget.libroObjeto.esAudiolibro ? 'Empezar a Escuchar' : 'Empezar a Leer',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColores.primario,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _guardarLibro(favorito: !_esFavorito),
+                    icon: Icon(_esFavorito ? Icons.favorite : Icons.favorite_border),
+                    label: Text(_esFavorito ? 'En favoritos' : 'Favorito'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2C2C2C),
+                      foregroundColor: _esFavorito ? Colors.red : const Color(0xFFAAAAAA),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _guardarLibro(),
+                    icon: Icon(_estaGuardado ? Icons.bookmark : Icons.bookmark_border),
+                    label: Text(_estaGuardado ? 'Guardado' : 'Guardar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2C2C2C),
+                      foregroundColor: _estaGuardado ? Colors.amber : const Color(0xFFAAAAAA),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 40),
           ],
         ),

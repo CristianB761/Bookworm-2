@@ -28,16 +28,38 @@ class _DetallesMangaState extends State<DetallesManga> {
   String? _sinopsisGenerada;
   bool _cargandoLectura = false;
   bool _cargandoDatosCompletos = false;
+  late SharedPreferences _prefs;
+  Set<String> _favoritosLocales = {};
 
   @override
   void initState() {
     super.initState();
+    _cargarSharedPreferences();
     _manga = widget.mangaObjeto;
     _verificarEstadoManga();
     _cargarSinopsisCache();
     if (_faltanDatosCompletos()) {
       _cargarDatosCompletosDesdeApi();
     }
+  }
+
+  Future<void> _cargarSharedPreferences() async {
+    _prefs = await SharedPreferences.getInstance();
+    final lista = _prefs.getStringList('favoritos_manga_locales') ?? [];
+    _favoritosLocales = lista.toSet();
+    setState(() {});
+  }
+
+  Future<void> _guardarFavoritoLocal(String mangaId, bool esFavorito) async {
+    if (esFavorito) {
+      _favoritosLocales.add(mangaId);
+    } else {
+      _favoritosLocales.remove(mangaId);
+    }
+    await _prefs.setStringList('favoritos_manga_locales', _favoritosLocales.toList());
+    setState(() {
+      _esFavorito = esFavorito;
+    });
   }
 
   bool _faltanDatosCompletos() {
@@ -134,13 +156,16 @@ class _DetallesMangaState extends State<DetallesManga> {
           .get();
 
       if (mangaDoc.exists) {
-        final data = mangaDoc.data();
-        if (data != null) {
-          setState(() {
-            _esFavorito = data['favorito'] == true;
-            _estaGuardado = data['guardado'] == true;
-          });
-        }
+        final data = mangaDoc.data()!;
+        setState(() {
+          _estaGuardado = data['guardado'] == true;
+          _esFavorito = data['favorito'] == true;
+        });
+      } else {
+        setState(() {
+          _estaGuardado = false;
+          _esFavorito = _favoritosLocales.contains(_manga.id);
+        });
       }
     } catch (e) {}
   }
@@ -149,55 +174,31 @@ class _DetallesMangaState extends State<DetallesManga> {
     try {
       final usuario = _auth.currentUser;
       if (usuario == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Debes iniciar sesión primero')),
-        );
+        _mostrarError('Debes iniciar sesión primero');
         return;
       }
 
       final nuevoEstado = !_esFavorito;
-      await _firestore
+      final docRef = _firestore
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('mangas_guardados')
-          .doc(_manga.id)
-          .set({
-            'id': _manga.id,
-            'titulo': _manga.titulo,
-            'urlPortada': _manga.urlPortada,
-            'autores': _manga.autores,
-            'favorito': nuevoEstado,
-            'guardado': _estaGuardado,
-            'fechaGuardado': FieldValue.serverTimestamp(),
-            'generos': _manga.generos,
-            'temas': _manga.temas,
-            'adaptacionAnime': _manga.adaptacionAnime,
-            'urlMangaDex': _manga.urlMangaDex,
-            'urlAniList': _manga.urlAniList,
-            'calificacionAniList': _manga.calificacionAniList,
-            'calificacionMangaDex': _manga.calificacionMangaDex,
-            'popularidad': _manga.popularidad,
-            'numeroCapitulos': _manga.numeroCapitulos,
-            'ultimoCapituloLanzado': _manga.ultimoCapituloLanzado,
-            'estado': _manga.estado,
-            'sinopsis': _manga.sinopsis,
-            'fechaPublicacion': _manga.fechaPublicacion,
-          }, SetOptions(merge: true));
+          .doc(_manga.id);
 
-      setState(() {
-        _esFavorito = nuevoEstado;
-        _estaGuardado = true;
-      });
+      final docSnapshot = await docRef.get();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(nuevoEstado ? 'Añadido a favoritos' : 'Removido de favoritos'),
-        ),
-      );
+      if (docSnapshot.exists) {
+        await docRef.update({'favorito': nuevoEstado});
+        setState(() {
+          _esFavorito = nuevoEstado;
+        });
+        _mostrarExito(nuevoEstado ? 'Añadido a favoritos' : 'Removido de favoritos');
+      } else {
+        await _guardarFavoritoLocal(_manga.id, nuevoEstado);
+        _mostrarExito(nuevoEstado ? 'Añadido a favoritos (localmente)' : 'Removido de favoritos locales');
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _mostrarError('Error: $e');
     }
   }
 
@@ -205,63 +206,80 @@ class _DetallesMangaState extends State<DetallesManga> {
     try {
       final usuario = _auth.currentUser;
       if (usuario == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Debes iniciar sesión primero')),
-        );
+        _mostrarError('Debes iniciar sesión primero');
         return;
       }
 
-      final nuevoEstado = !_estaGuardado;
-      await _firestore
+      final docRef = _firestore
           .collection('usuarios')
           .doc(usuario.uid)
           .collection('mangas_guardados')
-          .doc(_manga.id)
-          .set({
-            'id': _manga.id,
-            'titulo': _manga.titulo,
-            'urlPortada': _manga.urlPortada,
-            'autores': _manga.autores,
-            'guardado': nuevoEstado,
-            'favorito': _esFavorito,
-            'fechaGuardado': FieldValue.serverTimestamp(),
-            'generos': _manga.generos,
-            'temas': _manga.temas,
-            'adaptacionAnime': _manga.adaptacionAnime,
-            'urlMangaDex': _manga.urlMangaDex,
-            'urlAniList': _manga.urlAniList,
-            'calificacionAniList': _manga.calificacionAniList,
-            'calificacionMangaDex': _manga.calificacionMangaDex,
-            'popularidad': _manga.popularidad,
-            'numeroCapitulos': _manga.numeroCapitulos,
-            'ultimoCapituloLanzado': _manga.ultimoCapituloLanzado,
-            'estado': _manga.estado,
-            'sinopsis': _manga.sinopsis,
-            'fechaPublicacion': _manga.fechaPublicacion,
-          }, SetOptions(merge: true));
+          .doc(_manga.id);
 
-      setState(() {
-        _estaGuardado = nuevoEstado;
-      });
+      final docSnapshot = await docRef.get();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(nuevoEstado ? 'Manga guardado en tu biblioteca' : 'Manga eliminado de tu biblioteca'),
-        ),
-      );
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data()!;
+        final favoritoEnFirestore = data['favorito'] ?? false;
+
+        await docRef.delete();
+
+        if (favoritoEnFirestore) {
+          await _guardarFavoritoLocal(_manga.id, true);
+        }
+
+        setState(() {
+          _estaGuardado = false;
+          if (!favoritoEnFirestore) {
+            _esFavorito = _favoritosLocales.contains(_manga.id);
+          }
+        });
+        _mostrarExito('"${_manga.titulo}" eliminado de tu biblioteca');
+      } else {
+        final teniaFavoritoLocal = _favoritosLocales.contains(_manga.id);
+        final mangaData = {
+          'id': _manga.id,
+          'titulo': _manga.titulo,
+          'urlPortada': _manga.urlPortada,
+          'autores': _manga.autores,
+          'guardado': true,
+          'favorito': teniaFavoritoLocal,
+          'fechaGuardado': FieldValue.serverTimestamp(),
+          'generos': _manga.generos,
+          'temas': _manga.temas,
+          'adaptacionAnime': _manga.adaptacionAnime,
+          'urlMangaDex': _manga.urlMangaDex,
+          'urlAniList': _manga.urlAniList,
+          'calificacionAniList': _manga.calificacionAniList,
+          'calificacionMangaDex': _manga.calificacionMangaDex,
+          'popularidad': _manga.popularidad,
+          'numeroCapitulos': _manga.numeroCapitulos,
+          'ultimoCapituloLanzado': _manga.ultimoCapituloLanzado,
+          'estado': _manga.estado,
+          'sinopsis': _manga.sinopsis,
+          'fechaPublicacion': _manga.fechaPublicacion,
+        };
+        await docRef.set(mangaData);
+        if (teniaFavoritoLocal) {
+          await _guardarFavoritoLocal(_manga.id, false);
+          setState(() {
+            _esFavorito = true;
+          });
+        }
+        setState(() {
+          _estaGuardado = true;
+        });
+        _mostrarExito('"${_manga.titulo}" guardado en tu biblioteca');
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _mostrarError('Error: $e');
     }
   }
 
   Future<void> _iniciarLectura() async {
     final usuario = _auth.currentUser;
     if (usuario == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes iniciar sesión para empezar a leer')),
-      );
+      _mostrarError('Debes iniciar sesión para empezar a leer');
       return;
     }
 
@@ -278,12 +296,13 @@ class _DetallesMangaState extends State<DetallesManga> {
       if (mangaGuardadoSnap.exists) {
         await mangaGuardadoRef.update({'estado': 'leyendo'});
       } else {
+        final teniaFavoritoLocal = _favoritosLocales.contains(_manga.id);
         await mangaGuardadoRef.set({
           'id': _manga.id,
           'titulo': _manga.titulo,
           'urlPortada': _manga.urlPortada,
           'autores': _manga.autores,
-          'favorito': _esFavorito,
+          'favorito': teniaFavoritoLocal,
           'guardado': true,
           'estado': 'leyendo',
           'fechaGuardado': FieldValue.serverTimestamp(),
@@ -299,6 +318,15 @@ class _DetallesMangaState extends State<DetallesManga> {
           'ultimoCapituloLanzado': _manga.ultimoCapituloLanzado,
           'sinopsis': _manga.sinopsis,
           'fechaPublicacion': _manga.fechaPublicacion,
+        });
+        if (teniaFavoritoLocal) {
+          await _guardarFavoritoLocal(_manga.id, false);
+          setState(() {
+            _esFavorito = true;
+          });
+        }
+        setState(() {
+          _estaGuardado = true;
         });
       }
 
@@ -520,9 +548,7 @@ class _DetallesMangaState extends State<DetallesManga> {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo abrir el enlace: $e')),
-      );
+      _mostrarError('No se pudo abrir el enlace: $e');
     }
   }
 
@@ -946,7 +972,7 @@ class _DetallesMangaState extends State<DetallesManga> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _cargandoLectura ? null : _iniciarLectura,
-                icon: Icon(Icons.menu_book),
+                icon: const Icon(Icons.menu_book),
                 label: const Text('Empezar a Leer'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColores.primario,
@@ -979,7 +1005,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                     label: Text(_estaGuardado ? 'Guardado' : 'Guardar'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2C2C2C),
-                      foregroundColor: _estaGuardado ? AppColores.acento : const Color(0xFFAAAAAA),
+                      foregroundColor: _estaGuardado ? Colors.amber : const Color(0xFFAAAAAA),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),

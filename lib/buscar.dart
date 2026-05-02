@@ -43,6 +43,8 @@ class _BuscarState extends State<Buscar> {
 
   Set<String> _librosGuardadosIds = {};
   Set<String> _librosFavoritosIds = {};
+  Set<String> _mangasGuardadosIds = {};
+  Set<String> _mangasFavoritosIds = {};
 
   bool _busquedaUsuarios = false;
   List<DatosUsuario> _resultadosUsuarios = [];
@@ -116,6 +118,23 @@ class _BuscarState extends State<Buscar> {
         });
       }
     });
+
+    _firestore
+        .collection('usuarios')
+        .doc(usuario.uid)
+        .collection('mangas_guardados')
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          _mangasGuardadosIds = snapshot.docs.map((doc) => doc.id).toSet();
+          _mangasFavoritosIds = snapshot.docs
+              .where((doc) => doc.data()['favorito'] == true)
+              .map((doc) => doc.id)
+              .toSet();
+        });
+      }
+    });
   }
 
   @override
@@ -183,6 +202,53 @@ class _BuscarState extends State<Buscar> {
       }
     } catch (e) {
       _mostrarError('Error al guardar libro: $e');
+    }
+  }
+
+  Future<void> _guardarManga(Manga manga, {bool? favorito}) async {
+    try {
+      final usuario = _auth.currentUser;
+      if (usuario == null) {
+        _mostrarError('Debes iniciar sesión para guardar mangas');
+        return;
+      }
+
+      final docRef = _firestore
+          .collection('usuarios')
+          .doc(usuario.uid)
+          .collection('mangas_guardados')
+          .doc(manga.id);
+
+      final docSnapshot = await docRef.get();
+
+      if (favorito != null) {
+        if (docSnapshot.exists) {
+          await docRef.update({'favorito': favorito});
+        } else {
+          final datosManga = manga.toMap();
+          datosManga['fechaGuardado'] = FieldValue.serverTimestamp();
+          datosManga['guardado'] = true;
+          datosManga['favorito'] = favorito;
+          await docRef.set(datosManga);
+        }
+        _mostrarExito(favorito 
+            ? '"${manga.titulo}" añadido a favoritos' 
+            : '"${manga.titulo}" quitado de favoritos');
+      } else {
+        if (docSnapshot.exists) {
+          await docRef.delete();
+          _mostrarExito('"${manga.titulo}" eliminado de la biblioteca');
+        } else {
+          final datosManga = manga.toMap();
+          datosManga['fechaGuardado'] = FieldValue.serverTimestamp();
+          datosManga['guardado'] = true;
+          datosManga['favorito'] = false;
+          await docRef.set(datosManga);
+          _mostrarExito('"${manga.titulo}" guardado en la biblioteca');
+        }
+      }
+    } catch (e) {
+      _mostrarError('Error al guardar manga: $e');
     }
   }
 
@@ -407,7 +473,6 @@ class _BuscarState extends State<Buscar> {
     }
   }
 
-
   Libro _procesarLibroConPrecio(Libro libro) {
     if (libro.precio != null && libro.precio! > 0 && libro.ofertas.isNotEmpty) {
       return libro;
@@ -615,6 +680,14 @@ class _BuscarState extends State<Buscar> {
       context,
       '/detalles_libro',
       arguments: libro,
+    );
+  }
+
+  void _mostrarDetallesManga(Manga manga) {
+    Navigator.pushNamed(
+      context,
+      '/detalles_manga',
+      arguments: manga,
     );
   }
 
@@ -885,7 +958,7 @@ class _BuscarState extends State<Buscar> {
       return const EstadoVacio(
         icono: Icons.search,
         titulo: 'Busca tu próximo manga favorito',
-        descripcion: 'Ingresa un título o autor',
+        descripcion: 'Ingresa un título, autor, o selecciona un género',
       );
     }
 
@@ -901,7 +974,7 @@ class _BuscarState extends State<Buscar> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${_resultadosManga.length} resultados encontrados',
+          'Resultados de búsqueda',
           style: EstilosApp.cuerpoMedio(context),
         ),
         const SizedBox(height: 16),
@@ -917,34 +990,23 @@ class _BuscarState extends State<Buscar> {
           itemCount: _resultadosManga.length,
           itemBuilder: (context, index) {
             final manga = _resultadosManga[index];
-            return _construirTarjetaManga(manga);
+            return _construirTarjetaMangaConBotones(manga);
           },
         ),
       ],
     );
   }
 
-  Widget _construirTarjetaManga(Manga manga) {
+  Widget _construirTarjetaMangaConBotones(Manga manga) {
+    bool esGratuito = true;
+    bool esGuardado = _mangasGuardadosIds.contains(manga.id);
+    bool esFavorito = _mangasFavoritosIds.contains(manga.id);
+
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/detalles_manga',
-          arguments: manga,
-        );
-      },
+      onTap: () => _mostrarDetallesManga(manga),
+      onLongPress: () => _mostrarOpcionesManga(manga),
       child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.grey[900],
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        decoration: EstilosApp.tarjetaPlana(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -952,30 +1014,40 @@ class _BuscarState extends State<Buscar> {
               child: Stack(
                 children: [
                   Container(
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
                       ),
-                      image: manga.urlPortada != null
-                          ? DecorationImage(
-                              image: NetworkImage(manga.urlPortada!),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                      color: Colors.grey[800],
+                      color: const Color(0xFFEEEEEE),
                     ),
-                    child: manga.urlPortada == null
-                        ? const Center(
-                            child: Icon(Icons.image, size: 40, color: Colors.grey),
+                    child: manga.urlPortada != null
+                        ? ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              manga.urlPortada!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Icon(Icons.auto_stories, size: 40, color: Color(0xFF9E9E9E)),
+                                );
+                              },
+                            ),
                           )
-                        : null,
+                        : const Center(
+                            child: Icon(Icons.auto_stories, size: 40, color: Color(0xFF9E9E9E)),
+                          ),
                   ),
                   Positioned(
                     top: 6,
                     right: 6,
                     child: Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColores.primario,
                         shape: BoxShape.circle,
                       ),
@@ -990,40 +1062,80 @@ class _BuscarState extends State<Buscar> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     manga.titulo,
+                    style: EstilosApp.tituloPequeno(context),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
                   ),
-                  if (manga.calificacionAniList != null ||
-                      manga.calificacionMangaDex != null) ...[
-                    const SizedBox(height: 4),
+                  const SizedBox(height: 4),
+                  if (manga.autores.isNotEmpty)
+                    Text(
+                      manga.autores.join(', '),
+                      style: EstilosApp.cuerpoPequeno(context),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(height: 6),
+                  if (manga.calificacion != null)
                     Row(
                       children: [
-                        const Icon(Icons.star, size: 12, color: Colors.amber),
-                        const SizedBox(width: 2),
+                        const Icon(Icons.star, size: 14, color: Colors.amber),
+                        const SizedBox(width: 4),
                         Text(
-                          manga.calificacionAniList != null
-                              ? '${(manga.calificacionAniList! / 10).toStringAsFixed(1)}'
-                              : '${manga.calificacionMangaDex!.toStringAsFixed(1)}',
-                          style: const TextStyle(
-                            color: Colors.amber,
-                            fontSize: 11,
-                          ),
+                          manga.calificacion!,
+                          style: EstilosApp.cuerpoPequeno(context),
                         ),
                       ],
                     ),
-                  ],
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Gratis',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          esFavorito ? Icons.favorite : Icons.favorite_border,
+                          color: esFavorito ? Colors.red : AppColores.primario,
+                          size: 18,
+                        ),
+                        onPressed: () => _guardarManga(manga, favorito: !esFavorito),
+                        tooltip: esFavorito ? 'Quitar de favoritos' : 'Añadir a favoritos',
+                        constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                        padding: EdgeInsets.zero,
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          esGuardado ? Icons.bookmark : Icons.bookmark_border,
+                          color: esGuardado ? Colors.amber : AppColores.primario,
+                          size: 18,
+                        ),
+                        onPressed: () => _guardarManga(manga),
+                        tooltip: esGuardado ? 'Quitar de biblioteca' : 'Guardar manga',
+                        constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1033,6 +1145,72 @@ class _BuscarState extends State<Buscar> {
     );
   }
 
+  void _mostrarOpcionesManga(Manga manga) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              manga.titulo.length > 30 ? '${manga.titulo.substring(0, 30)}...' : manga.titulo,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColores.texto,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            if (manga.urlMangaDex != null)
+              ListTile(
+                leading: const Icon(Icons.lock_open, color: Colors.green, size: 28),
+                title: const Text('Leer gratis'),
+                subtitle: const Text('Abrir manga en MangaDex'),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  Navigator.pop(context);
+                  _abrirURL(manga.urlMangaDex!);
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.info, color: AppColores.primario, size: 28),
+              title: const Text('Ver detalles completos'),
+              subtitle: const Text('Información completa del manga'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.pop(context);
+                _mostrarDetallesManga(manga);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bookmark_add, color: Colors.amber, size: 28),
+              title: const Text('Guardar manga'),
+              subtitle: const Text('Añadir a mi biblioteca'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.pop(context);
+                _guardarManga(manga);
+              },
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColores.textoClaro,
+              ),
+              child: const Text('Cancelar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _construirTarjetaMosaico(Libro libro) {
     bool esGratuito = libro.precio == 0.0;
@@ -1166,8 +1344,8 @@ class _BuscarState extends State<Buscar> {
                       ),
                       IconButton(
                         icon: Icon(
-                          esGuardado ? Icons.bookmark : Icons.bookmark_add,
-                          color: esGuardado ? AppColores.secundario : AppColores.primario,
+                          esGuardado ? Icons.bookmark : Icons.bookmark_border,
+                          color: esGuardado ? Colors.amber : AppColores.primario,
                           size: 18,
                         ),
                         onPressed: () => _guardarLibro(libro),
@@ -1305,7 +1483,7 @@ class _BuscarState extends State<Buscar> {
                     children: [
                       _construirPestana('Libros', Icons.book, _tabActiva == 'libros'),
                       const SizedBox(width: 8),
-                      _construirPestana('Manga', Icons.auto_stories, _tabActiva == 'manga'),
+                      _construirPestana('Mangas', Icons.auto_stories, _tabActiva == 'manga'),
                       const SizedBox(width: 8),
                       _construirPestana('Usuarios', Icons.people, _tabActiva == 'usuarios'),
                     ],
@@ -1324,7 +1502,7 @@ class _BuscarState extends State<Buscar> {
                     _tabActiva == 'usuarios'
                         ? 'Encuentra lectores en Bookworm'
                         : _tabActiva == 'manga'
-                            ? 'Busca entre miles de mangas y títulos noveles'
+                            ? 'Busca entre miles de mangas y manwhas'
                             : 'Busca entre miles de libros y audiolibros',
                     style: EstilosApp.cuerpoMedio(context).copyWith(color: textColor),
                   ),
@@ -1407,7 +1585,7 @@ class _BuscarState extends State<Buscar> {
                     _tabActiva == 'usuarios'
                         ? 'Usuarios encontrados'
                         : _tabActiva == 'manga'
-                            ? 'Resultados de manga'
+                            ? 'Resultados de búsqueda'
                             : 'Resultados de búsqueda',
                     style: EstilosApp.tituloMedio(context).copyWith(color: textColor),
                   ),
@@ -1432,7 +1610,7 @@ class _BuscarState extends State<Buscar> {
         setState(() {
           if (texto == 'Libros') {
             _tabActiva = 'libros';
-          } else if (texto == 'Manga') {
+          } else if (texto == 'Mangas') {
             _tabActiva = 'manga';
           } else if (texto == 'Usuarios') {
             _tabActiva = 'usuarios';

@@ -1,11 +1,11 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
-import 'diseno.dart';
-import 'API/firebase_storage_service.dart';
+import '../diseno.dart';
+import '../API/firebase_storage_service.dart';
 
 class SubirAudioDialog extends StatefulWidget {
   final String? libroId;
@@ -29,14 +29,12 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
   String? _mensajeError;
   File? _archivoSeleccionado;
   String? _nombreArchivo;
-  Timer? _timer;
   
   final TextEditingController _nombreLibroController = TextEditingController();
   final TextEditingController _autorController = TextEditingController();
 
   @override
   void dispose() {
-    _timer?.cancel();
     _nombreLibroController.dispose();
     _autorController.dispose();
     super.dispose();
@@ -52,7 +50,6 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
       if (resultado != null && resultado.files.single.path != null) {
         final archivo = File(resultado.files.single.path!);
         final nombreCompleto = resultado.files.single.name;
-        // Limpiar nombre del archivo: quitar extensión
         String nombreSinExtension = nombreCompleto;
         final extensiones = ['.mp3', '.m4a', '.wav', '.ogg', '.aac'];
         for (final ext in extensiones) {
@@ -66,33 +63,24 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
           _archivoSeleccionado = archivo;
           _nombreArchivo = nombreCompleto;
           _mensajeError = null;
-          // Auto-completar el nombre del libro si está vacío
-          if (_nombreLibroController.text.trim().isEmpty) {
+          if (_nombreLibroController.text.trim().isEmpty && widget.tituloLibro == null) {
             _nombreLibroController.text = nombreSinExtension;
           }
         });
       }
     } catch (e) {
-      setState(() {
-        _mensajeError = 'Error al seleccionar archivo: $e';
-      });
+      setState(() => _mensajeError = 'Error al seleccionar archivo: $e');
     }
   }
 
   Future<void> _subirAudio() async {
     final titulo = _nombreLibroController.text.trim();
-    
     if (titulo.isEmpty && widget.tituloLibro == null) {
-      setState(() {
-        _mensajeError = 'Por favor ingresa el nombre del libro';
-      });
+      setState(() => _mensajeError = 'Por favor ingresa el nombre del libro');
       return;
     }
-    
     if (_archivoSeleccionado == null) {
-      setState(() {
-        _mensajeError = 'Por favor, selecciona un archivo de audio primero';
-      });
+      setState(() => _mensajeError = 'Primero selecciona un archivo de audio');
       return;
     }
 
@@ -102,19 +90,16 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
       _mensajeError = null;
     });
 
-    _timer = Timer.periodic(const Duration(milliseconds: 200), (t) {
+    Timer? timer;
+    timer = Timer.periodic(const Duration(milliseconds: 200), (t) {
       if (mounted && _subiendo && _progresoSubida < 0.95) {
-        setState(() {
-          _progresoSubida = (_progresoSubida + 0.05).clamp(0.0, 0.95);
-        });
+        setState(() => _progresoSubida += 0.05);
       }
     });
 
     try {
       final usuario = FirebaseAuth.instance.currentUser;
-      if (usuario == null) {
-        throw Exception('Usuario no autenticado');
-      }
+      if (usuario == null) throw Exception('No autenticado');
 
       final nombreLibro = widget.tituloLibro ?? titulo;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -127,10 +112,8 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
         nombreAudio: nombreAudio,
       );
 
-      _timer?.cancel();
-      if (mounted) {
-        setState(() => _progresoSubida = 1.0);
-      }
+      timer?.cancel();
+      if (mounted) setState(() => _progresoSubida = 1.0);
 
       final extension = _archivoSeleccionado!.path.split('.').last.toLowerCase();
       String tipoAudio = 'mp3';
@@ -173,23 +156,18 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
       if (mounted) {
         widget.onAudioSubido();
         Navigator.pop(context);
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Audiolibro subido exitosamente a Firebase Storage'),
+            content: Text('Audiolibro subido exitosamente'),
             backgroundColor: AppColores.secundario,
-            behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } catch (e) {
-      _timer?.cancel();
-      if (mounted) {
-        setState(() {
-          _mensajeError = 'Error al subir audio: $e';
-          _subiendo = false;
-        });
-      }
+      timer?.cancel();
+      setState(() => _mensajeError = 'Error al subir: $e');
+    } finally {
+      if (mounted) setState(() => _subiendo = false);
     }
   }
 
@@ -203,37 +181,38 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.tituloLibro == null) ...[
-              TextField(
+              TextFormField(
                 controller: _nombreLibroController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Nombre del libro',
-                  hintText: 'Ej: El Hobbit, La Odisea',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.book),
-                  errorText: _mensajeError != null && _nombreLibroController.text.trim().isEmpty ? 'Campo requerido' : null,
+                  hintText: 'Ej: El hobbit, La odisea',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.book),
                 ),
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: _autorController,
-                decoration: const InputDecoration(
-                  labelText: 'Autor (opcional)',
-                  hintText: 'Ej: J.R.R. Tolkien',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
+            ] else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  widget.tituloLibro!,
+                  style: EstilosApp.tituloPequeno(context),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
-            ] else ...[
-              Text(
-                widget.tituloLibro!,
-                style: EstilosApp.tituloPequeno(context),
-                textAlign: TextAlign.center,
+
+            TextFormField(
+              controller: _autorController,
+              decoration: const InputDecoration(
+                labelText: 'Autor (opcional)',
+                hintText: 'Ej: J.R.R. Tolkien',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
               ),
-              const SizedBox(height: 16),
-            ],
-            
-            if (_archivoSeleccionado == null) ...[
+            ),
+            const SizedBox(height: 16),
+
+            if (_archivoSeleccionado == null)
               ElevatedButton.icon(
                 onPressed: _subiendo ? null : _seleccionarAudio,
                 icon: const Icon(Icons.audiotrack),
@@ -241,34 +220,8 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColores.primario,
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Formatos soportados: MP3, M4A, WAV, OGG, AAC',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 16, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Los audiolibros se almacenan en Firebase Storage y se pueden reproducir offline',
-                        style: TextStyle(fontSize: 11, color: Colors.blue),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ] else ...[
+              )
+            else
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -280,11 +233,8 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
                   children: [
                     const Icon(Icons.audiotrack, color: Colors.green, size: 40),
                     const SizedBox(height: 8),
-                    Text(
-                      _nombreArchivo ?? 'Archivo seleccionado',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
+                    Text(_nombreArchivo!,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: _subiendo ? null : _seleccionarAudio,
@@ -293,32 +243,17 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
                   ],
                 ),
               ),
-            ],
-            
+
             if (_subiendo) ...[
               const SizedBox(height: 16),
               LinearProgressIndicator(value: _progresoSubida),
               const SizedBox(height: 8),
-              Text(
-                'Subiendo a Firebase Storage... ${(_progresoSubida * 100).toStringAsFixed(1)}%',
-                style: EstilosApp.cuerpoPequeno(context),
-              ),
+              Text('Subiendo... ${(_progresoSubida * 100).toStringAsFixed(0)}%'),
             ],
-            
+
             if (_mensajeError != null) ...[
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _mensajeError!,
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              Text(_mensajeError!, style: const TextStyle(color: Colors.red)),
             ],
           ],
         ),
@@ -328,20 +263,17 @@ class _SubirAudioDialogState extends State<SubirAudioDialog> {
           onPressed: _subiendo ? null : () => Navigator.pop(context),
           child: const Text('Cancelar'),
         ),
-        if (_archivoSeleccionado != null || widget.tituloLibro != null)
-          ElevatedButton(
-            onPressed: _subiendo ? null : _subirAudio,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColores.primario,
-            ),
-            child: _subiendo
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Subir a Firebase Storage'),
-          ),
+        ElevatedButton(
+          onPressed: (_archivoSeleccionado != null && !_subiendo) ? _subirAudio : null,
+          style: ElevatedButton.styleFrom(backgroundColor: AppColores.primario),
+          child: _subiendo
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Subir'),
+        ),
       ],
     );
   }

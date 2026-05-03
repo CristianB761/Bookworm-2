@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../diseno.dart';
@@ -31,16 +32,70 @@ class _ReproductorAudioState extends State<ReproductorAudio> {
   Duration _position = Duration.zero;
   double _progress = 0.0;
   double _volume = 1.0;
+  double _volumeAntesSilencio = 1.0;
+  bool _isMuted = false;
   double _speed = 1.0;
   bool _isLocalFile = false;
   File? _localFile;
   double _downloadProgress = 0.0;
   bool _isDownloading = false;
+  late SharedPreferences _prefs;
+  bool _prefsCargadas = false;
+
+  // Configuración de la velocidad: mínima 0.25, máxima 2.00, pasos de 0.05
+  static const double _minSpeed = 0.25;
+  static const double _maxSpeed = 2.00;
+  static const double _speedStep = 0.05;
+  static const int _speedDivisions = 35; // (2.00 - 0.25) / 0.05 = 35
 
   @override
   void initState() {
     super.initState();
+    _inicializarPrefs();
+  }
+
+  Future<void> _inicializarPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+    _prefsCargadas = true;
+    await _cargarVolumenGuardado();
+    await _cargarVelocidadGuardada();
     _inicializarReproductor();
+  }
+
+  Future<void> _cargarVolumenGuardado() async {
+    final volumenGuardado = _prefs.getDouble('volumen_audio');
+    if (volumenGuardado != null) {
+      _volume = volumenGuardado.clamp(0.0, 1.0);
+      _isMuted = (_volume == 0);
+      if (!_isMuted) {
+        _volumeAntesSilencio = _volume;
+      }
+    } else {
+      _volume = 1.0;
+      _volumeAntesSilencio = 1.0;
+      _isMuted = false;
+    }
+  }
+
+  Future<void> _cargarVelocidadGuardada() async {
+    final velocidadGuardada = _prefs.getDouble('velocidad_audio');
+    if (velocidadGuardada != null) {
+      _speed = velocidadGuardada.clamp(_minSpeed, _maxSpeed);
+      // Redondear al paso más cercano para mantener consistencia
+      _speed = (_speed / _speedStep).round() * _speedStep;
+    } else {
+      _speed = 1.0;
+    }
+  }
+
+  Future<void> _guardarVolumen(double nuevoVolumen) async {
+    if (!_prefsCargadas) return;
+    await _prefs.setDouble('volumen_audio', nuevoVolumen);
+  }
+
+  Future<void> _guardarVelocidad(double nuevaVelocidad) async {
+    if (!_prefsCargadas) return;
+    await _prefs.setDouble('velocidad_audio', nuevaVelocidad);
   }
 
   @override
@@ -89,6 +144,8 @@ class _ReproductorAudioState extends State<ReproductorAudio> {
 
     try {
       await _audioPlayer.setUrl(widget.audioUrl);
+      _audioPlayer.setVolume(_volume);
+      _audioPlayer.setSpeed(_speed);
       setState(() {
         _isLoading = false;
       });
@@ -140,6 +197,8 @@ class _ReproductorAudioState extends State<ReproductorAudio> {
         });
         
         await _audioPlayer.setUrl(file.path);
+        _audioPlayer.setVolume(_volume);
+        _audioPlayer.setSpeed(_speed);
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -200,15 +259,32 @@ class _ReproductorAudioState extends State<ReproductorAudio> {
   void _setVolume(double value) {
     setState(() {
       _volume = value;
+      _isMuted = (value == 0);
+      if (!_isMuted) {
+        _volumeAntesSilencio = value;
+      }
     });
     _audioPlayer.setVolume(value);
+    _guardarVolumen(value);
+  }
+
+  void _toggleMute() {
+    if (_isMuted) {
+      _setVolume(_volumeAntesSilencio);
+    } else {
+      _volumeAntesSilencio = _volume;
+      _setVolume(0.0);
+    }
   }
 
   void _setSpeed(double value) {
+    // Redondear al paso más cercano para evitar errores de precisión
+    final roundedSpeed = (value / _speedStep).round() * _speedStep;
     setState(() {
-      _speed = value;
+      _speed = roundedSpeed;
     });
-    _audioPlayer.setSpeed(value);
+    _audioPlayer.setSpeed(_speed);
+    _guardarVelocidad(_speed);
   }
 
   String _formatDuration(Duration duration) {
@@ -217,6 +293,11 @@ class _ReproductorAudioState extends State<ReproductorAudio> {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return duration.inHours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
+  }
+
+  String _formatSpeed(double speed) {
+    // Mostrar siempre dos decimales
+    return '${speed.toStringAsFixed(2)}x';
   }
 
   @override
@@ -404,8 +485,15 @@ class _ReproductorAudioState extends State<ReproductorAudio> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.volume_up, color: AppColores.primario),
-                                const SizedBox(width: 12),
+                                IconButton(
+                                  icon: Icon(
+                                    _isMuted ? Icons.volume_off : Icons.volume_up,
+                                    color: AppColores.primario,
+                                  ),
+                                  onPressed: _toggleMute,
+                                  tooltip: _isMuted ? 'Activar sonido' : 'Silenciar',
+                                ),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Slider(
                                     value: _volume,
@@ -433,14 +521,14 @@ class _ReproductorAudioState extends State<ReproductorAudio> {
                                   child: Slider(
                                     value: _speed,
                                     onChanged: _setSpeed,
-                                    min: 0.5,
-                                    max: 2.0,
-                                    divisions: 15,
+                                    min: _minSpeed,
+                                    max: _maxSpeed,
+                                    divisions: _speedDivisions,
                                     activeColor: AppColores.primario,
                                   ),
                                 ),
                                 Text(
-                                  '${_speed}x',
+                                  _formatSpeed(_speed),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: isDark ? Colors.white70 : Colors.black54,

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -117,7 +119,7 @@ class FirebaseStorageService {
   }
 
   static Future<String> subirImagenPerfil({
-    required File imagen,
+    required dynamic imagen,
     required String userId,
   }) async {
     final String nombreArchivo = 'profile_$userId.jpg';
@@ -125,7 +127,11 @@ class FirebaseStorageService {
         .ref()
         .child('$carpetaUsuarios/$userId/perfil/$nombreArchivo');
     
-    await ref.putFile(imagen);
+    if (kIsWeb) {
+      await ref.putData(imagen as Uint8List);
+    } else {
+      await ref.putFile(imagen as File);
+    }
     final String url = await ref.getDownloadURL();
     return url;
   }
@@ -137,7 +143,6 @@ class FirebaseStorageService {
       final ref = _storage.refFromURL(urlArchivo);
       await ref.delete();
     } catch (e) {
-      // Ignorar errores al eliminar
     }
   }
 

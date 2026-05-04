@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'diseno.dart';
 
 class LectorPDF extends StatefulWidget {
@@ -27,10 +29,10 @@ class _LectorPDFState extends State<LectorPDF> {
   @override
   void initState() {
     super.initState();
-    _descargarYMostrarPDF();
+    _abrirPDF();
   }
 
-  Future<void> _descargarYMostrarPDF() async {
+  Future<void> _abrirPDF() async {
     if (widget.pdfUrl.isEmpty) {
       setState(() {
         _error = 'No se ha cargado un PDF para este libro. Por favor, sube un PDF.';
@@ -39,45 +41,52 @@ class _LectorPDFState extends State<LectorPDF> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+      _progress = 0.0;
+      _error = null;
+    });
+
     try {
-      setState(() {
-        _isLoading = true;
-        _progress = 0.0;
-        _error = null;
-      });
-
-      final tempDir = await getTemporaryDirectory();
-      final fileName = '${widget.titulo.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${tempDir.path}/$fileName');
-
-      final response = await http.Client().send(
-        http.Request('GET', Uri.parse(widget.pdfUrl))
-      );
-
-      final totalBytes = response.contentLength;
-      var bytesReceived = 0;
-
-      final sink = file.openWrite();
-      await response.stream.listen((chunk) {
-        sink.add(chunk);
-        bytesReceived += chunk.length;
-        if (totalBytes != null && mounted) {
-          setState(() {
-            _progress = bytesReceived / totalBytes;
-          });
+      if (kIsWeb) {
+        final Uri url = Uri.parse(widget.pdfUrl);
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+          if (mounted) Navigator.pop(context);
+        } else {
+          throw Exception('No se puede abrir la URL');
         }
-      }).asFuture();
-      await sink.close();
+      } else {
+        final tempDir = await getTemporaryDirectory();
+        final fileName = '${widget.titulo.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final file = File('${tempDir.path}/$fileName');
 
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        final response = await http.Client().send(
+          http.Request('GET', Uri.parse(widget.pdfUrl))
+        );
 
-        await OpenFile.open(file.path);
-        
+        final totalBytes = response.contentLength;
+        var bytesReceived = 0;
+
+        final sink = file.openWrite();
+        await response.stream.listen((chunk) {
+          sink.add(chunk);
+          bytesReceived += chunk.length;
+          if (totalBytes != null && mounted) {
+            setState(() {
+              _progress = bytesReceived / totalBytes;
+            });
+          }
+        }).asFuture();
+        await sink.close();
+
         if (mounted) {
-          Navigator.pop(context);
+          setState(() {
+            _isLoading = false;
+          });
+
+          await OpenFile.open(file.path);
+          if (mounted) Navigator.pop(context);
         }
       }
     } catch (e) {
@@ -92,7 +101,10 @@ class _LectorPDFState extends State<LectorPDF> {
 
   void _abrirConNavegador() async {
     final url = Uri.parse(widget.pdfUrl);
-    await OpenFile.open(url.toString());
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (mounted) Navigator.pop(context);
+    }
   }
 
   @override
@@ -111,7 +123,7 @@ class _LectorPDFState extends State<LectorPDF> {
             ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _descargarYMostrarPDF,
+            onPressed: _abrirPDF,
             tooltip: 'Reintentar',
           ),
         ],
@@ -164,7 +176,7 @@ class _LectorPDFState extends State<LectorPDF> {
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
-                          onPressed: _descargarYMostrarPDF,
+                          onPressed: _abrirPDF,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColores.primario,
                           ),

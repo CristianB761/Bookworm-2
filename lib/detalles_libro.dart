@@ -216,7 +216,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1e1e1e),
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -227,19 +227,12 @@ class _DetallesLibroState extends State<DetallesLibro> {
           children: [
             Text(
               widget.libroObjeto.esAudiolibro ? 'Buscar audiolibro' : 'Buscar en tiendas',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: EstilosApp.tituloMedio(context),
             ),
             const SizedBox(height: 10),
             Text(
               '"${widget.libroObjeto.titulo}"',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
+              style: EstilosApp.cuerpoMedio(context),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -250,9 +243,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFFFF9900),
                   child: Icon(Icons.shopping_bag, color: Colors.white),
                 ),
-                title: const Text('Amazon', style: TextStyle(color: Colors.white)),
-                subtitle: const Text('Buscar en Amazon', style: TextStyle(color: Colors.white70)),
-                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+                title: Text('Amazon', style: EstilosApp.cuerpoGrande(context)),
+                subtitle: Text('Buscar en Amazon', style: EstilosApp.cuerpoMedio(context)),
+                trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.amazon.es/s?k=${Uri.encodeComponent(busqueda)}&i=stripbooks';
@@ -265,9 +258,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFFE2001A),
                   child: Icon(Icons.store, color: Colors.white),
                 ),
-                title: const Text('Casa del Libro', style: TextStyle(color: Colors.white)),
-                subtitle: const Text('Librería española', style: TextStyle(color: Colors.white70)),
-                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+                title: Text('Casa del Libro', style: EstilosApp.cuerpoGrande(context)),
+                subtitle: Text('Librería española', style: EstilosApp.cuerpoMedio(context)),
+                trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.casadellibro.com/busqueda-libros?q=${Uri.encodeComponent(busqueda)}';
@@ -280,9 +273,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFF0D5FA6),
                   child: Icon(Icons.shopping_cart, color: Colors.white),
                 ),
-                title: const Text('Fnac', style: TextStyle(color: Colors.white)),
-                subtitle: const Text('Tienda de cultura', style: TextStyle(color: Colors.white70)),
-                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+                title: Text('Fnac', style: EstilosApp.cuerpoGrande(context)),
+                subtitle: Text('Tienda de cultura', style: EstilosApp.cuerpoMedio(context)),
+                trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.fnac.es/ia?Search=${Uri.encodeComponent(busqueda)}';
@@ -297,9 +290,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFFF7991C),
                   child: Icon(Icons.headset, color: Colors.white),
                 ),
-                title: const Text('Audible', style: TextStyle(color: Colors.white)),
-                subtitle: const Text('Audiolibros con suscripción', style: TextStyle(color: Colors.white70)),
-                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+                title: Text('Audible', style: EstilosApp.cuerpoGrande(context)),
+                subtitle: Text('Audiolibros con suscripción', style: EstilosApp.cuerpoMedio(context)),
+                trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.audible.es/search?keywords=${Uri.encodeComponent(busqueda)}';
@@ -312,9 +305,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                   backgroundColor: Color(0xFF00A8FF),
                   child: Icon(Icons.volume_up, color: Colors.white),
                 ),
-                title: const Text('Storytel', style: TextStyle(color: Colors.white)),
-                subtitle: const Text('Streaming de audiolibros', style: TextStyle(color: Colors.white70)),
-                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+                title: Text('Storytel', style: EstilosApp.cuerpoGrande(context)),
+                subtitle: Text('Streaming de audiolibros', style: EstilosApp.cuerpoMedio(context)),
+                trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () {
                   Navigator.pop(context);
                   final url = 'https://www.storytel.com/es/es/search?q=${Uri.encodeComponent(busqueda)}';
@@ -326,7 +319,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+              child: const Text('Cancelar'),
             ),
           ],
         ),
@@ -495,7 +488,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(mensaje),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColores.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -505,7 +498,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(mensaje),
-        backgroundColor: AppColores.secundario,
+        backgroundColor: AppColores.exito,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -632,16 +625,18 @@ class _DetallesLibroState extends State<DetallesLibro> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriasTraducidas = _traducirCategorias(widget.libroObjeto.categorias);
     
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Detalles del Libro',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColores.primario,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -651,7 +646,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1e1e1e),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -662,7 +657,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
                     height: 180,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: const Color(0xFF2C2C2C),
+                      color: Theme.of(context).brightness == Brightness.light ? const Color(0xFFF5F5F5) : const Color(0xFF2C2C2C),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
@@ -703,10 +698,10 @@ class _DetallesLibroState extends State<DetallesLibro> {
                       children: [
                         Text(
                           widget.libroObjeto.titulo,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
@@ -715,9 +710,9 @@ class _DetallesLibroState extends State<DetallesLibro> {
                         if (widget.libroObjeto.autores.isNotEmpty)
                           Text(
                             'Por ${widget.libroObjeto.autores.join(', ')}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              color: Color(0xFFAAAAAA),
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -726,18 +721,18 @@ class _DetallesLibroState extends State<DetallesLibro> {
                         if (widget.libroObjeto.fechaPublicacion != null)
                           Text(
                             'Publicado: ${widget.libroObjeto.fechaPublicacion}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF888888),
+                              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.8),
                             ),
                           ),
                         if (widget.libroObjeto.numeroPaginas != null) ...[
                           const SizedBox(height: 4),
                           Text(
                             '${widget.libroObjeto.numeroPaginas} páginas',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF888888),
+                              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.8),
                             ),
                           ),
                         ],
@@ -749,18 +744,18 @@ class _DetallesLibroState extends State<DetallesLibro> {
                               const SizedBox(width: 4),
                               Text(
                                 '${widget.libroObjeto.calificacionPromedio!.toStringAsFixed(1)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.white,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 '(${widget.libroObjeto.numeroCalificaciones ?? 0} reseñas)',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: Color(0xFFAAAAAA),
+                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                                 ),
                               ),
                             ],
@@ -840,15 +835,15 @@ class _DetallesLibroState extends State<DetallesLibro> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1e1e1e),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Descripción',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: EstilosApp.tituloMedio(context),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
@@ -876,7 +871,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
                         : _descripcionOllama != null
                             ? Text(
                                 _descripcionOllama!,
-                                style: const TextStyle(fontSize: 15, color: Color(0xFFAAAAAA), height: 1.5),
+                                style: TextStyle(fontSize: 15, color: Theme.of(context).textTheme.bodyMedium?.color, height: 1.5),
                               )
                             : const SizedBox.shrink(),
                   ],
@@ -888,15 +883,15 @@ class _DetallesLibroState extends State<DetallesLibro> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1e1e1e),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Categorías',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: EstilosApp.tituloMedio(context),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -905,8 +900,8 @@ class _DetallesLibroState extends State<DetallesLibro> {
                       children: categoriasTraducidas.map((categoria) {
                         return Chip(
                           label: Text(categoria),
-                          backgroundColor: const Color(0xFF2C2C2C),
-                          labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                          backgroundColor: Theme.of(context).brightness == Brightness.light ? const Color(0xFFEEEEEE) : const Color(0xFF2C2C2C),
+                          labelStyle: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 12),
                         );
                       }).toList(),
                     ),
@@ -919,20 +914,20 @@ class _DetallesLibroState extends State<DetallesLibro> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1e1e1e),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Acceso Gratuito',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: EstilosApp.tituloMedio(context),
                     ),
                     const SizedBox(height: 12),
                     Card(
                       elevation: 2,
-                      color: const Color(0xFF2C2C2C),
+                      color: Theme.of(context).brightness == Brightness.light ? const Color(0xFFFAFAFA) : const Color(0xFF2C2C2C),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -954,7 +949,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
                                         widget.libroObjeto.esAudiolibro 
                                           ? 'Este audiolibro está disponible para escuchar gratis'
                                           : 'Este libro está disponible para leer gratis',
-                                        style: const TextStyle(fontSize: 14, color: Colors.white70),
+                                        style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
                                       ),
                                     ],
                                   ),
@@ -986,7 +981,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1e1e1e),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -994,12 +989,12 @@ class _DetallesLibroState extends State<DetallesLibro> {
                 children: [
                   Text(
                     widget.libroObjeto.esAudiolibro ? 'Plataformas de Audiolibros' : 'Disponibilidad en Tiendas',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: EstilosApp.tituloMedio(context),
                   ),
                   const SizedBox(height: 12),
                   Card(
                     elevation: 2,
-                    color: const Color(0xFF2C2C2C),
+                    color: Theme.of(context).brightness == Brightness.light ? const Color(0xFFFAFAFA) : const Color(0xFF2C2C2C),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -1021,7 +1016,7 @@ class _DetallesLibroState extends State<DetallesLibro> {
                                       widget.libroObjeto.esAudiolibro 
                                         ? 'Encuentra este audiolibro en Audible, Storytel, y más.'
                                         : 'Encuentra este libro en Amazon, Fnac, y más.',
-                                      style: const TextStyle(fontSize: 14, color: Colors.white70),
+                                      style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
                                     ),
                                   ],
                                 ),
@@ -1072,8 +1067,8 @@ class _DetallesLibroState extends State<DetallesLibro> {
                     icon: Icon(_esFavorito ? Icons.favorite : Icons.favorite_border),
                     label: Text(_esFavorito ? 'En favoritos' : 'Favorito'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C2C2C),
-                      foregroundColor: _esFavorito ? Colors.red : const Color(0xFFAAAAAA),
+                      backgroundColor: Theme.of(context).brightness == Brightness.light ? const Color(0xFFF5F5F5) : const Color(0xFF2C2C2C),
+                      foregroundColor: _esFavorito ? Colors.red : AppColores.textoClaro,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
@@ -1085,8 +1080,8 @@ class _DetallesLibroState extends State<DetallesLibro> {
                     icon: Icon(_estaGuardado ? Icons.bookmark : Icons.bookmark_border),
                     label: Text(_estaGuardado ? 'Guardado' : 'Guardar'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C2C2C),
-                      foregroundColor: _estaGuardado ? Colors.amber : const Color(0xFFAAAAAA),
+                      backgroundColor: Theme.of(context).brightness == Brightness.light ? const Color(0xFFF5F5F5) : const Color(0xFF2C2C2C),
+                      foregroundColor: _estaGuardado ? Colors.amber : AppColores.textoClaro,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),

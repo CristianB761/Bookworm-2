@@ -372,7 +372,7 @@ class _DetallesMangaState extends State<DetallesManga> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(mensaje),
-        backgroundColor: AppColores.secundario,
+        backgroundColor: AppColores.exito,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -382,7 +382,7 @@ class _DetallesMangaState extends State<DetallesManga> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(mensaje),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColores.error,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -392,7 +392,7 @@ class _DetallesMangaState extends State<DetallesManga> {
     final query = _manga.titulo;
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1e1e1e),
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -403,12 +403,12 @@ class _DetallesMangaState extends State<DetallesManga> {
           children: [
             Text(
               'Buscar en tiendas',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              style: EstilosApp.tituloMedio(context),
             ),
             const SizedBox(height: 10),
             Text(
               '"${_manga.titulo}"',
-              style: const TextStyle(fontSize: 14, color: Colors.white70),
+              style: EstilosApp.cuerpoMedio(context),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -417,9 +417,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                 backgroundColor: Color(0xFFFF9900),
                 child: Icon(Icons.shopping_bag, color: Colors.white),
               ),
-              title: const Text('Amazon', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Buscar en Amazon', style: TextStyle(color: Colors.white70)),
-              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              title: Text('Amazon', style: EstilosApp.cuerpoGrande(context)),
+              subtitle: Text('Buscar en Amazon', style: EstilosApp.cuerpoMedio(context)),
+              trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.pop(context);
                 final url = 'https://www.amazon.es/s?k=${Uri.encodeComponent(query)}&i=stripbooks';
@@ -431,9 +431,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                 backgroundColor: Color(0xFFE2001A),
                 child: Icon(Icons.store, color: Colors.white),
               ),
-              title: const Text('Casa del Libro', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Librería española', style: TextStyle(color: Colors.white70)),
-              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              title: Text('Casa del Libro', style: EstilosApp.cuerpoGrande(context)),
+              subtitle: Text('Librería española', style: EstilosApp.cuerpoMedio(context)),
+              trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.pop(context);
                 final url = 'https://www.casadellibro.com/busqueda-libros?q=${Uri.encodeComponent(query)}';
@@ -445,9 +445,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                 backgroundColor: Color(0xFF0D5FA6),
                 child: Icon(Icons.shopping_cart, color: Colors.white),
               ),
-              title: const Text('Fnac', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Tienda de cultura', style: TextStyle(color: Colors.white70)),
-              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              title: Text('Fnac', style: EstilosApp.cuerpoGrande(context)),
+              subtitle: Text('Tienda de cultura', style: EstilosApp.cuerpoMedio(context)),
+              trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.pop(context);
                 final url = 'https://www.fnac.es/ia?Search=${Uri.encodeComponent(query)}';
@@ -457,7 +457,7 @@ class _DetallesMangaState extends State<DetallesManga> {
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+              child: const Text('Cancelar'),
             ),
           ],
         ),
@@ -469,7 +469,7 @@ class _DetallesMangaState extends State<DetallesManga> {
     final query = Uri.encodeComponent(_manga.titulo);
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1e1e1e),
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -480,12 +480,12 @@ class _DetallesMangaState extends State<DetallesManga> {
           children: [
             Text(
               'Ver adaptación anime',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              style: EstilosApp.tituloMedio(context),
             ),
             const SizedBox(height: 10),
             Text(
               '"${_manga.titulo}"',
-              style: const TextStyle(fontSize: 14, color: Colors.white70),
+              style: EstilosApp.cuerpoMedio(context),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -494,9 +494,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                 backgroundColor: const Color(0xFFF47521),
                 child: const Icon(Icons.tv, color: Colors.white),
               ),
-              title: const Text('Crunchyroll', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Anime y manga en streaming', style: TextStyle(color: Colors.white70)),
-              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              title: Text('Crunchyroll', style: EstilosApp.cuerpoGrande(context)),
+              subtitle: Text('Anime y manga en streaming', style: EstilosApp.cuerpoMedio(context)),
+              trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.pop(context);
                 final url = 'https://www.crunchyroll.com/es/search?q=$query';
@@ -508,9 +508,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                 backgroundColor: const Color(0xFFE50914),
                 child: const Icon(Icons.tv, color: Colors.white),
               ),
-              title: const Text('Netflix', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Plataforma de streaming', style: TextStyle(color: Colors.white70)),
-              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              title: Text('Netflix', style: EstilosApp.cuerpoGrande(context)),
+              subtitle: Text('Plataforma de streaming', style: EstilosApp.cuerpoMedio(context)),
+              trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.pop(context);
                 final url = 'https://www.netflix.com/es/search?q=$query';
@@ -522,9 +522,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                 backgroundColor: const Color(0xFF00A8E1),
                 child: const Icon(Icons.tv, color: Colors.white),
               ),
-              title: const Text('Amazon Prime Video', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Series y películas', style: TextStyle(color: Colors.white70)),
-              trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+              title: Text('Amazon Prime Video', style: EstilosApp.cuerpoGrande(context)),
+              subtitle: Text('Series y películas', style: EstilosApp.cuerpoMedio(context)),
+              trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.pop(context);
                 final url = 'https://www.primevideo.com/search/ref=atv_nb_sr?phrase=$query';
@@ -534,7 +534,7 @@ class _DetallesMangaState extends State<DetallesManga> {
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+              child: const Text('Cancelar'),
             ),
           ],
         ),
@@ -554,14 +554,16 @@ class _DetallesMangaState extends State<DetallesManga> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'Detalles del Manga',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColores.primario,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -571,7 +573,7 @@ class _DetallesMangaState extends State<DetallesManga> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1e1e1e),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -582,7 +584,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                     height: 180,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: const Color(0xFF2C2C2C),
+                      color: Theme.of(context).brightness == Brightness.light ? const Color(0xFFF5F5F5) : const Color(0xFF2C2C2C),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
@@ -623,10 +625,10 @@ class _DetallesMangaState extends State<DetallesManga> {
                       children: [
                         Text(
                           _manga.titulo,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
@@ -635,9 +637,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                         if (_manga.autores.isNotEmpty)
                           Text(
                             'Por ${_manga.autores.join(', ')}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              color: Color(0xFFAAAAAA),
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -646,9 +648,9 @@ class _DetallesMangaState extends State<DetallesManga> {
                           const SizedBox(height: 8),
                           Text(
                             'Publicado: ${_manga.fechaPublicacion}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF888888),
+                              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.8),
                             ),
                           ),
                         ],
@@ -671,7 +673,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                                     const SizedBox(width: 4),
                                     Text(
                                       '${(_manga.calificacionAniList! / 10).toStringAsFixed(1)}/10',
-                                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                                      style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyLarge?.color),
                                     ),
                                   ],
                                 ),
@@ -715,15 +717,15 @@ class _DetallesMangaState extends State<DetallesManga> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1e1e1e),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Sinopsis',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: EstilosApp.tituloMedio(context),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
@@ -751,7 +753,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                         : _sinopsisGenerada != null
                             ? Text(
                                 _sinopsisGenerada!,
-                                style: const TextStyle(fontSize: 15, color: Color(0xFFAAAAAA), height: 1.5),
+                                style: TextStyle(fontSize: 15, color: Theme.of(context).textTheme.bodyMedium?.color, height: 1.5),
                               )
                             : const SizedBox.shrink(),
                   ],
@@ -763,15 +765,15 @@ class _DetallesMangaState extends State<DetallesManga> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1e1e1e),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Géneros',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: EstilosApp.tituloMedio(context),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -780,8 +782,8 @@ class _DetallesMangaState extends State<DetallesManga> {
                       children: _manga.generos.map((genero) {
                         return Chip(
                           label: Text(genero),
-                          backgroundColor: const Color(0xFF2C2C2C),
-                          labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                          backgroundColor: Theme.of(context).brightness == Brightness.light ? const Color(0xFFEEEEEE) : const Color(0xFF2C2C2C),
+                          labelStyle: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 12),
                         );
                       }).toList(),
                     ),
@@ -793,20 +795,20 @@ class _DetallesMangaState extends State<DetallesManga> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1e1e1e),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Adaptación anime',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: EstilosApp.tituloMedio(context),
                     ),
                     const SizedBox(height: 12),
                     Card(
                       elevation: 2,
-                      color: const Color(0xFF2C2C2C),
+                      color: Theme.of(context).brightness == Brightness.light ? const Color(0xFFFAFAFA) : const Color(0xFF2C2C2C),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -823,7 +825,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                                       const SizedBox(height: 4),
                                       Text(
                                         'Encuentra este anime en Crunchyroll, Netflix, y más.',
-                                        style: TextStyle(fontSize: 14, color: Colors.white70),
+                                        style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
                                       ),
                                     ],
                                   ),
@@ -852,20 +854,20 @@ class _DetallesMangaState extends State<DetallesManga> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1e1e1e),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Acceso Gratuito',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: EstilosApp.tituloMedio(context),
                   ),
                   const SizedBox(height: 12),
                   Card(
                     elevation: 2,
-                    color: const Color(0xFF2C2C2C),
+                    color: Theme.of(context).brightness == Brightness.light ? const Color(0xFFFAFAFA) : const Color(0xFF2C2C2C),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -882,7 +884,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                                     const SizedBox(height: 4),
                                     Text(
                                       'Este Manga está disponible para leer gratis',
-                                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                                      style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
                                     ),
                                   ],
                                 ),
@@ -912,20 +914,20 @@ class _DetallesMangaState extends State<DetallesManga> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1e1e1e),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Disponibilidad en Tiendas',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: EstilosApp.tituloMedio(context),
                   ),
                   const SizedBox(height: 12),
                   Card(
                     elevation: 2,
-                    color: const Color(0xFF2C2C2C),
+                    color: Theme.of(context).brightness == Brightness.light ? const Color(0xFFFAFAFA) : const Color(0xFF2C2C2C),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -942,7 +944,7 @@ class _DetallesMangaState extends State<DetallesManga> {
                                     const SizedBox(height: 4),
                                     Text(
                                       'Encuentra este manga en Amazon, Fnac, y más.',
-                                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                                      style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
                                     ),
                                   ],
                                 ),
@@ -991,8 +993,8 @@ class _DetallesMangaState extends State<DetallesManga> {
                     icon: Icon(_esFavorito ? Icons.favorite : Icons.favorite_border),
                     label: Text(_esFavorito ? 'En favoritos' : 'Favorito'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C2C2C),
-                      foregroundColor: _esFavorito ? Colors.red : const Color(0xFFAAAAAA),
+                      backgroundColor: Theme.of(context).brightness == Brightness.light ? const Color(0xFFF5F5F5) : const Color(0xFF2C2C2C),
+                      foregroundColor: _esFavorito ? Colors.red : AppColores.textoClaro,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
@@ -1004,8 +1006,8 @@ class _DetallesMangaState extends State<DetallesManga> {
                     icon: Icon(_estaGuardado ? Icons.bookmark : Icons.bookmark_border),
                     label: Text(_estaGuardado ? 'Guardado' : 'Guardar'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C2C2C),
-                      foregroundColor: _estaGuardado ? Colors.amber : const Color(0xFFAAAAAA),
+                      backgroundColor: Theme.of(context).brightness == Brightness.light ? const Color(0xFFF5F5F5) : const Color(0xFF2C2C2C),
+                      foregroundColor: _estaGuardado ? Colors.amber : AppColores.textoClaro,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),

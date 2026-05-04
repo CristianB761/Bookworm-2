@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -38,7 +39,7 @@ class _PerfilState extends State<Perfil> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
-  File? _imagenSeleccionada;
+  XFile? _imagenSeleccionada;
   bool _subiendoImagen = false;
   
   List<Map<String, dynamic>> _favoritos = [];
@@ -155,8 +156,6 @@ class _PerfilState extends State<Perfil> {
           _actualizarListasUnificadas();
         });
       }
-    }, onError: (error) {
-      if (mounted) setState(() => _cargandoFavoritos = false);
     });
 
     _firestore
@@ -178,8 +177,6 @@ class _PerfilState extends State<Perfil> {
           _actualizarListasUnificadas();
         });
       }
-    }, onError: (error) {
-      if (mounted) setState(() => _cargandoFavoritos = false);
     });
 
     _firestore
@@ -198,8 +195,6 @@ class _PerfilState extends State<Perfil> {
           _cargandoProgresos = false;
         });
       }
-    }, onError: (error) {
-      if (mounted) setState(() => _cargandoProgresos = false);
     });
   }
 
@@ -208,6 +203,9 @@ class _PerfilState extends State<Perfil> {
     _favoritos = todos.where((item) => item['favorito'] == true).toList();
     _guardados = todos.where((item) {
       final estado = item['estado'];
+      final esSubidoPorUsuario = (item['urlPDFSubido'] != null && item['urlPDFSubido'].toString().isNotEmpty) ||
+                                  (item['urlAudioSubido'] != null && item['urlAudioSubido'].toString().isNotEmpty);
+      if (esSubidoPorUsuario) return false;
       return item['guardado'] == true || estado == 'guardado' || estado == 'leyendo' || (estado == null && item['favorito'] != true);
     }).toList();
     _cargandoFavoritos = false;
@@ -366,6 +364,38 @@ class _PerfilState extends State<Perfil> {
     }
   }
 
+  Future<void> _eliminarFotoPerfil() async {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return;
+
+    try {
+      setState(() => _subiendoImagen = true);
+
+      final urlActual = _datosUsuario?.urlImagenPerfil;
+      if (urlActual != null && urlActual.isNotEmpty) {
+        await FirebaseStorageService.eliminarArchivo(urlActual);
+      }
+
+      await _servicioFirestore.actualizarDatosUsuario(
+        usuario.uid,
+        {'urlImagenPerfil': null},
+      );
+
+      setState(() {
+        _imagenSeleccionada = null;
+      });
+
+      await _cargarDatosUsuario();
+
+      _mostrarExito('Foto de perfil eliminada');
+      Navigator.pop(context);
+    } catch (e) {
+      _mostrarError('Error al eliminar foto: $e');
+    } finally {
+      if (mounted) setState(() => _subiendoImagen = false);
+    }
+  }
+
   Future<void> _seleccionarImagen() async {
     final picker = ImagePicker();
     
@@ -399,7 +429,7 @@ class _PerfilState extends State<Perfil> {
       
       if (pickedFile != null && mounted) {
         setState(() {
-          _imagenSeleccionada = File(pickedFile.path);
+          _imagenSeleccionada = pickedFile;
         });
       }
     } catch (e) {
@@ -411,7 +441,7 @@ class _PerfilState extends State<Perfil> {
     final nombreCtrl = TextEditingController(text: _datosUsuario?.nombre ?? '');
     final biografiaCtrl = TextEditingController(text: _datosUsuario?.biografia ?? '');
 
-    File? imagenTemp = _imagenSeleccionada;
+    XFile? imagenTemp = _imagenSeleccionada;
 
     showDialog(
       context: context,
@@ -456,6 +486,51 @@ class _PerfilState extends State<Perfil> {
                               ),
                             ),
                           ),
+                          if (_datosUsuario?.urlImagenPerfil != null || imagenTemp != null)
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Eliminar foto'),
+                                      content: const Text('¿Quieres eliminar tu foto de perfil?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text('Cancelar'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                          child: const Text('Eliminar'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm == true) {
+                                    await _eliminarFotoPerfil();
+                                    if (mounted) {
+                                      setStateDialog(() {
+                                        imagenTemp = null;
+                                        _imagenSeleccionada = null;
+                                      });
+                                    }
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(Icons.delete, size: 16, color: Colors.white),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -514,9 +589,9 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
-  ImageProvider? _obtenerImagenPerfil(File? imagenTemp) {
+  ImageProvider? _obtenerImagenPerfil(XFile? imagenTemp) {
     if (imagenTemp != null) {
-      return FileImage(imagenTemp);
+      return FileImage(File(imagenTemp.path));
     } else if (_datosUsuario?.urlImagenPerfil != null &&
         _datosUsuario!.urlImagenPerfil!.isNotEmpty) {
       return NetworkImage(_datosUsuario!.urlImagenPerfil!);
@@ -524,7 +599,7 @@ class _PerfilState extends State<Perfil> {
     return null;
   }
 
-  Widget? _obtenerIconoPerfil(File? imagenTemp) {
+  Widget? _obtenerIconoPerfil(XFile? imagenTemp) {
     if (imagenTemp == null &&
         (_datosUsuario?.urlImagenPerfil == null ||
             _datosUsuario!.urlImagenPerfil!.isEmpty)) {
@@ -536,7 +611,7 @@ class _PerfilState extends State<Perfil> {
   Future<void> _guardarCambiosPerfil(
     String nombre,
     String biografia,
-    File? imagenTemp,
+    XFile? imagenTemp,
   ) async {
     try {
       setState(() => _subiendoImagen = true);
@@ -544,10 +619,19 @@ class _PerfilState extends State<Perfil> {
       String? imagenUrl;
 
       if (imagenTemp != null) {
-        imagenUrl = await FirebaseStorageService.subirImagenPerfil(
-          imagen: imagenTemp,
-          userId: _auth.currentUser!.uid,
-        );
+        if (kIsWeb) {
+          final bytes = await imagenTemp.readAsBytes();
+          imagenUrl = await FirebaseStorageService.subirImagenPerfil(
+            imagen: bytes,
+            userId: _auth.currentUser!.uid,
+          );
+        } else {
+          final file = File(imagenTemp.path);
+          imagenUrl = await FirebaseStorageService.subirImagenPerfil(
+            imagen: file,
+            userId: _auth.currentUser!.uid,
+          );
+        }
       }
 
       final Map<String, dynamic> datosActualizados = {
@@ -1871,89 +1955,83 @@ class _PerfilState extends State<Perfil> {
         final autores = List<String>.from(libroMap['autores'] ?? []);
         final miniatura = libroMap['urlMiniatura'];
         
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: EstilosApp.tarjetaPlana(context),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: miniatura != null && miniatura.isNotEmpty
-                    ? Image.network(
-                        miniatura,
-                        width: 50,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 50,
-                            height: 70,
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.picture_as_pdf, size: 30, color: Colors.red),
-                          );
-                        },
-                      )
-                    : Container(
-                        width: 50,
-                        height: 70,
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.picture_as_pdf, size: 30, color: Colors.red),
-                      ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      titulo,
-                      style: EstilosApp.tituloPequeno(context),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (autores.isNotEmpty)
+        return GestureDetector(
+          onTap: () => _abrirPDF(pdfUrl, titulo),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: EstilosApp.tarjetaPlana(context),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: miniatura != null && miniatura.isNotEmpty
+                      ? Image.network(
+                          miniatura,
+                          width: 50,
+                          height: 70,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 50,
+                              height: 70,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.picture_as_pdf, size: 30, color: Colors.red),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: 50,
+                          height: 70,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.picture_as_pdf, size: 30, color: Colors.red),
+                        ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        autores.join(', '),
-                        style: EstilosApp.cuerpoPequeno(context),
-                        maxLines: 1,
+                        titulo,
+                        style: EstilosApp.tituloPequeno(context),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                      if (autores.isNotEmpty)
+                        Text(
+                          autores.join(', '),
+                          style: EstilosApp.cuerpoPequeno(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.picture_as_pdf, size: 12, color: Colors.red),
+                            SizedBox(width: 4),
+                            Text('PDF subido', style: TextStyle(fontSize: 10, color: Colors.red)),
+                          ],
+                        ),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.picture_as_pdf, size: 12, color: Colors.red),
-                          SizedBox(width: 4),
-                          Text('PDF subido', style: TextStyle(fontSize: 10, color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.visibility, color: AppColores.primario),
-                    onPressed: () => _abrirPDF(pdfUrl, titulo),
-                    tooltip: 'Leer PDF',
+                    ],
                   ),
-                  if (_esMiPerfil)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () => _eliminarPDFSubido(libroMap['id'], pdfUrl),
-                      tooltip: 'Eliminar PDF',
-                    ),
-                ],
-              ),
-            ],
+                ),
+                if (_esMiPerfil)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: () => _eliminarPDFSubido(libroMap['id'], pdfUrl),
+                    tooltip: 'Eliminar PDF',
+                  ),
+              ],
+            ),
           ),
         );
       }).toList(),

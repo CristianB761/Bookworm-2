@@ -341,26 +341,70 @@ class _ChatClubState extends State<ChatClub> {
         backgroundColor: AppColores.primario,
         actions: [
           if (_rolUsuario == 'creador')
-            IconButton(
-              icon: const Icon(Icons.edit),
+            TextButton(
               onPressed: _mostrarDialogoEditarClub,
-              tooltip: 'Editar información del club',
+              style: ButtonStyle(
+                foregroundColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                  return const Color(0xFFFAFAFA);
+                }),
+                backgroundColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                  return const Color(0xFF20B2AA);
+                }),
+                shape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                padding: MaterialStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+              child: const Icon(Icons.edit, size: 18),
             ),
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              _mostrarInfoClub();
-            },
-            tooltip: 'Información del club',
+          TextButton(
+            onPressed: _mostrarInfoClub,
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                return const Color(0xFFFAFAFA);
+              }),
+              backgroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                return const Color(0xFF20B2AA);
+              }),
+              shape: MaterialStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              padding: MaterialStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+            child: const Icon(Icons.info_outline, size: 18),
           ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, _) {
-              return IconButton(
-                icon: Icon(
-                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
-                ),
+              return TextButton(
                 onPressed: themeProvider.alternarTema,
-                tooltip: themeProvider.esModoOscuro ? 'Modo claro' : 'Modo oscuro',
+                style: ButtonStyle(
+                  foregroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                    return const Color(0xFFFAFAFA);
+                  }),
+                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                    return const Color(0xFF20B2AA);
+                  }),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                child: Icon(
+                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
+                  size: 18,
+                ),
               );
             },
           ),

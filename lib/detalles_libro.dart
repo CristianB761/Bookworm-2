@@ -8,6 +8,8 @@ import 'dart:convert';
 import 'diseno.dart';
 import 'API/modelos.dart';
 import 'API/ollama_service.dart';
+import 'theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class DetallesLibro extends StatefulWidget {
   final Libro libroObjeto;
@@ -637,6 +639,35 @@ class _DetallesLibroState extends State<DetallesLibro> {
         ),
         backgroundColor: AppColores.primario,
         foregroundColor: Colors.white,
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return TextButton(
+                onPressed: themeProvider.alternarTema,
+                style: ButtonStyle(
+                  foregroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                    return const Color(0xFFFAFAFA);
+                  }),
+                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                    return const Color(0xFF20B2AA);
+                  }),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                child: Icon(
+                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
+                  size: 18,
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

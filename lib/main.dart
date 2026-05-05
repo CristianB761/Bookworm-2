@@ -235,10 +235,25 @@ class _PaginaInicioState extends State<PaginaInicio> {
         automaticallyImplyLeading: false,
         actions: [
           const BotonNotificaciones(),
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+          TextButton(
             onPressed: () => Navigator.pushNamed(context, '/mensajes_directos'),
-            tooltip: 'Mensajes',
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                return const Color(0xFFFAFAFA);
+              }),
+              backgroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                return const Color(0xFF20B2AA);
+              }),
+              shape: MaterialStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              padding: MaterialStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+            child: const Icon(Icons.chat_bubble_outline, size: 18),
           ),
           TextButton(
             onPressed: () => themeProvider.alternarTema(),
@@ -251,8 +266,12 @@ class _PaginaInicioState extends State<PaginaInicio> {
                 if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
                 return const Color(0xFF20B2AA);
               }),
-              shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-              padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+              shape: MaterialStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              padding: MaterialStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
             ),
             child: Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 18),
           ),

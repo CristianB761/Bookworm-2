@@ -259,6 +259,36 @@ class _BuscarState extends State<Buscar> {
     final busquedaVacia = _controladorBusqueda.text.trim().isEmpty;
     final sinFiltros = !tieneFiltros;
 
+    // Si se busca audiolibros y el campo está vacío, forzar una búsqueda de audiolibros
+    if (busquedaVacia && _formatoSeleccionado == 'Audiolibros') {
+      setState(() {
+        _estaCargando = true;
+        _haBuscado = true;
+      });
+      try {
+        // Buscar audiolibros directamente
+        List<Libro> audiolibros = await _servicioBiblioteca.buscarLibros('audiolibro', limite: 20);
+        // Filtrar solo los que sean audiolibros (por si acaso)
+        audiolibros = audiolibros.where((l) => l.esAudiolibro).toList();
+        // También buscar en LibriVox específicamente
+        final librivoxLibros = await _servicioBiblioteca.buscarLibros('', limite: 20);
+        for (var libro in librivoxLibros) {
+          if (libro.esAudiolibro && !audiolibros.any((l) => l.id == libro.id)) {
+            audiolibros.add(libro);
+          }
+        }
+        setState(() {
+          _resultadosBusqueda = audiolibros;
+          _estaCargando = false;
+        });
+        return;
+      } catch (e) {
+        setState(() => _estaCargando = false);
+        _mostrarError('Error cargando audiolibros: $e');
+        return;
+      }
+    }
+
     if (busquedaVacia && sinFiltros) {
       setState(() {
         _estaCargando = true;
@@ -332,6 +362,15 @@ class _BuscarState extends State<Buscar> {
         consultaBusqueda = 'libros populares';
       }
       
+      // Si se busca audiolibros, modificar la consulta para incluir términos relacionados
+      if (_formatoSeleccionado == 'Audiolibros') {
+        if (consultaBusqueda.isEmpty || consultaBusqueda == 'libros populares') {
+          consultaBusqueda = 'audiolibro';
+        } else {
+          consultaBusqueda = 'audiolibro $consultaBusqueda';
+        }
+      }
+      
       final cacheKey = '$consultaBusqueda|$_generoSeleccionado|$_formatoSeleccionado';
       
       if (_cacheBusquedas.containsKey(cacheKey)) {
@@ -348,8 +387,13 @@ class _BuscarState extends State<Buscar> {
       List<Libro> resultados = await _servicioBiblioteca.buscarLibros(
         consultaBusqueda,
         genero: _generoSeleccionado == 'Todos los géneros' ? null : _generoSeleccionado,
-        limite: 20,
+        limite: 30,
       );
+      
+      // Si no hay resultados y se buscaban audiolibros, forzar búsqueda en LibriVox
+      if (resultados.isEmpty && _formatoSeleccionado == 'Audiolibros') {
+        resultados = await _servicioBiblioteca.buscarLibros('audiolibro', limite: 20);
+      }
       
       if (_formatoSeleccionado != null && _formatoSeleccionado != 'Todos los formatos') {
         if (_formatoSeleccionado == 'Audiolibros') {
@@ -1456,15 +1500,47 @@ class _BuscarState extends State<Buscar> {
         automaticallyImplyLeading: false,
         actions: [
           const BotonNotificaciones(),
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/mensajes_directos'),
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                return const Color(0xFFFAFAFA);
+              }),
+              backgroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                return const Color(0xFF20B2AA);
+              }),
+              shape: MaterialStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              padding: MaterialStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+            child: const Icon(Icons.chat_bubble_outline, size: 18),
+          ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
-              return IconButton(
-                icon: Icon(
-                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
-                  color: Colors.white,
-                ),
+              return TextButton(
                 onPressed: () => themeProvider.alternarTema(),
-                tooltip: themeProvider.esModoOscuro ? 'Modo claro' : 'Modo oscuro',
+                style: ButtonStyle(
+                  foregroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                    return const Color(0xFFFAFAFA);
+                  }),
+                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                    return const Color(0xFF20B2AA);
+                  }),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                child: Icon(themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode, size: 18),
               );
             },
           ),

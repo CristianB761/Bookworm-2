@@ -392,7 +392,6 @@ class TarjetaLibro extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 8),
-
         if (libro.autores.isNotEmpty)
           Text(
             'Por ${libro.autores.join(', ')}',
@@ -400,7 +399,6 @@ class TarjetaLibro extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-
         if (libro.fechaPublicacion != null) ...[
           const SizedBox(height: 4),
           Text(
@@ -408,7 +406,6 @@ class TarjetaLibro extends StatelessWidget {
             style: EstilosApp.cuerpoPequeno(context),
           ),
         ],
-
         if (libro.calificacionPromedio != null) ...[
           const SizedBox(height: 4),
           Row(
@@ -757,9 +754,7 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Stack(
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications),
-                tooltip: 'Notificaciones',
+              TextButton(
                 onPressed: () {
                   setState(() {
                     _mostrarDropdown = !_mostrarDropdown;
@@ -770,6 +765,23 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
                     _ocultarMenuNotificaciones();
                   }
                 },
+                style: ButtonStyle(
+                  foregroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                    return const Color(0xFFFAFAFA);
+                  }),
+                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                    return const Color(0xFF20B2AA);
+                  }),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                child: const Icon(Icons.notifications, size: 18),
               ),
               if (servicio.contadorNoLeidosTotal > 0)
                 Positioned(
@@ -832,7 +844,6 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Row(
@@ -858,7 +869,6 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
                     ),
                   ),
                   const Divider(height: 1),
-                  // Lista de notificaciones
                   servicio.notificaciones.isEmpty
                       ? const Padding(
                           padding: EdgeInsets.all(40),
@@ -961,7 +971,6 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
             servicio.marcarComoLeido(notificacion.id);
           }
 
-          // Navegar según tipo de notificación
           if (notificacion.tipo == TipoNotificacion.mensajeClub && notificacion.clubId != null) {
             Navigator.pushNamed(
               context,
@@ -972,7 +981,6 @@ class _BotonNotificacionesState extends State<BotonNotificaciones> {
               },
             );
           } else if (notificacion.publicacionId != null) {
-            // Navegar a la publicación
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Publicación - Próximamente'),

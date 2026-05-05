@@ -48,6 +48,9 @@ dependencies:
   permission_handler: ^11.3.1
   open_file: ^3.3.2
 
+  # Imagenes adaptables
+  adaptive_network_image: ^0.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

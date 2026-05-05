@@ -382,6 +382,9 @@ class _ClubsState extends State<Clubs> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.esModoOscuro;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -390,17 +393,21 @@ class _ClubsState extends State<Clubs> {
         automaticallyImplyLeading: false,
         actions: [
           const BotonNotificaciones(),
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              return IconButton(
-                icon: Icon(
-                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
-                  color: Colors.white,
-                ),
-                onPressed: () => themeProvider.alternarTema(),
-                tooltip: themeProvider.esModoOscuro ? 'Modo claro' : 'Modo oscuro',
-              );
-            },
+          TextButton(
+            onPressed: () => themeProvider.alternarTema(),
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                return const Color(0xFFFAFAFA);
+              }),
+              backgroundColor: MaterialStateProperty.resolveWith((states) {
+                if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                return const Color(0xFF20B2AA);
+              }),
+              shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+            ),
+            child: Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 18),
           ),
           const BotonesBarraApp(rutaActual: '/clubs'),
         ],

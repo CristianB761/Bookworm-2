@@ -301,7 +301,7 @@ class _BuscarState extends State<Buscar> {
           if ((b.precio ?? 1.0) == 0.0 && (a.precio ?? 1.0) > 0) return 1;
           return 0;
         });
-
+        unicos = unicos.where((libro) => libro.precio == 0.0).toList();
         setState(() {
           _resultadosBusqueda = unicos;
           _estaCargando = false;
@@ -374,6 +374,8 @@ class _BuscarState extends State<Buscar> {
         if (precioB == 0.0 && precioA > 0) return 1;
         return precioA.compareTo(precioB);
       });
+      
+      resultadosProcesados = resultadosProcesados.where((libro) => libro.precio == 0.0).toList();
       
       _cacheBusquedas[cacheKey] = resultadosProcesados;
       _cacheTiempos[cacheKey] = DateTime.now();

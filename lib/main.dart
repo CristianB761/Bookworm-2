@@ -24,7 +24,7 @@ import 'mensajes_directos.dart';
 import 'pantalla_recomendaciones.dart';
 import 'recomendaciones_widget.dart';
 import 'noticias.dart';
-import 'recuperar_contraseña.dart'; 
+import 'recuperar_contraseña.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -179,7 +179,6 @@ class AppBookWorm extends StatelessWidget {
           return const Scaffold(body: Center(child: Text('Error: Datos de lectura no encontrados')));
         },
         '/mensajes_directos': (context) => const MensajesDirectos(),
-        // NUEVA RUTA PARA RECUPERAR CONTRASEÑA
         '/recuperar-contrasena': (context) {
           final uri = ModalRoute.of(context)?.settings.arguments as String?;
           if (uri != null && uri.contains('mode=resetPassword')) {
@@ -232,10 +231,7 @@ class _PaginaInicioState extends State<PaginaInicio> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: GestureDetector(
-          onTap: () => Navigator.pushReplacementNamed(context, '/home'),
-          child: const Text('BookWorm', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFFAFAFA))),
-        ),
+        title: const Text('BookWorm', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFFAFAFA))),
         automaticallyImplyLeading: false,
         actions: [
           const BotonNotificaciones(),
@@ -313,10 +309,6 @@ class _PaginaInicioState extends State<PaginaInicio> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // ... el resto de tu código de PaginaInicio se mantiene igual ...
-            // (He recortado por espacio, pero mantén todo el código existente)
-            
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(24),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'dart:math';
 import 'diseno.dart';
 import 'componentes.dart';
+import 'theme_provider.dart';
 
 class Desafios extends StatefulWidget {
   const Desafios({super.key});
@@ -43,7 +45,7 @@ class _DesafiosState extends State<Desafios> {
       0xFFFFCDD2, 
     ];
     
-    final colorRandom = colores[Random().nextInt(colores.length)];
+    final colorRandom = Color(colores[Random().nextInt(colores.length)]);
 
     try {
       await _firestore
@@ -53,7 +55,7 @@ class _DesafiosState extends State<Desafios> {
           .add({
         'texto': _notaController.text.trim(),
         'fecha': FieldValue.serverTimestamp(),
-        'color': colorRandom,
+        'color': colorRandom.value,
       });
 
       _notaController.clear();
@@ -84,21 +86,55 @@ class _DesafiosState extends State<Desafios> {
   @override
   Widget build(BuildContext context) {
     final usuario = _auth.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final Color fondoInput = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5);
+    final Color hintColor = isDark ? Colors.grey.shade500 : Colors.grey.shade400;
+    final Color textColorTitulo = isDark ? Colors.white : Colors.black87;
 
     return Scaffold(
-      backgroundColor: AppColores.fondo,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('Mis Desafíos', style: EstilosApp.tituloGrande(context)),
         backgroundColor: AppColores.primario,
         foregroundColor: Colors.white,
-        actions: const [BotonesBarraApp(rutaActual: '/desafios')],
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return TextButton(
+                onPressed: () => themeProvider.alternarTema(),
+                style: ButtonStyle(
+                  foregroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                    return const Color(0xFFFAFAFA);
+                  }),
+                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                    return const Color(0xFF20B2AA);
+                  }),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                child: Icon(
+                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
+                  size: 18,
+                ),
+              );
+            },
+          ),
+          const BotonesBarraApp(rutaActual: '/desafios'),
+        ],
       ),
       body: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -112,15 +148,16 @@ class _DesafiosState extends State<Desafios> {
                 Expanded(
                   child: TextField(
                     controller: _notaController,
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Escribe una meta, idea o frase...',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      hintStyle: TextStyle(color: hintColor),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: fondoInput,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     ),
                     maxLines: 1,
@@ -140,7 +177,12 @@ class _DesafiosState extends State<Desafios> {
           ),
           Expanded(
             child: usuario == null 
-                ? const Center(child: Text('Inicia sesión para ver tus notas'))
+                ? Center(
+                    child: Text(
+                      'Inicia sesión para ver tus notas',
+                      style: TextStyle(color: textColorTitulo),
+                    ),
+                  )
                 : StreamBuilder<QuerySnapshot>(
                     stream: _firestore
                         .collection('usuarios')
@@ -149,7 +191,14 @@ class _DesafiosState extends State<Desafios> {
                         .orderBy('fecha', descending: true)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      if (snapshot.hasError) return const Center(child: Text('Error al cargar notas'));
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Error al cargar notas',
+                            style: TextStyle(color: textColorTitulo),
+                          ),
+                        );
+                      }
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       }
@@ -161,11 +210,18 @@ class _DesafiosState extends State<Desafios> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.note_alt_outlined, size: 64, color: Colors.grey[300]),
+                              Icon(
+                                Icons.note_alt_outlined,
+                                size: 64,
+                                color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
+                              ),
                               const SizedBox(height: 16),
                               Text(
                                 'Tus notas aparecerán aquí',
-                                style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                                style: TextStyle(
+                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  fontSize: 16,
+                                ),
                               ),
                             ],
                           ),

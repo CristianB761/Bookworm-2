@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'diseno.dart';
 import 'componentes.dart';
 import 'API/modelos.dart';
+import 'theme_provider.dart';
 
 class Historial extends StatelessWidget {
   const Historial({super.key});
@@ -98,15 +100,59 @@ class Historial extends StatelessWidget {
         title: const Text('Historial de Búsqueda'),
         backgroundColor: AppColores.primario,
         foregroundColor: Colors.white,
-        automaticallyImplyLeading: false,
         actions: [
           if (usuario != null)
-            IconButton(
-              icon: const Icon(Icons.delete_sweep),
-              tooltip: 'Borrar todo',
-              onPressed: () => _borrarTodoElHistorial(context),
+            Tooltip(
+              message: 'Borrar todo',
+              child: TextButton(
+                onPressed: () => _borrarTodoElHistorial(context),
+                style: ButtonStyle(
+                  foregroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                    return const Color(0xFFFAFAFA);
+                  }),
+                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                    return const Color(0xFF20B2AA);
+                  }),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                child: const Icon(Icons.delete_sweep, size: 18),
+              ),
             ),
-          const BotonesBarraApp(rutaActual: '/historial')
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return TextButton(
+                onPressed: () => themeProvider.alternarTema(),
+                style: ButtonStyle(
+                  foregroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                    return const Color(0xFFFAFAFA);
+                  }),
+                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                    return const Color(0xFF20B2AA);
+                  }),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                child: Icon(
+                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
+                  size: 18,
+                ),
+              );
+            },
+          ),
+          const BotonesBarraApp(rutaActual: '/historial'),
         ],
       ),
       body: usuario == null

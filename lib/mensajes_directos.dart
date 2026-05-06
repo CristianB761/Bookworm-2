@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../diseno.dart';
 import '../componentes.dart';
 import '../servicio/servicio_firestore.dart';
 import '../modelos/datos_usuario.dart';
+import '../theme_provider.dart';
 import 'chat_messages_screen.dart';
 
 class MensajesDirectos extends StatefulWidget {
@@ -110,25 +112,73 @@ class _MensajesDirectosState extends State<MensajesDirectos> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        automaticallyImplyLeading: true,
         title: const Text('Mensajes Directos'),
         backgroundColor: AppColores.primario,
         foregroundColor: Colors.white,
-        automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            icon: Icon(
-              _mostrarListaUsuarios ? Icons.chat : Icons.person_add,
+          Tooltip(
+            message: 'Nuevo mensaje',
+            child: TextButton(
+              onPressed: () {
+                setState(() {
+                  _mostrarListaUsuarios = !_mostrarListaUsuarios;
+                  _busqueda = '';
+                });
+              },
+              style: ButtonStyle(
+                foregroundColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                  return const Color(0xFFFAFAFA);
+                }),
+                backgroundColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                  return const Color(0xFF20B2AA);
+                }),
+                shape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                padding: MaterialStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+              child: Icon(
+                _mostrarListaUsuarios ? Icons.chat : Icons.person_add,
+                size: 18,
+              ),
             ),
-            onPressed: () {
-              setState(() {
-                _mostrarListaUsuarios = !_mostrarListaUsuarios;
-                _busqueda = '';
-              });
+          ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return TextButton(
+                onPressed: () => themeProvider.alternarTema(),
+                style: ButtonStyle(
+                  foregroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFFDCDCDC);
+                    return const Color(0xFFFAFAFA);
+                  }),
+                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
+                    return const Color(0xFF20B2AA);
+                  }),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                child: Icon(
+                  themeProvider.esModoOscuro ? Icons.light_mode : Icons.dark_mode,
+                  size: 18,
+                ),
+              );
             },
-            tooltip: _mostrarListaUsuarios ? 'Ver conversaciones' : 'Nuevo mensaje',
           ),
           const BotonesBarraApp(rutaActual: '/mensajes_directos'),
         ],

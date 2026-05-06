@@ -48,8 +48,8 @@ dependencies:
   permission_handler: ^11.3.1
   open_file: ^3.3.2
 
-  # Imagenes adaptables
-  adaptive_network_image: ^0.1.2
+  # Ventana
+  window_manager: ^0.4.3
 
 dev_dependencies:
   flutter_test:
@@ -57,11 +57,19 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   hive_generator: ^2.0.1
   build_runner: ^2.4.7
+  flutter_launcher_icons: ^0.14.2
 
 flutter:
   uses-material-design: true
   assets:
     - assets/googleLogo.png
+
+flutter_launcher_icons:
+  android: true
+  windows:
+    generate: true
+    image_path: "assets/appLogo.png"
+  image_path: "assets/appLogo.png"
 
 dependency_overrides:
   sign_in_with_apple: ^7.0.1

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 import 'firebase_options.dart';
 import 'autenticacion.dart';
 import 'buscar.dart';
@@ -28,7 +31,21 @@ import 'recuperar_contraseña.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  if (!kIsWeb) {
+    await windowManager.ensureInitialized();
+    WindowOptions windowOptions = const WindowOptions(
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+    );
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   
   runApp(
@@ -48,6 +65,14 @@ class AppBookWorm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    if (!kIsWeb) {
+      RawKeyboard.instance.addListener((event) {
+        if (event.logicalKey == LogicalKeyboardKey.f11 && event is RawKeyDownEvent) {
+          _toggleFullScreen();
+        }
+      });
+    }
 
     return MaterialApp(
       title: 'BookWorm',
@@ -192,6 +217,14 @@ class AppBookWorm extends StatelessWidget {
       },
     );
   }
+
+  void _toggleFullScreen() async {
+    if (await windowManager.isFullScreen()) {
+      await windowManager.setFullScreen(false);
+    } else {
+      await windowManager.setFullScreen(true);
+    }
+  }
 }
 
 class PaginaInicio extends StatefulWidget {
@@ -246,12 +279,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
                 if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
                 return const Color(0xFF20B2AA);
               }),
-              shape: MaterialStateProperty.all(
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              padding: MaterialStateProperty.all(
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
+              shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
             ),
             child: const Icon(Icons.chat_bubble_outline, size: 18),
           ),
@@ -266,12 +295,8 @@ class _PaginaInicioState extends State<PaginaInicio> {
                 if (states.contains(MaterialState.hovered)) return const Color(0xFF008080);
                 return const Color(0xFF20B2AA);
               }),
-              shape: MaterialStateProperty.all(
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              padding: MaterialStateProperty.all(
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
+              shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              padding: MaterialStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
             ),
             child: Icon(isDark ? Icons.light_mode : Icons.dark_mode, size: 18),
           ),

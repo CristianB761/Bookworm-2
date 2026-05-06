@@ -50,7 +50,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
 
   void _inicializarGoogleSignIn() {
     try {
-      // Web Client ID 
       const webClientId = '993471989568-t5gumicvfvdt3fagka0f2lg7uf6v23br.apps.googleusercontent.com';
       
       _googleSignIn = GoogleSignIn(
@@ -295,8 +294,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
     _mostrarSnackBar(mensajesError[e.code] ?? 'Error: ${e.message}', const Color(0xFFb22222));
   }
 
-  // ==================== RECUPERACIÓN DE CONTRASEÑA ====================
-  
   void _mostrarDialogoRecuperarContrasena() {
     final emailController = TextEditingController();
     
@@ -510,7 +507,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                   ),
                   child: Column(
                     children: [
-                      // Logo
                       Container(
                         width: 100,
                         height: 100,
@@ -526,8 +522,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         ),
                       ),
                       const SizedBox(height: 25),
-                      
-                      // Título
                       Text(
                         _esLogin ? 'Iniciar Sesión' : 'Crear Cuenta',
                         style: TextStyle(
@@ -549,8 +543,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 30),
-                      
-                      // Campo Nombre (solo registro)
                       if (!_esLogin) ...[
                         _construirCampoTexto(
                           _controladorNombre,
@@ -567,8 +559,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         ),
                         const SizedBox(height: 20),
                       ],
-                      
-                      // Campo Email
                       _construirCampoTexto(
                         _controladorEmail,
                         'Correo electrónico',
@@ -583,8 +573,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         inputTextColor: inputTextColor,
                       ),
                       const SizedBox(height: 20),
-                      
-                      // Campo Contraseña
                       _construirCampoTexto(
                         _controladorPassword,
                         'Contraseña',
@@ -602,8 +590,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         inputTextColor: inputTextColor,
                       ),
                       const SizedBox(height: 20),
-                      
-                      // Enlace "¿Olvidaste tu contraseña?" (solo login)
                       if (_esLogin) ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -628,8 +614,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         ),
                         const SizedBox(height: 8),
                       ],
-                      
-                      // Campo Confirmar Contraseña (solo registro)
                       if (!_esLogin) ...[
                         _construirCampoTexto(
                           _controladorConfirmarPassword,
@@ -649,8 +633,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         ),
                         const SizedBox(height: 20),
                       ],
-                      
-                      // Botón Email/Password
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -688,8 +670,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                                 ),
                               ),
                       ),
-                      
-                      // Separador
                       const SizedBox(height: 20),
                       Row(
                         children: [
@@ -718,8 +698,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
-                      // Botón Google
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -748,9 +726,7 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                                   height: 24,
                                   decoration: const BoxDecoration(
                                     image: DecorationImage(
-                                      image: NetworkImage(
-                                        'https://developers.google.com/identity/images/g-logo.png',
-                                      ),
+                                      image: AssetImage('assets/googleLogo.png'),
                                       fit: BoxFit.contain,
                                     ),
                                   ),
@@ -769,8 +745,6 @@ class _EstadoPantallaAuth extends State<Autenticacion> {
                           ),
                         ),
                       ),
-                      
-                      // Enlace para cambiar entre login/registro
                       const SizedBox(height: 25),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

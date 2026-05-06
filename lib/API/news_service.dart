@@ -36,7 +36,7 @@ class NoticiaLibro {
 }
 
 class NewsService {
-  static const String _apiKey = '7f4e31b4931e4abba669eae6a8994a39';
+  static const String _apiKey = 'c8b33be89a2744d49aa1526a6a31c932';
   static const String _baseUrl = 'https://newsapi.org/v2';
 
   Future<List<NoticiaLibro>> obtenerNoticiasLibros({int limite = 10, int pagina = 1}) async {

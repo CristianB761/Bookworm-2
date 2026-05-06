@@ -1125,13 +1125,13 @@ class _PerfilState extends State<Perfil> {
                               usuario.nombre,
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            subtitle: Text(
-                              usuario.biografia?.isNotEmpty == true
-                                  ? usuario.biografia!
-                                  : 'Sin biografía',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            subtitle: usuario.biografia?.isNotEmpty == true
+                                ? TextoConLinks(
+                                    texto: usuario.biografia!,
+                                    maxLineas: 1,
+                                    desbordamiento: TextOverflow.ellipsis,
+                                  )
+                                : const Text('Sin biografía'),
                             trailing: ElevatedButton(
                               onPressed: () {
                                 Navigator.pop(context);
